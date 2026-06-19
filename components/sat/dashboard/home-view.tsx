@@ -12,6 +12,7 @@ interface HomeViewProps {
   countdownLabel: string
   sleepLabel: string
   wakeLabel: string
+  timeZoneLabel: string | null
   onNavigate: (view: DashboardView) => void
 }
 
@@ -26,8 +27,6 @@ const QUICK_LINKS: QuickLink[] = [
   { id: 'plan', title: 'Study Plan', desc: 'Your prioritized topics', icon: 'ti-list-check' },
   { id: 'practice', title: 'Practice Drills', desc: 'AI questions on weak spots', icon: 'ti-target-arrow' },
   { id: 'flashcards', title: 'Flashcards', desc: 'Rapid-fire review', icon: 'ti-cards' },
-  { id: 'formulas', title: 'Formula Sheet', desc: 'Must-know references', icon: 'ti-math-function' },
-  { id: 'focus', title: 'Focus Timer', desc: 'Pomodoro study blocks', icon: 'ti-clock-hour-4' },
   { id: 'checklist', title: 'Night Checklist', desc: 'Pack & prep for tomorrow', icon: 'ti-checkbox' },
 ]
 
@@ -64,6 +63,7 @@ export function HomeView({
   countdownLabel,
   sleepLabel,
   wakeLabel,
+  timeZoneLabel,
   onNavigate,
 }: HomeViewProps) {
   const practiceAccuracy =
@@ -74,7 +74,6 @@ export function HomeView({
     stats.topicsTotal > 0
       ? Math.round((stats.topicsCompleted / stats.topicsTotal) * 100)
       : 0
-  const focusMinutes = Math.round(stats.focusSeconds / 60)
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,6 +118,12 @@ export function HomeView({
                 <i className="ti ti-sun" aria-hidden="true" /> {wakeLabel}
               </span>
             </div>
+            {timeZoneLabel && (
+              <p className="mt-2 flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+                <i className="ti ti-world" aria-hidden="true" />
+                Times shown in your timezone ({timeZoneLabel})
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -128,7 +133,7 @@ export function HomeView({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Tonight at a glance
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           <StatCard
             label="Plan progress"
             value={`${topicPct}%`}
@@ -149,13 +154,6 @@ export function HomeView({
             sub={`${stats.flashcardsKnown} marked known`}
             icon="ti-cards"
             accent="text-blue-600 dark:text-blue-400"
-          />
-          <StatCard
-            label="Focus time"
-            value={`${focusMinutes}m`}
-            sub={`${stats.focusSessions} sessions`}
-            icon="ti-clock-hour-4"
-            accent="text-amber-600 dark:text-amber-400"
           />
         </div>
       </section>

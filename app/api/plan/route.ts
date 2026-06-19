@@ -59,6 +59,7 @@ Weak areas: ${(d.weakAreas || []).join(', ') || 'unknown'}
 Learning style: ${d.learningStyle || 'unknown'}
 Previous prep: ${(d.previousPrep || []).join(', ') || 'none'}
 ${d.scoreReportText ? `Score report notes: ${d.scoreReportText}` : ''}
+${d.diagnosticSummary ? `Diagnostic test results (the student just took a 15-question diagnostic — prioritize the topics they got wrong): ${d.diagnosticSummary}` : ''}
 
 Use these EXACT values in the summary:
 sleep_deadline: "${d.sleepLabel}"

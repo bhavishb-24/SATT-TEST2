@@ -63,11 +63,48 @@ export interface PlanResponse {
 
 export type Screen =
   | 'landing'
+  | 'auth'
   | 'triage'
+  | 'diagnostic'
+  | 'reviewing'
+  | 'results'
   | 'loading'
   | 'coachWelcome'
   | 'coach'
   | 'dashboard'
+
+export interface GuestUser {
+  id: string
+  name: string
+  createdAt: number
+}
+
+export interface DiagnosticResult {
+  question: PracticeQuestion
+  selectedIndex: number | null
+  correct: boolean
+}
+
+export interface DiagnosticReview {
+  overall_summary: string
+  identified_weak_areas: string[]
+  strengths: string[]
+  recommended_focus: string
+  encouragement: string
+}
+
+export interface DiagnosticRecord {
+  results: DiagnosticResult[]
+  review: DiagnosticReview
+  correct: number
+  total: number
+  mathCorrect: number
+  mathTotal: number
+  rwCorrect: number
+  rwTotal: number
+  source: 'ai' | 'fallback'
+  takenAt: number
+}
 
 export type CoachMode =
   | 'welcome'
@@ -87,9 +124,8 @@ export type DashboardView =
   | 'home'
   | 'plan'
   | 'practice'
-  | 'formulas'
+  | 'mocktest'
   | 'flashcards'
-  | 'focus'
   | 'progress'
   | 'checklist'
   | 'morning'

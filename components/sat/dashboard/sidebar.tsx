@@ -14,10 +14,8 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'home', label: 'Dashboard', icon: 'ti-layout-dashboard' },
   { view: 'plan', label: 'Study Plan', icon: 'ti-list-check' },
   { view: 'practice', label: 'Practice', icon: 'ti-pencil-question' },
+  { view: 'mocktest', label: 'Mock Tests', icon: 'ti-clipboard-check' },
   { view: 'flashcards', label: 'Flashcards', icon: 'ti-cards' },
-  { view: 'formulas', label: 'Formulas', icon: 'ti-math-function' },
-  { view: 'focus', label: 'Focus Timer', icon: 'ti-clock-play' },
-  { view: 'progress', label: 'Progress', icon: 'ti-chart-bar' },
   { view: 'checklist', label: 'Night Checklist', icon: 'ti-checklist' },
   { view: 'morning', label: 'Morning Mode', icon: 'ti-sunrise' },
 ]

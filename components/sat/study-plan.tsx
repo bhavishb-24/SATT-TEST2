@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { PlanResponse, PlanTopic, TriageData } from '@/lib/sat-types'
 import { deriveTimes } from '@/lib/time-utils'
+import { downloadFormulaSheetPdf } from '@/lib/formula-pdf'
 import { BreathingAnimation } from './breathing-animation'
 import { SleepBanner } from './sleep-banner'
 import { SummaryCard } from './summary-card'
@@ -87,6 +88,32 @@ export function StudyPlan({
           sleepLabel={times.sleepDeadlineLabel}
         />
       )}
+
+      {/* Formula sheet download */}
+      <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground"
+            aria-hidden="true"
+          >
+            <span className="ti ti-math-function text-xl" />
+          </span>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">SAT formula &amp; rule sheet</h3>
+            <p className="text-xs text-muted-foreground">
+              Download every must-know math formula and grammar rule as a printable PDF.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={downloadFormulaSheetPdf}
+          className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-foreground px-4 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+        >
+          <span className="ti ti-download text-base" aria-hidden="true" />
+          Download PDF
+        </button>
+      </section>
 
       <div className="flex flex-col gap-4">
         {topics.map((topic, i) => (

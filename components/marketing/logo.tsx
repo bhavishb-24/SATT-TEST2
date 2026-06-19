@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import Image from 'next/image'
 import { SITE } from '@/lib/site'
 
 export function Logo({
@@ -12,18 +12,16 @@ export function Logo({
   return (
     <Link
       href={href}
-      className={cn(
-        'group flex items-center gap-2 font-extrabold tracking-tight text-foreground',
-        className,
-      )}
+      className={className}
       aria-label={`${SITE.name} home`}
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-        <span className="ti ti-heartbeat text-lg" aria-hidden="true" />
-      </span>
-      <span className="text-base leading-none">
-        SAT <span className="text-primary">Emergency Room</span>
-      </span>
+      <Image
+        src="/logo.png"
+        alt={SITE.name}
+        width={56}
+        height={56}
+        className="h-14 w-14 transition-transform hover:scale-105"
+      />
     </Link>
   )
 }

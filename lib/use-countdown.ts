@@ -17,3 +17,32 @@ export function useCountdown(testStartTime: string): string {
   if (!now || testMinutes == null) return '—'
   return formatCountdown(nextOccurrence(testMinutes, now).getTime() - now.getTime())
 }
+
+export interface UserTimeZone {
+  /** IANA identifier, e.g. "America/New_York". */
+  id: string
+  /** Short label for display, e.g. "EST". */
+  label: string
+}
+
+// Detects the visitor's timezone from the browser so countdowns and test-day
+// times are shown relative to where they actually are. Runs client-side only
+// (after mount) to avoid SSR/hydration mismatches.
+export function useTimeZone(): UserTimeZone | null {
+  const [tz, setTz] = useState<UserTimeZone | null>(null)
+
+  useEffect(() => {
+    try {
+      const id = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const label =
+        new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+          .formatToParts(new Date())
+          .find((p) => p.type === 'timeZoneName')?.value ?? id
+      setTz({ id, label })
+    } catch {
+      setTz(null)
+    }
+  }, [])
+
+  return tz
+}

@@ -1,3 +1,8 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import { FadeInOnScroll } from '@/components/marketing/fade-in-on-scroll'
+
 const FAQS = [
   {
     q: 'Is it really free?',
@@ -29,20 +34,38 @@ export function Faq() {
   return (
     <section id="faq">
       <div className="mx-auto w-full max-w-3xl px-5 py-20 lg:px-8 lg:py-28">
-        <div className="flex flex-col gap-4 text-center">
-          <span className="text-sm font-bold uppercase tracking-wider text-primary">
-            Questions
-          </span>
-          <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
-            Everything you might be wondering
-          </h2>
-        </div>
+        <FadeInOnScroll>
+          <div className="flex flex-col gap-4 text-center">
+            <span className="text-sm font-bold uppercase tracking-wider text-primary">
+              Questions
+            </span>
+            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
+              Everything you might be wondering
+            </h2>
+          </div>
+        </FadeInOnScroll>
 
-        <div className="mt-10 flex flex-col gap-3">
+        <motion.div
+          className="mt-10 flex flex-col gap-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.05,
+              },
+            },
+          }}
+        >
           {FAQS.map((item) => (
-            <details
+            <motion.details
               key={item.q}
-              className="group rounded-2xl border border-border bg-card p-5 transition-colors open:border-primary/40"
+              className="group rounded-2xl border border-border bg-card p-5 transition-colors open:border-primary/40 cursor-pointer hover:border-primary/20"
+              variants={{
+                hidden: { opacity: 0, x: -20 },
+                visible: { opacity: 1, x: 0, transition: { duration: 0.4 } },
+              }}
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold">
                 {item.q}
@@ -52,9 +75,9 @@ export function Faq() {
                 />
               </summary>
               <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">{item.a}</p>
-            </details>
+            </motion.details>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

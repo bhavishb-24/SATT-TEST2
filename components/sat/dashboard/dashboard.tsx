@@ -9,16 +9,15 @@ import type {
 } from '@/lib/sat-types'
 import { getPanicTheme } from '@/lib/theme'
 import { deriveTimes } from '@/lib/time-utils'
-import { useCountdown } from '@/lib/use-countdown'
+import { useCountdown, useTimeZone } from '@/lib/use-countdown'
 import type { StatsApi } from '@/lib/use-stats'
 import { cn } from '@/lib/utils'
 import { Sidebar } from './sidebar'
 import { MobileNav } from './mobile-nav'
 import { HomeView } from './home-view'
 import { PracticeView } from './practice-view'
-import { FormulaView } from './formula-view'
+import { MockTestView } from './mock-test-view'
 import { FlashcardsView } from './flashcards-view'
-import { FocusView } from './focus-view'
 import { ProgressView } from './progress-view'
 import { StudyPlan } from '../study-plan'
 import { Checklist } from '../checklist'
@@ -41,9 +40,8 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   home: { title: 'Dashboard', sub: 'Your command center for tonight' },
   plan: { title: 'Study Plan', sub: 'Highest-impact topics first' },
   practice: { title: 'Practice Drills', sub: 'Target your weak areas' },
+  mocktest: { title: 'Mock Tests', sub: 'Full-length SAT-style practice tests' },
   flashcards: { title: 'Flashcards', sub: 'Quick recall review' },
-  formulas: { title: 'Formula Sheet', sub: 'Must-know references' },
-  focus: { title: 'Focus Timer', sub: 'Stay sharp with pomodoro blocks' },
   progress: { title: 'Progress', sub: 'Track what you have done' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
@@ -64,16 +62,17 @@ export function Dashboard({
   const [view, setView] = useState<DashboardView>('home')
   const theme = getPanicTheme(triage.panic)
   const countdown = useCountdown(triage.testStartTime)
+  const timeZone = useTimeZone()
   const times = deriveTimes(triage.testStartTime)
   const sleepLabel = times?.sleepDeadlineLabel ?? '11:00 PM'
   const wakeLabel = times?.wakeUpLabel ?? '7:00 AM'
+  const tzSuffix = timeZone ? ` · ${timeZone.label}` : ''
   const sprint = triage.timeBudget === 'sprint'
 
   const meta = VIEW_TITLES[view]
   const centeredView =
     view === 'practice' ||
     view === 'flashcards' ||
-    view === 'focus' ||
     view === 'progress'
 
   return (
@@ -83,7 +82,7 @@ export function Dashboard({
         onNavigate={setView}
         theme={theme}
         countdownLabel={countdown}
-        countdownSub={`Wake ${wakeLabel} · Sleep by ${sleepLabel}`}
+        countdownSub={`Wake ${wakeLabel} · Sleep by ${sleepLabel}${tzSuffix}`}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -123,6 +122,7 @@ export function Dashboard({
                 countdownLabel={countdown}
                 sleepLabel={sleepLabel}
                 wakeLabel={wakeLabel}
+                timeZoneLabel={timeZone?.label ?? null}
                 onNavigate={setView}
               />
             )}
@@ -151,19 +151,12 @@ export function Dashboard({
               />
             )}
 
-            {view === 'flashcards' && (
-              <FlashcardsView theme={theme} onReview={statsApi.recordFlashcard} />
+            {view === 'mocktest' && (
+              <MockTestView theme={theme} onAnswer={statsApi.recordPractice} />
             )}
 
-            {view === 'formulas' && <FormulaView theme={theme} />}
-
-            {view === 'focus' && (
-              <FocusView
-                theme={theme}
-                onSessionComplete={statsApi.recordFocusSession}
-                speak={speak}
-                voiceEnabled={voiceEnabled}
-              />
+            {view === 'flashcards' && (
+              <FlashcardsView theme={theme} onReview={statsApi.recordFlashcard} />
             )}
 
             {view === 'progress' && (
