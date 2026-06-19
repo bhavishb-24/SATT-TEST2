@@ -54,18 +54,18 @@
 
 :root {
   color-scheme: light;
-  /* Solace design system — soft off-white canvas, white surfaces, calm teal brand accent. */
-  --background: #fafaf8;
+  /* Solace design system — warm cream canvas, cream surfaces, calm teal brand accent. */
+  --background: #f5f2ed;
   --foreground: #1a1a1a;
-  --card: #ffffff;
+  --card: #faf7f2;
   --card-foreground: #1a1a1a;
-  --popover: #ffffff;
+  --popover: #faf7f2;
   --popover-foreground: #1a1a1a;
   --primary: #0e8a6a;
   --primary-foreground: #ffffff;
   --secondary: #e6f5f0;
   --secondary-foreground: #096b52;
-  --muted: #f1f1ee;
+  --muted: #ede9e2;
   --muted-foreground: #6f6f6b;
   --accent: #e6f5f0;
   --accent-foreground: #096b52;
@@ -79,7 +79,7 @@
   --chart-4: #d97706;
   --chart-5: #888888;
   --radius: 0.75rem;
-  --sidebar: #ffffff;
+  --sidebar: #faf7f2;
   --sidebar-foreground: #1a1a1a;
   --sidebar-primary: #0e8a6a;
   --sidebar-primary-foreground: #ffffff;
