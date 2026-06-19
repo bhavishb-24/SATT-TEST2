@@ -1,5 +1,6 @@
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
+import { visionModelChain } from '@/lib/ai-providers'
 
 export const maxDuration = 45
 
@@ -18,12 +19,12 @@ export async function POST(req: Request) {
     return Response.json({ readable: false, error: 'No image provided' }, { status: 400 })
   }
 
-  const models = ['openai/gpt-4o', 'google/gemini-2.5-flash']
+  const chain = visionModelChain()
 
-  for (const model of models) {
+  for (const attempt of chain) {
     try {
       const { experimental_output } = await generateText({
-        model,
+        model: attempt.model,
         system:
           'You extract SAT score information from an uploaded image. If the image is not a readable SAT score report, set readable=false and leave scores null. Never guess or invent scores or weak areas.',
         messages: [
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
       const out = experimental_output as z.infer<typeof schema>
       return Response.json(out)
     } catch (err) {
-      console.log(`[v0] Score report model ${model} failed:`, (err as Error).message)
+      console.log(`[v0] Score report model ${attempt.provider} failed:`, (err as Error).message)
     }
   }
 
