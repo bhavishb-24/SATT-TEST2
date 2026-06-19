@@ -16,7 +16,9 @@ import { getPanicTheme } from '@/lib/theme'
 import { useVoice } from '@/lib/use-voice'
 import { useStats } from '@/lib/use-stats'
 import { useAuth } from '@/lib/use-auth'
+import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout'
 import { AuthGate } from '@/components/sat/auth-gate'
+import { InactivityTimeoutModal } from '@/components/inactivity-timeout-modal'
 import { TriageForm } from '@/components/sat/triage-form'
 import { DiagnosticTest } from '@/components/sat/diagnostic-test'
 import { DiagnosticResults } from '@/components/sat/diagnostic-results'
@@ -28,6 +30,11 @@ import { FloatingControls } from '@/components/sat/floating-controls'
 export default function Page() {
   const auth = useAuth()
   const [screen, setScreen] = useState<Screen>('triage')
+  const { isWarningOpen, handleDismiss, handleLogout } = useInactivityTimeout(() => {
+    // When user times out, redirect to triage
+    setScreen('triage')
+    auth.logout()
+  })
   const [triage, setTriage] = useState<TriageData | null>(null)
   const [response, setResponse] = useState<PlanResponse | null>(null)
   const [topics, setTopics] = useState<PlanTopic[]>([])
@@ -347,6 +354,13 @@ export default function Page() {
           voiceEnabled={voice.enabled}
         />
       )}
+
+      {/* Inactivity timeout modal */}
+      <InactivityTimeoutModal
+        isOpen={isWarningOpen}
+        onDismiss={handleDismiss}
+        onLogout={handleLogout}
+      />
     </div>
   )
 }
