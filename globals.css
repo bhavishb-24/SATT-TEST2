@@ -1,0 +1,270 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-inter), 'Inter Fallback', system-ui, sans-serif;
+  --font-sans: var(--font-inter), 'Inter Fallback', system-ui, sans-serif;
+  --font-mono: var(--font-inter), 'Inter Fallback', system-ui, sans-serif;
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-pulse-ring: pulseRing 1.6s ease-in-out infinite;
+  --animate-mic-pulse: micPulse 1.2s ease-in-out infinite;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  /* Warm off-white canvas, white surfaces, coral-red brand accent. */
+  --background: #f5f4f0;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #e63946;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f1ec;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f3f1ec;
+  --muted-foreground: #8a8784;
+  --accent: #f3f1ec;
+  --accent-foreground: #1a1a1a;
+  --destructive: #dc2626;
+  --border: #ebe9e4;
+  --input: #e5e3dd;
+  --ring: #e63946;
+  --chart-1: #e63946;
+  --chart-2: #2563eb;
+  --chart-3: #16a34a;
+  --chart-4: #d97706;
+  --chart-5: #8a8784;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #e63946;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fef2f2;
+  --sidebar-accent-foreground: #e63946;
+  --sidebar-border: #ebe9e4;
+  --sidebar-ring: #e63946;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #16140f;
+  --foreground: #f5f4f0;
+  --card: #211e18;
+  --card-foreground: #f5f4f0;
+  --popover: #211e18;
+  --popover-foreground: #f5f4f0;
+  --primary: #f05461;
+  --primary-foreground: #1a1a1a;
+  --secondary: #2a2620;
+  --secondary-foreground: #f5f4f0;
+  --muted: #2a2620;
+  --muted-foreground: #a8a39b;
+  --accent: #2a2620;
+  --accent-foreground: #f5f4f0;
+  --destructive: #ef4444;
+  --border: #322d26;
+  --input: #3a342c;
+  --ring: #f05461;
+  --chart-1: #f05461;
+  --chart-2: #60a5fa;
+  --chart-3: #4ade80;
+  --chart-4: #fbbf24;
+  --chart-5: #a8a39b;
+  --sidebar: #211e18;
+  --sidebar-foreground: #f5f4f0;
+  --sidebar-primary: #f05461;
+  --sidebar-primary-foreground: #1a1a1a;
+  --sidebar-accent: #2a2620;
+  --sidebar-accent-foreground: #f05461;
+  --sidebar-border: #322d26;
+  --sidebar-ring: #f05461;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: #16140f;
+    --foreground: #f5f4f0;
+    --card: #211e18;
+    --card-foreground: #f5f4f0;
+    --popover: #211e18;
+    --popover-foreground: #f5f4f0;
+    --primary: #f05461;
+    --primary-foreground: #1a1a1a;
+    --secondary: #2a2620;
+    --secondary-foreground: #f5f4f0;
+    --muted: #2a2620;
+    --muted-foreground: #a8a39b;
+    --accent: #2a2620;
+    --accent-foreground: #f5f4f0;
+    --destructive: #ef4444;
+    --border: #322d26;
+    --input: #3a342c;
+    --ring: #f05461;
+    --chart-1: #f05461;
+    --chart-2: #60a5fa;
+    --chart-3: #4ade80;
+    --chart-4: #fbbf24;
+    --chart-5: #a8a39b;
+    --sidebar: #211e18;
+    --sidebar-foreground: #f5f4f0;
+    --sidebar-primary: #f05461;
+    --sidebar-primary-foreground: #1a1a1a;
+    --sidebar-accent: #2a2620;
+    --sidebar-accent-foreground: #f05461;
+    --sidebar-border: #322d26;
+    --sidebar-ring: #f05461;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+}
+
+@keyframes micPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(230, 57, 70, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: var(--animate-fade-in);
+}
+
+/* Hide scrollbars on horizontal chip rows but keep scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth in-page anchor scrolling with offset for the sticky header */
+html {
+  scroll-behavior: smooth;
+}
+:target {
+  scroll-margin-top: 5rem;
+}
+
+/* Long-form legal / about text styling (no typography plugin needed) */
+.prose-legal section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.prose-legal h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+.prose-legal h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.prose-legal p,
+.prose-legal li {
+  line-height: 1.7;
+  color: color-mix(in oklab, var(--foreground) 80%, transparent);
+}
+.prose-legal ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.prose-legal a {
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-legal strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
