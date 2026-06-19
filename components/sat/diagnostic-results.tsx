@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { DiagnosticRecord } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
+import { MathText } from '@/components/sat/math-text'
 
 interface Props {
   record: DiagnosticRecord
@@ -68,30 +69,48 @@ export function DiagnosticResults({ record, theme, onSeePlan, generatingPlan }: 
                   </span>
                 </div>
                 <p className="text-sm font-medium leading-relaxed text-pretty text-foreground">
-                  {r.question.prompt}
+                  <MathText>{r.question.prompt}</MathText>
                 </p>
-                <div className="mt-3 flex flex-col gap-1.5 text-sm">
-                  <p
-                    className={cn(
-                      r.correct
-                        ? 'text-emerald-700 dark:text-emerald-300'
-                        : 'text-red-700 dark:text-red-300',
-                    )}
-                  >
-                    <span className="font-semibold">Your answer:</span> {yourChoice}
-                  </p>
-                  {!r.correct && (
-                    <p className="text-emerald-700 dark:text-emerald-300">
-                      <span className="font-semibold">Correct answer:</span> {correctChoice}
-                    </p>
-                  )}
-                </div>
-                <div className="mt-3 rounded-lg bg-muted p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+
+                {/* All choices listed so it's easy to cross-reference */}
+                <ol className="mt-3 flex flex-col gap-1.5">
+                  {r.question.choices.map((ch, ci) => {
+                    const letter = String.fromCharCode(65 + ci)
+                    const isYours = r.selectedIndex === ci
+                    const isCorrect = r.question.correctIndex === ci
+                    return (
+                      <li
+                        key={ci}
+                        className={cn(
+                          'flex items-start gap-2 rounded-lg px-3 py-2 text-sm',
+                          isCorrect
+                            ? 'bg-emerald-50 text-emerald-800'
+                            : isYours && !r.correct
+                              ? 'bg-red-50 text-red-800'
+                              : 'text-muted-foreground',
+                        )}
+                      >
+                        <span className="mt-0.5 shrink-0 font-bold">{letter}.</span>
+                        <span className="leading-relaxed">
+                          <MathText>{ch}</MathText>
+                        </span>
+                        {isCorrect && (
+                          <i className="ti ti-check ml-auto mt-0.5 shrink-0 text-emerald-600" aria-label="Correct answer" />
+                        )}
+                        {isYours && !r.correct && (
+                          <i className="ti ti-x ml-auto mt-0.5 shrink-0 text-red-500" aria-label="Your answer" />
+                        )}
+                      </li>
+                    )
+                  })}
+                </ol>
+
+                <div className="mt-3 rounded-lg border border-border bg-muted/60 p-4">
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                     Explanation
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-foreground">
-                    {r.question.explanation}
+                  <p className="text-sm leading-relaxed text-foreground">
+                    <MathText>{r.question.explanation}</MathText>
                   </p>
                 </div>
               </li>
