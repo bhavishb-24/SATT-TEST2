@@ -5,6 +5,7 @@ import type { DiagnosticRecord } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import { MathText } from '@/components/sat/math-text'
+import { ReportQuestionModal } from '@/components/sat/report-question-modal'
 
 interface Props {
   record: DiagnosticRecord
@@ -15,6 +16,7 @@ interface Props {
 
 export function DiagnosticResults({ record, theme, onSeePlan, generatingPlan }: Props) {
   const [mode, setMode] = useState<'summary' | 'answers'>('summary')
+  const [reportingQuestion, setReportingQuestion] = useState<{ q: typeof record.results[0]['question']; num: number } | null>(null)
   const { review, results, correct, total, mathCorrect, mathTotal, rwCorrect, rwTotal } = record
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0
 
@@ -67,6 +69,21 @@ export function DiagnosticResults({ record, theme, onSeePlan, generatingPlan }: 
                   <span className="text-xs font-medium text-muted-foreground">
                     Q{i + 1} · {r.question.section} · {r.question.topic}
                   </span>
+                  {r.question.id.startsWith('ai-') && (
+                    <span className="flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      <i className="ti ti-sparkles text-[10px]" aria-hidden="true" />
+                      AI Generated
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setReportingQuestion({ q: r.question, num: i + 1 })}
+                    title="Report an issue with this question"
+                    className="ml-auto flex h-7 items-center gap-1 rounded-lg border border-border bg-background px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <i className="ti ti-flag text-[11px]" aria-hidden="true" />
+                    Report
+                  </button>
                 </div>
                 <p className="text-sm font-medium leading-relaxed text-pretty text-foreground">
                   <MathText>{r.question.prompt}</MathText>
@@ -117,6 +134,15 @@ export function DiagnosticResults({ record, theme, onSeePlan, generatingPlan }: 
             )
           })}
         </ol>
+
+        {/* Report modal */}
+        {reportingQuestion && (
+          <ReportQuestionModal
+            question={reportingQuestion.q}
+            questionNumber={reportingQuestion.num}
+            onClose={() => setReportingQuestion(null)}
+          />
+        )}
 
         <button
           type="button"

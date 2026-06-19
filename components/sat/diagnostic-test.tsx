@@ -7,6 +7,7 @@ import { diagnosticFallback } from '@/lib/practice-bank'
 import { cn } from '@/lib/utils'
 import { MathText } from '@/components/sat/math-text'
 import { DesmosPanel } from '@/components/sat/desmos-panel'
+import { ReportQuestionModal } from '@/components/sat/report-question-modal'
 
 const MATH_COUNT = 15
 const RW_COUNT = 15
@@ -28,6 +29,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
   // Per-question state — keyed by question index
   const [eliminated, setEliminated] = useState<Record<number, Set<number>>>({})
   const [calcOpen, setCalcOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
 
   // Highlight tool: when active, mouseup over the question text applies a <mark>
   const [highlightMode, setHighlightMode] = useState(false)
@@ -118,6 +120,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
   if (!current) return null
 
   const isMath = current.section === 'Math'
+  const isAIGenerated = current.id.startsWith('ai-')
   const total = questions.length
   const progress = Math.round(((index + (selected !== null ? 1 : 0)) / total) * 100)
   const isLast = index + 1 >= total
@@ -268,8 +271,26 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           <span className="text-xs text-muted-foreground">·</span>
           <span className="text-xs font-medium text-muted-foreground">{current.difficulty}</span>
 
+          {/* AI generated badge */}
+          {isAIGenerated && (
+            <span className="flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <i className="ti ti-sparkles text-[10px]" aria-hidden="true" />
+              AI Generated
+            </span>
+          )}
+
           {/* Spacer */}
           <div className="ml-auto flex items-center gap-1.5">
+            {/* Report button */}
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              title="Report an issue with this question"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
+            >
+              <i className="ti ti-flag text-sm" aria-hidden="true" />
+              <span className="hidden sm:inline">Report</span>
+            </button>
             {/* Highlight toggle — activates text-selection highlighting mode */}
             <button
               type="button"
@@ -439,6 +460,15 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
             clear
           </button>
         </p>
+      )}
+
+      {/* Report modal */}
+      {reportOpen && (
+        <ReportQuestionModal
+          question={current}
+          questionNumber={index + 1}
+          onClose={() => setReportOpen(false)}
+        />
       )}
 
       {/* Navigation */}
