@@ -33,7 +33,7 @@ export default function Page() {
   const { isWarningOpen, handleDismiss, handleLogout } = useInactivityTimeout(() => {
     // When user times out, redirect to triage
     setScreen('triage')
-    auth.logout()
+    auth.signOut()
   })
   const [triage, setTriage] = useState<TriageData | null>(null)
   const [response, setResponse] = useState<PlanResponse | null>(null)

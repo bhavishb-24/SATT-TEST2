@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type {
   DashboardView,
   PlanResponse,
@@ -14,6 +14,7 @@ import type { StatsApi } from '@/lib/use-stats'
 import { cn } from '@/lib/utils'
 import { Sidebar } from './sidebar'
 import { MobileNav } from './mobile-nav'
+import { DashboardTour } from './dashboard-tour'
 import { HomeView } from './home-view'
 import { PracticeView } from './practice-view'
 import { MockTestView } from './mock-test-view'
@@ -60,6 +61,9 @@ export function Dashboard({
   onActiveStep,
 }: DashboardProps) {
   const [view, setView] = useState<DashboardView>('home')
+  // The interactive product tour auto-starts the first time the dashboard loads.
+  const [tourActive, setTourActive] = useState(true)
+  const finishTour = useCallback(() => setTourActive(false), [])
   const theme = getPanicTheme(triage.panic)
   const countdown = useCountdown(triage.testStartTime)
   const timeZone = useTimeZone()
@@ -180,6 +184,8 @@ export function Dashboard({
       </div>
 
       <MobileNav active={view} onNavigate={setView} theme={theme} />
+
+      {tourActive && <DashboardTour onNavigate={setView} onFinish={finishTour} />}
     </div>
   )
 }

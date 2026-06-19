@@ -57,7 +57,7 @@ export function Sidebar({
 
       {/* Countdown */}
       <div className="px-3">
-        <div className={cn('rounded-xl p-3', theme.accentBgSoft)}>
+        <div data-tour="countdown" className={cn('rounded-xl p-3', theme.accentBgSoft)}>
           <p className={cn('text-xs font-medium', theme.accentText)}>Time until test</p>
           <p className={cn('text-xl font-bold tabular-nums', theme.accentText)}>
             {countdownLabel}
@@ -75,6 +75,7 @@ export function Sidebar({
               <li key={item.view}>
                 <button
                   type="button"
+                  data-tour={`nav-${item.view}`}
                   onClick={() => onNavigate(item.view)}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
