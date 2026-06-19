@@ -24,7 +24,7 @@ const BRAND_ACCENT = {
   accentBorder: 'border-primary/40',
   accentRing: 'ring-primary',
   gradientFrom: 'from-primary',
-  accentHex: '#e63946',
+    accentHex: '#0e8a6a',
 } as const
 
 export function getPanicTheme(panic: number): PanicTheme {

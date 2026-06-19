@@ -33,7 +33,7 @@ export function Faq() {
           <span className="text-sm font-bold uppercase tracking-wider text-primary">
             Questions
           </span>
-          <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
             Everything you might be wondering
           </h2>
         </div>

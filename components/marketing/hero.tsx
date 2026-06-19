@@ -17,9 +17,9 @@ export function Hero() {
             </span>
           </div>
 
-          <h1 className="text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
+          <h1 className="text-balance font-serif text-5xl font-normal leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl">
             Wealthy students hire an SAT tutor the night before.
-            <span className="mt-2 block text-primary">Now you have one too. Free.</span>
+            <span className="mt-2 block italic text-primary">Now you have one too. Free.</span>
           </h1>
 
           <p className="max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">

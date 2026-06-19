@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-inter), 'Inter Fallback', system-ui, sans-serif;
+  --font-heading: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
+  --font-serif: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
   --font-sans: var(--font-inter), 'Inter Fallback', system-ui, sans-serif;
   --font-mono: var(--font-inter), 'Inter Fallback', system-ui, sans-serif;
   --animate-fade-in: fadeIn 0.2s ease-out;
@@ -53,112 +54,42 @@
 
 :root {
   color-scheme: light;
-  /* Warm off-white canvas, white surfaces, coral-red brand accent. */
-  --background: #f5f4f0;
+  /* Solace design system — warm cream canvas, cream surfaces, calm teal brand accent. */
+  --background: #f5f2ed;
   --foreground: #1a1a1a;
-  --card: #ffffff;
+  --card: #faf7f2;
   --card-foreground: #1a1a1a;
-  --popover: #ffffff;
+  --popover: #faf7f2;
   --popover-foreground: #1a1a1a;
-  --primary: #e63946;
+  --primary: #0e8a6a;
   --primary-foreground: #ffffff;
-  --secondary: #f3f1ec;
-  --secondary-foreground: #1a1a1a;
-  --muted: #f3f1ec;
-  --muted-foreground: #8a8784;
-  --accent: #f3f1ec;
-  --accent-foreground: #1a1a1a;
-  --destructive: #dc2626;
-  --border: #ebe9e4;
-  --input: #e5e3dd;
-  --ring: #e63946;
-  --chart-1: #e63946;
-  --chart-2: #2563eb;
-  --chart-3: #16a34a;
+  --secondary: #e6f5f0;
+  --secondary-foreground: #096b52;
+  --muted: #ede9e2;
+  --muted-foreground: #6f6f6b;
+  --accent: #e6f5f0;
+  --accent-foreground: #096b52;
+  --destructive: #d94040;
+  --border: #e8e8e8;
+  --input: #e2e2de;
+  --ring: #0e8a6a;
+  --chart-1: #0e8a6a;
+  --chart-2: #1aad86;
+  --chart-3: #2563eb;
   --chart-4: #d97706;
-  --chart-5: #8a8784;
+  --chart-5: #888888;
   --radius: 0.75rem;
-  --sidebar: #ffffff;
+  --sidebar: #faf7f2;
   --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #e63946;
+  --sidebar-primary: #0e8a6a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fef2f2;
-  --sidebar-accent-foreground: #e63946;
-  --sidebar-border: #ebe9e4;
-  --sidebar-ring: #e63946;
+  --sidebar-accent: #e6f5f0;
+  --sidebar-accent-foreground: #096b52;
+  --sidebar-border: #e8e8e8;
+  --sidebar-ring: #0e8a6a;
 }
 
-.dark {
-  color-scheme: dark;
-  --background: #16140f;
-  --foreground: #f5f4f0;
-  --card: #211e18;
-  --card-foreground: #f5f4f0;
-  --popover: #211e18;
-  --popover-foreground: #f5f4f0;
-  --primary: #f05461;
-  --primary-foreground: #1a1a1a;
-  --secondary: #2a2620;
-  --secondary-foreground: #f5f4f0;
-  --muted: #2a2620;
-  --muted-foreground: #a8a39b;
-  --accent: #2a2620;
-  --accent-foreground: #f5f4f0;
-  --destructive: #ef4444;
-  --border: #322d26;
-  --input: #3a342c;
-  --ring: #f05461;
-  --chart-1: #f05461;
-  --chart-2: #60a5fa;
-  --chart-3: #4ade80;
-  --chart-4: #fbbf24;
-  --chart-5: #a8a39b;
-  --sidebar: #211e18;
-  --sidebar-foreground: #f5f4f0;
-  --sidebar-primary: #f05461;
-  --sidebar-primary-foreground: #1a1a1a;
-  --sidebar-accent: #2a2620;
-  --sidebar-accent-foreground: #f05461;
-  --sidebar-border: #322d26;
-  --sidebar-ring: #f05461;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    color-scheme: dark;
-    --background: #16140f;
-    --foreground: #f5f4f0;
-    --card: #211e18;
-    --card-foreground: #f5f4f0;
-    --popover: #211e18;
-    --popover-foreground: #f5f4f0;
-    --primary: #f05461;
-    --primary-foreground: #1a1a1a;
-    --secondary: #2a2620;
-    --secondary-foreground: #f5f4f0;
-    --muted: #2a2620;
-    --muted-foreground: #a8a39b;
-    --accent: #2a2620;
-    --accent-foreground: #f5f4f0;
-    --destructive: #ef4444;
-    --border: #322d26;
-    --input: #3a342c;
-    --ring: #f05461;
-    --chart-1: #f05461;
-    --chart-2: #60a5fa;
-    --chart-3: #4ade80;
-    --chart-4: #fbbf24;
-    --chart-5: #a8a39b;
-    --sidebar: #211e18;
-    --sidebar-foreground: #f5f4f0;
-    --sidebar-primary: #f05461;
-    --sidebar-primary-foreground: #1a1a1a;
-    --sidebar-accent: #2a2620;
-    --sidebar-accent-foreground: #f05461;
-    --sidebar-border: #322d26;
-    --sidebar-ring: #f05461;
-  }
-}
+/* Light mode only — the Solace design system does not define a dark theme. */
 
 @layer base {
   * {
@@ -201,15 +132,39 @@
 @keyframes micPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.5);
+    box-shadow: 0 0 0 0 rgba(14, 138, 106, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(230, 57, 70, 0);
+    box-shadow: 0 0 0 12px rgba(14, 138, 106, 0);
   }
 }
 
 .animate-fade-in {
   animation: var(--animate-fade-in);
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.75); opacity: 0.6; }
+  40% { transform: scale(1); opacity: 1; }
+  60% { transform: scale(1); opacity: 1; }
+}
+
+/* CSS-only SVG checkmark for topic complete screen */
+.check-circle__circle {
+  stroke: var(--primary);
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.check-circle__check {
+  stroke: var(--primary);
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+  transform-origin: 50% 50%;
+}
+@keyframes stroke {
+  100% { stroke-dashoffset: 0; }
 }
 
 /* Hide scrollbars on horizontal chip rows but keep scroll */

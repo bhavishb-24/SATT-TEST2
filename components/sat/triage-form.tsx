@@ -152,7 +152,7 @@ export function TriageForm({ onSubmit }: Props) {
   return (
     <main className="animate-fade-in mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 pb-32 pt-8 lg:px-8 lg:pt-12">
       <header className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight lg:text-4xl">
+        <h1 className="font-serif text-4xl font-normal tracking-tight lg:text-5xl">
           Let’s triage your night.
         </h1>
         <p className="text-base text-muted-foreground">
