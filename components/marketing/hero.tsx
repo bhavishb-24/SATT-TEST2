@@ -1,24 +1,58 @@
+'use client'
+
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { SITE } from '@/lib/site'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8 lg:py-12">
-        {/* Left — message */}
-        <div className="flex flex-col items-start gap-6">
-          <h1 className="text-balance font-serif text-5xl font-normal leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl">
-            Wealthy students hire an SAT tutor the night before.
-            <span className="mt-2 block italic text-primary">Now you have one too. Free.</span>
-          </h1>
+    <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl"
+          animate={{ y: [0, 50, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl"
+          animate={{ y: [0, -50, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
 
-          <p className="max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
+      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8 lg:py-20">
+        {/* Left — message */}
+        <motion.div
+          className="flex flex-col items-start gap-6"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.h1
+            className="text-balance font-serif text-5xl font-normal leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}>
+            Wealthy students hire an SAT tutor the night before.
+            <span className="mt-2 block italic text-primary">            Now you have one too. Free.</span>
+          </motion.h1>
+
+          <motion.p
+            className="max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}>
             {SITE.name} is an AI coach for the most stressful night of the semester. Tell it how
             you feel and when you test — it builds a calm, hour-by-hour plan around your exact weak
             spots in about 60 seconds.
-          </p>
+          </motion.p>
 
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <motion.div
+            className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}>
             <Link
               href={SITE.appPath}
               className="flex min-h-[54px] items-center justify-center gap-2 rounded-xl bg-primary px-7 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80"
@@ -32,22 +66,30 @@ export function Hero() {
             >
               See how it works
             </Link>
-          </div>
+          </motion.div>
 
-          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <motion.ul
+            className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}>
             {['No account needed', 'Works at 2 AM', '100% free'].map((item) => (
               <li key={item} className="flex items-center gap-1.5">
                 <span className="ti ti-check text-base text-primary" aria-hidden="true" />
                 {item}
               </li>
             ))}
-          </ul>
-        </div>
+          </motion.ul>
+        </motion.div>
 
         {/* Right — product preview */}
-        <div className="relative">
+        <motion.div
+          className="relative"
+          initial={{ opacity: 0, x: 20, rotateZ: 5 }}
+          animate={{ opacity: 1, x: 0, rotateZ: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}>
           <PlanPreview />
-        </div>
+        </motion.div>
       </div>
     </section>
   )
