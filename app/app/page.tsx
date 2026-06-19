@@ -21,8 +21,6 @@ import { TriageForm } from '@/components/sat/triage-form'
 import { DiagnosticTest } from '@/components/sat/diagnostic-test'
 import { DiagnosticResults } from '@/components/sat/diagnostic-results'
 import { LoadingScreen } from '@/components/sat/loading-screen'
-import { CoachWelcome } from '@/components/sat/coach-welcome'
-import { CoachFlow } from '@/components/sat/coach-flow'
 import { Dashboard } from '@/components/sat/dashboard/dashboard'
 import { PanicOverlay } from '@/components/sat/panic-overlay'
 import { FloatingControls } from '@/components/sat/floating-controls'
@@ -36,8 +34,6 @@ export default function Page() {
   const [completed, setCompleted] = useState<Set<string>>(new Set())
   const [panicOpen, setPanicOpen] = useState(false)
   const [planLoading, setPlanLoading] = useState(false)
-  // When true the full Dashboard is overlaid on top of the coach flow
-  const [showFullPlan, setShowFullPlan] = useState(false)
   const lastSpokenStep = useRef<string>('')
 
   const statsApi = useStats()
@@ -216,13 +212,13 @@ export default function Page() {
       setResponse(result)
       setTopics(result.plan.topics)
       setPlanLoading(false)
-      setScreen('coachWelcome')
+      setScreen('dashboard')
 
       if (voice.enabled) {
         const msg =
           data.panic >= 4
             ? 'Your plan is ready. Take a breath. We will go one step at a time.'
-            : 'Your study plan is ready. Let us start with your first topic.'
+            : 'Your study plan is ready.'
         speak(msg)
       }
     },
@@ -323,63 +319,6 @@ export default function Page() {
 
       {screen === 'loading' && <LoadingScreen />}
 
-      {screen === 'coachWelcome' && response && triage && (
-        <CoachWelcome
-          triage={triage}
-          response={response}
-          onReady={() => setScreen('coach')}
-        />
-      )}
-
-      {screen === 'coach' && response && triage && (
-        <>
-          <CoachFlow
-            triage={triage}
-            response={response}
-            topics={topics}
-            completed={completed}
-            voiceEnabled={voice.enabled}
-            speak={speak}
-            onComplete={handleComplete}
-            onGoToChecklist={() => {
-              setScreen('dashboard')
-            }}
-            onShowFullPlan={() => setShowFullPlan(true)}
-          />
-
-          {/* Full plan overlay — fills the entire screen */}
-          {showFullPlan && (
-            <div className="fixed inset-0 z-40 flex flex-col bg-background">
-              <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                <h2 className="text-base font-semibold text-foreground">Full plan overview</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowFullPlan(false)}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center text-muted-foreground hover:text-foreground"
-                  aria-label="Close"
-                >
-                  <span className="ti ti-x text-xl" aria-hidden="true" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <Dashboard
-                  triage={triage}
-                  response={response}
-                  topics={topics}
-                  completed={completed}
-                  statsApi={statsApi}
-                  voiceEnabled={voice.enabled}
-                  speak={speak}
-                  onComplete={handleComplete}
-                  onReorder={handleReorder}
-                  onActiveStep={handleActiveStep}
-                />
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
       {screen === 'dashboard' && response && triage && (
         <Dashboard
           triage={triage}
@@ -396,10 +335,7 @@ export default function Page() {
       )}
 
       {/* Floating voice + panic controls available on the coaching screens. */}
-      {(screen === 'coachWelcome' ||
-        screen === 'coach' ||
-        screen === 'dashboard' ||
-        screen === 'results') && (
+      {(screen === 'dashboard' || screen === 'results') && (
         <FloatingControls onPanic={() => setPanicOpen(true)} />
       )}
 
