@@ -140,6 +140,63 @@ export const PRACTICE_BANK: PracticeQuestion[] = [
     explanation:
       '"Deeply flawed" signals criticism, even though the author acknowledges good intentions.',
   },
+  {
+    id: 'pb-m7',
+    section: 'Math',
+    topic: 'Exponents',
+    difficulty: 'Medium',
+    prompt: 'If 2^x = 32, what is the value of x?',
+    choices: ['4', '5', '6', '16'],
+    correctIndex: 1,
+    explanation: '32 = 2^5, so x = 5.',
+  },
+  {
+    id: 'pb-m8',
+    section: 'Math',
+    topic: 'Systems of equations',
+    difficulty: 'Hard',
+    prompt: 'If x + y = 10 and x − y = 4, what is x?',
+    choices: ['3', '5', '6', '7'],
+    correctIndex: 3,
+    explanation: 'Add the equations: 2x = 14, so x = 7.',
+  },
+  {
+    id: 'pb-m9',
+    section: 'Math',
+    topic: 'Ratios',
+    difficulty: 'Easy',
+    prompt: 'A recipe uses 2 cups of flour for every 3 cups of sugar. For 9 cups of sugar, how much flour is needed?',
+    choices: ['4 cups', '6 cups', '8 cups', '12 cups'],
+    correctIndex: 1,
+    explanation: '9 cups of sugar is 3 times the ratio amount, so 2 × 3 = 6 cups of flour.',
+  },
+  {
+    id: 'pb-r7',
+    section: 'Reading & Writing',
+    topic: 'Parallel structure',
+    difficulty: 'Medium',
+    prompt: 'Choose the option that keeps the list parallel: "She likes hiking, swimming, and ___."',
+    choices: ['to bike', 'biking', 'she bikes', 'bike'],
+    correctIndex: 1,
+    explanation: 'To match "hiking" and "swimming", the third item should be the -ing form "biking".',
+  },
+  {
+    id: 'pb-r8',
+    section: 'Reading & Writing',
+    topic: 'Evidence questions',
+    difficulty: 'Hard',
+    prompt:
+      'A claim states a town\'s recycling rose sharply after a new program. Which finding best supports it?',
+    choices: [
+      'Residents said they liked the program.',
+      'Recycling tonnage increased 60% the year the program launched.',
+      'The program was featured in the local news.',
+      'Neighboring towns also recycle.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Direct measured data tied to the program (a 60% increase) is the strongest evidence for the claim.',
+  },
 ]
 
 export function fallbackQuestions(
@@ -152,4 +209,23 @@ export function fallbackQuestions(
       : PRACTICE_BANK.filter((q) => q.section === section)
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, Math.min(count, shuffled.length))
+}
+
+/**
+ * A balanced diagnostic set (used when the AI gateway is unavailable).
+ * Splits roughly evenly between Math and Reading & Writing.
+ */
+export function diagnosticFallback(count = 15): PracticeQuestion[] {
+  const mathCount = Math.ceil(count / 2)
+  const rwCount = count - mathCount
+  const math = fallbackQuestions('Math', mathCount)
+  const rw = fallbackQuestions('Reading & Writing', rwCount)
+  // Interleave so the test alternates sections.
+  const out: PracticeQuestion[] = []
+  const max = Math.max(math.length, rw.length)
+  for (let i = 0; i < max; i++) {
+    if (math[i]) out.push(math[i])
+    if (rw[i]) out.push(rw[i])
+  }
+  return out.slice(0, count)
 }

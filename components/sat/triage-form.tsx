@@ -80,18 +80,10 @@ export function TriageForm({ onSubmit }: Props) {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value])
   }
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setReportName(file.name)
+  async function analyzeReport(dataUrl: string, name: string) {
+    setReportName(name)
     setReportState('reading')
     try {
-      const dataUrl: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
       const res = await fetch('/api/score-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,6 +103,39 @@ export function TriageForm({ onSubmit }: Props) {
         setReportState('error')
         setScoreReportText('')
       }
+    } catch {
+      setReportState('error')
+      setScoreReportText('')
+    }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+    analyzeReport(dataUrl, file.name)
+  }
+
+  // Loads the bundled example report and runs it through the same AI analysis,
+  // so users can try the upload feature without their own score report.
+  async function handleExample() {
+    setReportName('example-score-report.png')
+    setReportState('reading')
+    try {
+      const res = await fetch('/example-score-report.png')
+      const blob = await res.blob()
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+      await analyzeReport(dataUrl, 'example-score-report.png')
     } catch {
       setReportState('error')
       setScoreReportText('')
@@ -264,6 +289,25 @@ export function TriageForm({ onSubmit }: Props) {
           <span className="ti ti-upload text-base" aria-hidden="true" />
           Or upload your score report
         </button>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="ti ti-photo text-sm" aria-hidden="true" />
+          <span>No report handy?</span>
+          <button
+            type="button"
+            onClick={handleExample}
+            className="font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            Try our example report
+          </button>
+          <a
+            href="/example-score-report.png"
+            target="_blank"
+            rel="noreferrer"
+            className="ml-auto underline-offset-2 hover:underline"
+          >
+            View it
+          </a>
+        </div>
         {reportState === 'reading' && (
           <p className="text-xs text-muted-foreground">
             Reading {reportName}…
