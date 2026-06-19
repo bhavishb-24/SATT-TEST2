@@ -27,7 +27,7 @@ export function Testimonials() {
           <span className="text-sm font-bold uppercase tracking-wider text-primary">
             From the night before
           </span>
-          <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
             Calm beats cramming
           </h2>
         </div>

@@ -39,7 +39,7 @@ export function Features() {
           <span className="text-sm font-bold uppercase tracking-wider text-primary">
             Everything in one place
           </span>
-          <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
             A full prep toolkit, opened the moment you need it most
           </h2>
           <p className="text-pretty text-lg leading-relaxed text-muted-foreground">

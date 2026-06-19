@@ -30,7 +30,7 @@ export function ProsePage({
   return (
     <article className="mx-auto w-full max-w-3xl px-5 py-12 lg:px-8 lg:py-20">
       <header className="flex flex-col gap-3 border-b border-border pb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-balance lg:text-4xl">
+        <h1 className="font-serif text-4xl font-normal tracking-tight text-balance lg:text-5xl">
           {title}
         </h1>
         {intro && (

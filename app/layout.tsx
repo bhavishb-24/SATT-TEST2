@@ -1,11 +1,18 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
+})
+
+const instrumentSerif = Instrument_Serif({
+  variable: '--font-instrument-serif',
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
 })
 
 const SITE_URL = 'https://sat-emergency-room.vercel.app'
@@ -50,13 +57,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
+  colorScheme: 'light',
   width: 'device-width',
   initialScale: 1,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f4f0' },
-    { media: '(prefers-color-scheme: dark)', color: '#16140f' },
-  ],
+  themeColor: '#FAFAF8',
 }
 
 export default function RootLayout({
@@ -65,7 +69,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} bg-background`}>
+    <html
+      lang="en"
+      className={`light ${inter.variable} ${instrumentSerif.variable} bg-background`}
+      style={{ colorScheme: 'light' }}
+    >
       <head>
         <link
           rel="stylesheet"
