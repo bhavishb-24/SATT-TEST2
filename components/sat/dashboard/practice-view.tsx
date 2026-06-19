@@ -5,6 +5,7 @@ import type { PracticeQuestion, Section, TriageData } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { fallbackQuestions } from '@/lib/practice-bank'
 import { cn } from '@/lib/utils'
+import { QuestionCard } from '@/components/sat/question-card'
 
 interface PracticeViewProps {
   triage: TriageData
@@ -13,12 +14,6 @@ interface PracticeViewProps {
 }
 
 type SectionChoice = Section | 'Both'
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-  Medium: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  Hard: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
-}
 
 export function PracticeView({ triage, theme, onAnswer }: PracticeViewProps) {
   const [sectionChoice, setSectionChoice] = useState<SectionChoice>('Both')
@@ -207,123 +202,17 @@ export function PracticeView({ triage, theme, onAnswer }: PracticeViewProps) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Progress header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'rounded-full px-2.5 py-1 text-xs font-semibold',
-              DIFFICULTY_COLORS[current.difficulty] ?? DIFFICULTY_COLORS.Medium,
-            )}
-          >
-            {current.difficulty}
-          </span>
-          <span className="text-xs text-muted-foreground">{current.topic}</span>
-        </div>
-        <span className="text-xs font-medium text-muted-foreground tabular-nums">
-          {index + 1} / {questions.length}
-        </span>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-        <p className="text-base font-medium text-foreground leading-relaxed text-pretty">
-          {current.prompt}
-        </p>
-
-        <div className="mt-5 flex flex-col gap-2">
-          {current.choices.map((choice, i) => {
-            const isSelected = selected === i
-            const isCorrect = i === current.correctIndex
-            let stateClass =
-              'border-border bg-background hover:border-foreground/30'
-            if (revealed) {
-              if (isCorrect)
-                stateClass =
-                  'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
-              else if (isSelected)
-                stateClass = 'border-red-400 bg-red-50 dark:bg-red-950/40'
-              else stateClass = 'border-border bg-background opacity-60'
-            } else if (isSelected) {
-              stateClass = cn(theme.accentBorder, theme.accentBgSoft)
-            }
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => handleSelect(i)}
-                disabled={revealed}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors',
-                  stateClass,
-                )}
-              >
-                <span
-                  className={cn(
-                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
-                    isSelected && !revealed
-                      ? cn(theme.accentBg, 'text-card border-transparent')
-                      : 'border-border text-muted-foreground',
-                  )}
-                >
-                  {String.fromCharCode(65 + i)}
-                </span>
-                <span className="text-foreground">{choice}</span>
-                {revealed && isCorrect && (
-                  <i
-                    className="ti ti-check ml-auto text-emerald-600 dark:text-emerald-400"
-                    aria-hidden="true"
-                  />
-                )}
-                {revealed && isSelected && !isCorrect && (
-                  <i
-                    className="ti ti-x ml-auto text-red-600 dark:text-red-400"
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        {revealed && (
-          <div className="mt-4 rounded-lg bg-muted p-4 animate-fade-in">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {selected === current.correctIndex ? 'Correct' : 'Explanation'}
-            </p>
-            <p className="mt-1 text-sm text-foreground leading-relaxed">
-              {current.explanation}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6">
-          {!revealed ? (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={selected === null}
-              className={cn(
-                'w-full rounded-lg px-4 py-3 text-sm font-semibold text-card transition-opacity hover:opacity-90 disabled:opacity-40',
-                theme.accentBg,
-              )}
-            >
-              Check answer
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleNext}
-              className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-card transition-opacity hover:opacity-90',
-                theme.accentBg,
-              )}
-            >
-              {index + 1 >= questions.length ? 'Finish set' : 'Next question'}
-              <i className="ti ti-arrow-right" aria-hidden="true" />
-            </button>
-          )}
-        </div>
-      </div>
+      <QuestionCard
+        question={current}
+        questionNumber={index + 1}
+        selected={selected}
+        onSelect={handleSelect}
+        revealed={revealed}
+        onSubmit={handleSubmit}
+        onNext={handleNext}
+        isLastQuestion={index + 1 >= questions.length}
+        accentTheme={theme}
+      />
 
       {source === 'fallback' && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
