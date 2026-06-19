@@ -87,15 +87,6 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
     }
   }, [triage.weakAreas])
 
-  // Restore saved highlight marks whenever the question index changes.
-  // Must be declared before any conditional return to comply with Rules of Hooks.
-  useEffect(() => {
-    if (!promptRef.current) return
-    const saved = highlightedHtml[index]
-    if (saved) {
-      promptRef.current.innerHTML = saved
-    }
-  }, [index]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -362,19 +353,32 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
           </div>
         )}
 
-        {/* Question prompt — div so we can set innerHTML to restore <mark> spans.
-            MathText renders the initial content; the useEffect patches in saved
-            highlight marks on top without triggering a React re-render clash. */}
-        <div
-          ref={promptRef}
-          onMouseUp={highlightMode ? applyHighlight : undefined}
-          className={cn(
-            'text-base font-medium leading-relaxed text-foreground',
-            highlightMode && 'cursor-text select-text',
-          )}
-        >
-          <MathText>{current.prompt}</MathText>
-        </div>
+        {/* Question prompt — when saved highlight HTML exists we render it via
+            dangerouslySetInnerHTML so React doesn't fight the <mark> nodes.
+            When there are no highlights we use MathText normally. */}
+        {highlightedHtml[index] ? (
+          <div
+            ref={promptRef}
+            onMouseUp={highlightMode ? applyHighlight : undefined}
+            className={cn(
+              'text-base font-medium leading-relaxed text-foreground',
+              highlightMode && 'cursor-text select-text',
+            )}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: highlightedHtml[index] }}
+          />
+        ) : (
+          <div
+            ref={promptRef}
+            onMouseUp={highlightMode ? applyHighlight : undefined}
+            className={cn(
+              'text-base font-medium leading-relaxed text-foreground',
+              highlightMode && 'cursor-text select-text',
+            )}
+          >
+            <MathText>{current.prompt}</MathText>
+          </div>
+        )}
 
         {/* Answer choices */}
         <div className="mt-6 flex flex-col gap-2.5" role="radiogroup" aria-label="Answer choices">
