@@ -30,9 +30,16 @@ export function DesmosPanel({ open, onClose, accentBg, accentText }: Props) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  // Dimensions (only used when not maximized)
+  const [dims, setDims] = useState({ w: DEFAULT_W, h: DEFAULT_H })
+
   // drag state stored in refs to avoid re-render on every mousemove
   const dragging = useRef(false)
   const dragStart = useRef({ mx: 0, my: 0, px: 0, py: 0 })
+
+  // resize state
+  const resizing = useRef(false)
+  const resizeStart = useRef({ mx: 0, my: 0, w: 0, h: 0, x: 0, y: 0, edge: '' })
 
   // Mount lazily on first open
   useEffect(() => {
@@ -76,6 +83,71 @@ export function DesmosPanel({ open, onClose, accentBg, accentText }: Props) {
     window.addEventListener('mouseup', onUp)
   }, [size])
 
+  // ── Resize handlers ────────────────────────────────────────────────────────
+
+  const onResizeStart = useCallback(
+    (e: React.MouseEvent, edge: string) => {
+      if (size === 'maximized' || !pos) return
+      e.preventDefault()
+      e.stopPropagation()
+      resizing.current = true
+      resizeStart.current = { mx: e.clientX, my: e.clientY, w: dims.w, h: dims.h, x: pos.x, y: pos.y, edge }
+
+      function onMove(ev: MouseEvent) {
+        if (!resizing.current || !resizeStart.current) return
+        const dx = ev.clientX - resizeStart.current.mx
+        const dy = ev.clientY - resizeStart.current.my
+        const edge = resizeStart.current.edge
+
+        let newW = resizeStart.current.w
+        let newH = resizeStart.current.h
+        let newX = resizeStart.current.x
+        let newY = resizeStart.current.y
+
+        // Handle horizontal edges
+        if (edge.includes('e')) {
+          newW = Math.max(MIN_W, resizeStart.current.w + dx)
+        }
+        if (edge.includes('w')) {
+          const potentialW = resizeStart.current.w - dx
+          if (potentialW >= MIN_W) {
+            newW = potentialW
+            newX = resizeStart.current.x + dx
+          }
+        }
+
+        // Handle vertical edges
+        if (edge.includes('s')) {
+          newH = Math.max(MIN_H, resizeStart.current.h + dy)
+        }
+        if (edge.includes('n')) {
+          const potentialH = resizeStart.current.h - dy
+          if (potentialH >= MIN_H) {
+            newH = potentialH
+            newY = resizeStart.current.y + dy
+          }
+        }
+
+        // Constrain position to viewport
+        newX = Math.max(0, Math.min(window.innerWidth - MIN_W, newX))
+        newY = Math.max(0, Math.min(window.innerHeight - 48, newY))
+
+        setPos({ x: newX, y: newY })
+        setDims({ w: newW, h: newH })
+      }
+
+      function onUp() {
+        resizing.current = false
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+      }
+
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    },
+    [size, pos, dims],
+  )
+
   if (!mounted || !open) return null
 
   const isMin = size === 'minimized'
@@ -88,17 +160,18 @@ export function DesmosPanel({ open, onClose, accentBg, accentText }: Props) {
           position: 'fixed',
           left: pos.x,
           top: pos.y,
-          width: DEFAULT_W,
+          width: dims.w,
+          height: dims.h,
           zIndex: 9999,
         }
-      : { position: 'fixed', bottom: 24, right: 24, width: DEFAULT_W, zIndex: 9999 }
+      : { position: 'fixed', bottom: 24, right: 24, width: dims.w, height: dims.h, zIndex: 9999 }
 
   return (
     <div
       ref={panelRef}
       style={style}
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl',
+        'relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl',
         'transition-shadow duration-200',
       )}
       role="dialog"
@@ -159,13 +232,67 @@ export function DesmosPanel({ open, onClose, accentBg, accentText }: Props) {
         </div>
       </div>
 
+      {/* ── Resize handles (8 edges) ──────────────────────────────────── */}
+      {!isMax && !isMin && (
+        <>
+          {/* Top-left corner */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'nw')}
+            className="absolute left-0 top-0 h-1.5 w-1.5 cursor-nwse-resize hover:bg-primary/50"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Top edge */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'n')}
+            className="absolute left-1.5 right-1.5 top-0 h-1 cursor-ns-resize hover:bg-primary/40"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Top-right corner */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'ne')}
+            className="absolute right-0 top-0 h-1.5 w-1.5 cursor-nesw-resize hover:bg-primary/50"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Right edge */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'e')}
+            className="absolute bottom-1.5 right-0 top-1.5 w-1 cursor-ew-resize hover:bg-primary/40"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Bottom-right corner */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'se')}
+            className="absolute bottom-0 right-0 h-1.5 w-1.5 cursor-se-resize hover:bg-primary/50"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Bottom edge */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 's')}
+            className="absolute bottom-0 left-1.5 right-1.5 h-1 cursor-ns-resize hover:bg-primary/40"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Bottom-left corner */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'sw')}
+            className="absolute bottom-0 left-0 h-1.5 w-1.5 cursor-sw-resize hover:bg-primary/50"
+            style={{ pointerEvents: 'auto' }}
+          />
+          {/* Left edge */}
+          <div
+            onMouseDown={(e) => onResizeStart(e, 'w')}
+            className="absolute left-0 top-1.5 bottom-1.5 w-1 cursor-ew-resize hover:bg-primary/40"
+            style={{ pointerEvents: 'auto' }}
+          />
+        </>
+      )}
+
       {/* ── Iframe body (hidden when minimized) ────────────────────────── */}
       {!isMin && (
         <iframe
           title="Desmos scientific calculator"
           src="https://www.desmos.com/scientific"
           className="flex-1 border-0"
-          style={{ height: isMax ? '100%' : DEFAULT_H }}
+          style={{ height: isMax ? '100%' : dims.h - 44 }}
           allow="clipboard-read; clipboard-write"
         />
       )}
