@@ -27,12 +27,13 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
 
   // Per-question state — keyed by question index
   const [eliminated, setEliminated] = useState<Record<number, Set<number>>>({})
-  const [highlighted, setHighlighted] = useState<Record<number, boolean>>({})
   const [calcOpen, setCalcOpen] = useState(false)
 
-  // Highlight tool mode
+  // Highlight tool: when active, mouseup over the question text applies a <mark>
   const [highlightMode, setHighlightMode] = useState(false)
-  const promptRef = useRef<HTMLParagraphElement>(null)
+  // Store highlighted HTML per question index so navigating preserves marks
+  const [highlightedHtml, setHighlightedHtml] = useState<Record<number, string>>({})
+  const promptRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -83,6 +84,16 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
     }
   }, [triage.weakAreas])
 
+  // Restore saved highlight marks whenever the question index changes.
+  // Must be declared before any conditional return to comply with Rules of Hooks.
+  useEffect(() => {
+    if (!promptRef.current) return
+    const saved = highlightedHtml[index]
+    if (saved) {
+      promptRef.current.innerHTML = saved
+    }
+  }, [index]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loading) {
     return (
       <main className="animate-fade-in flex min-h-dvh flex-col items-center justify-center px-6 text-center">
@@ -111,7 +122,6 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
   const progress = Math.round(((index + (selected !== null ? 1 : 0)) / total) * 100)
   const isLast = index + 1 >= total
   const eliminatedForQ = eliminated[index] ?? new Set<number>()
-  const isHighlighted = highlighted[index] ?? false
 
   function choose(i: number) {
     if (eliminatedForQ.has(i)) return // can't select an eliminated choice
@@ -132,8 +142,46 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
     })
   }
 
-  function toggleHighlight() {
-    setHighlighted((prev) => ({ ...prev, [index]: !prev[index] }))
+  // Apply a <mark> span around whatever the user has selected inside the prompt.
+  // We persist the resulting innerHTML so navigating away and back keeps marks.
+  function applyHighlight() {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed || !promptRef.current) return
+    // Ensure selection is inside the prompt container
+    if (!promptRef.current.contains(sel.anchorNode)) return
+
+    const range = sel.getRangeAt(0)
+    const mark = document.createElement('mark')
+    mark.style.backgroundColor = 'rgba(250,204,21,0.5)' // yellow-400/50
+    mark.style.borderRadius = '2px'
+    mark.style.padding = '0 1px'
+    try {
+      range.surroundContents(mark)
+    } catch {
+      // surroundContents fails when the selection spans multiple elements;
+      // fall back to extracting and re-inserting wrapped content.
+      const fragment = range.extractContents()
+      mark.appendChild(fragment)
+      range.insertNode(mark)
+    }
+    sel.removeAllRanges()
+    // Persist the highlighted HTML for this question
+    setHighlightedHtml((prev) => ({ ...prev, [index]: promptRef.current!.innerHTML }))
+  }
+
+  function clearHighlights() {
+    if (!promptRef.current) return
+    // Replace every <mark> with its plain text content
+    const marks = promptRef.current.querySelectorAll('mark')
+    marks.forEach((m) => {
+      const text = document.createTextNode(m.textContent ?? '')
+      m.replaceWith(text)
+    })
+    setHighlightedHtml((prev) => {
+      const next = { ...prev }
+      delete next[index]
+      return next
+    })
   }
 
   function next() {
@@ -155,7 +203,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
     }
     setIndex((prev) => prev + 1)
     setSelected(updated[index + 1] ?? null)
-    setCalcOpen(false) // close calc when navigating
+    setCalcOpen(false)
   }
 
   function back() {
@@ -204,10 +252,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
       )}
 
       {/* Question card */}
-      <div className={cn(
-        'rounded-2xl border border-border bg-card p-6 sm:p-8 transition-colors',
-        isHighlighted && 'ring-2 ring-yellow-400/60 bg-yellow-50/60',
-      )}>
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
         {/* Section badge + tools row */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span
@@ -225,22 +270,34 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
 
           {/* Spacer */}
           <div className="ml-auto flex items-center gap-1.5">
-            {/* Highlight toggle */}
+            {/* Highlight toggle — activates text-selection highlighting mode */}
             <button
               type="button"
-              onClick={toggleHighlight}
-              title={isHighlighted ? 'Remove highlight' : 'Highlight question'}
-              aria-pressed={isHighlighted}
+              onClick={() => setHighlightMode((v) => !v)}
+              title={highlightMode ? 'Exit highlight mode' : 'Highlight text (select text to mark it)'}
+              aria-pressed={highlightMode}
               className={cn(
                 'flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors',
-                isHighlighted
+                highlightMode
                   ? 'border-yellow-400 bg-yellow-100 text-yellow-700'
                   : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
               <i className="ti ti-highlight text-sm" aria-hidden="true" />
-              <span className="hidden sm:inline">Highlight</span>
+              <span className="hidden sm:inline">{highlightMode ? 'Highlighting' : 'Highlight'}</span>
             </button>
+            {/* Clear highlights (only shown when there are saved highlights) */}
+            {highlightedHtml[index] && (
+              <button
+                type="button"
+                onClick={clearHighlights}
+                title="Clear all highlights on this question"
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-yellow-300 bg-yellow-50 px-2.5 text-xs font-medium text-yellow-700 transition-colors hover:bg-yellow-100"
+              >
+                <i className="ti ti-eraser text-sm" aria-hidden="true" />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+            )}
 
             {/* Calculator (Math only) */}
             {isMath && (
@@ -263,13 +320,27 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           </div>
         </div>
 
-        {/* Question prompt with KaTeX rendering */}
-        <p
+        {/* Highlight mode banner */}
+        {highlightMode && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg bg-yellow-50 px-3 py-2 text-xs text-yellow-700 border border-yellow-200">
+            <i className="ti ti-highlight shrink-0" aria-hidden="true" />
+            Select any text in the question below to highlight it. Click &quot;Highlighting&quot; again to exit.
+          </div>
+        )}
+
+        {/* Question prompt — div so we can set innerHTML to restore <mark> spans.
+            MathText renders the initial content; the useEffect patches in saved
+            highlight marks on top without triggering a React re-render clash. */}
+        <div
           ref={promptRef}
-          className="text-base font-medium leading-relaxed text-pretty text-foreground"
+          onMouseUp={highlightMode ? applyHighlight : undefined}
+          className={cn(
+            'text-base font-medium leading-relaxed text-foreground',
+            highlightMode && 'cursor-text select-text',
+          )}
         >
           <MathText>{current.prompt}</MathText>
-        </p>
+        </div>
 
         {/* Answer choices */}
         <div className="mt-6 flex flex-col gap-2.5" role="radiogroup" aria-label="Answer choices">
