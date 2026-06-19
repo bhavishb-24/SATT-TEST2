@@ -17,9 +17,10 @@ interface Props {
   triage: TriageData
   theme: PanicTheme
   onComplete: (results: DiagnosticResult[]) => void
+  onSkip?: () => void
 }
 
-export function DiagnosticTest({ triage, theme, onComplete }: Props) {
+export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
   const [questions, setQuestions] = useState<PracticeQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [index, setIndex] = useState(0)
@@ -227,9 +228,21 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           <h1 className="font-serif text-2xl font-normal tracking-tight lg:text-3xl">
             Diagnostic test
           </h1>
-          <span className="text-sm font-medium tabular-nums text-muted-foreground">
-            {index + 1} / {total}
-          </span>
+          <div className="flex items-center gap-3">
+            {onSkip && (
+              <button
+                type="button"
+                onClick={onSkip}
+                className="flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+              >
+                <i className="ti ti-player-skip-forward text-sm" aria-hidden="true" />
+                Skip (demo)
+              </button>
+            )}
+            <span className="text-sm font-medium tabular-nums text-muted-foreground">
+              {index + 1} / {total}
+            </span>
+          </div>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div

@@ -291,6 +291,7 @@ export default function Page() {
           triage={triage}
           theme={theme}
           onComplete={handleDiagnosticComplete}
+          onSkip={() => generatePlan(triage, null)}
         />
       )}
 
