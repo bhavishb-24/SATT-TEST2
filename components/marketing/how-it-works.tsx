@@ -19,7 +19,7 @@ const STEPS = [
   {
     icon: 'ti-run',
     title: 'Work the steps',
-    body: 'Move through topics with drills, flashcards, and a focus timer. Hit the panic button anytime and we will calm you back down.',
+    body: 'Move through topics with drills and flashcards. Hit the panic button anytime and we will calm you back down.',
   },
 ]
 

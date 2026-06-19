@@ -12,7 +12,7 @@ interface MockTestViewProps {
   onAnswer: (section: string, correct: boolean) => void
 }
 
-type Stage = 'select' | 'taking' | 'results'
+type Stage = 'select' | 'loading' | 'taking' | 'results'
 
 // Seconds allotted per question (digital SAT pacing ~1.25 min/question).
 const SECONDS_PER_QUESTION = 75
@@ -33,6 +33,7 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [reviewIndex, setReviewIndex] = useState(0)
+  const [source, setSource] = useState<'ai' | 'fallback'>('ai')
 
   const totalQuestions = activeTest?.questions.length ?? 0
 
@@ -48,7 +49,37 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, secondsLeft])
 
-  function startTest(test: MockTest) {
+  // Begin a test: ask OpenAI for a fresh SAT-style set, falling back to the
+  // curated static test if the AI is unavailable.
+  async function startTest(test: MockTest, testNumber: number) {
+    setStage('loading')
+    let questions = test.questions
+    let src: 'ai' | 'fallback' = 'fallback'
+    try {
+      const res = await fetch('/api/mock-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testNumber }),
+      })
+      if (!res.ok) throw new Error(`status ${res.status}`)
+      const data = await res.json()
+      if (Array.isArray(data.questions) && data.questions.length > 0) {
+        questions = data.questions
+        src = data.source === 'ai' ? 'ai' : 'fallback'
+      }
+    } catch (err) {
+      console.log('[v0] mock-test fetch failed, using curated test:', err)
+    }
+    setSource(src)
+    beginWith({ ...test, questions })
+  }
+
+  // Reset and start the test that's already loaded (used for "Retake").
+  function restartCurrent() {
+    if (activeTest) beginWith(activeTest)
+  }
+
+  function beginWith(test: MockTest) {
     setActiveTest(test)
     setIndex(0)
     setAnswers({})
@@ -88,7 +119,13 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
               <i className={cn('ti ti-clipboard-check text-2xl', theme.accentText)} aria-hidden="true" />
             </span>
             <div>
-              <h2 className="text-xl font-bold text-foreground">Mock Tests</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground">Mock Tests</h2>
+                <span className="flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <i className="ti ti-sparkles text-[10px]" aria-hidden="true" />
+                  AI generated
+                </span>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Full-length, SAT-style practice tests to take when you&apos;re ready
               </p>
@@ -96,10 +133,10 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
           </div>
 
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-            Each test mixes Math and Reading &amp; Writing questions in the digital SAT format —
-            no immediate answers, a running timer, and a full score breakdown with review at the
-            end. Use the highlighter, calculator, and answer-elimination tools just like the real
-            thing.
+            Each test is freshly written by AI to mirror the digital SAT — a mix of Math and
+            Reading &amp; Writing questions, no immediate answers, a running timer, and a full
+            score breakdown with review at the end. Use the highlighter, calculator, and
+            answer-elimination tools just like the real thing.
           </p>
 
           <ul className="mt-6 flex flex-col gap-3">
@@ -111,7 +148,7 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
                 <li key={test.id}>
                   <button
                     type="button"
-                    onClick={() => startTest(test)}
+                    onClick={() => startTest(test, i + 1)}
                     className="group flex w-full items-center gap-4 rounded-xl border border-border bg-background p-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted"
                   >
                     <span
@@ -138,6 +175,26 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
               )
             })}
           </ul>
+        </div>
+      </div>
+    )
+  }
+
+  // ─────────────────────────── Generating (loading) ───────────────────────────
+  if (stage === 'loading') {
+    return (
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="rounded-2xl border border-border bg-card p-12 text-center">
+          <i
+            className={cn('ti ti-loader-2 text-3xl animate-spin', theme.accentText)}
+            aria-hidden="true"
+          />
+          <p className="mt-3 text-sm font-medium text-foreground">
+            Generating your SAT-style mock test…
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            AI is writing fresh Math and Reading &amp; Writing questions. This can take a moment.
+          </p>
         </div>
       </div>
     )
@@ -172,6 +229,13 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
             </span>
           </div>
         </div>
+
+        {source === 'fallback' && (
+          <p className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <i className="ti ti-info-circle" aria-hidden="true" />
+            Showing curated SAT-style questions (AI offline).
+          </p>
+        )}
 
         {/* Question palette */}
         <div className="mb-4 flex flex-wrap gap-1.5">
@@ -342,7 +406,7 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <button
               type="button"
-              onClick={() => startTest(activeTest)}
+              onClick={restartCurrent}
               className={cn(
                 'rounded-lg px-4 py-2.5 text-sm font-semibold text-card',
                 theme.accentBg,
