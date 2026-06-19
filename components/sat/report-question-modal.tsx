@@ -24,49 +24,42 @@ export function ReportQuestionModal({ question, questionNumber, onClose }: Props
   const [selectedReason, setSelectedReason] = useState<string>('')
   const [details, setDetails] = useState('')
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  function buildMailtoLink() {
-    const subject = encodeURIComponent(
-      `Question Report — Q${questionNumber}: ${question.topic} (${question.section})`,
-    )
-
-    const reasonLabel = REASONS.find((r) => r.id === selectedReason)?.label ?? selectedReason
-
-    const body = encodeURIComponent(
-      [
-        `QUESTION REPORT`,
-        `─────────────────────────────────────`,
-        `Question #: ${questionNumber}`,
-        `Section: ${question.section}`,
-        `Topic: ${question.topic}`,
-        `Difficulty: ${question.difficulty}`,
-        `Question ID: ${question.id}`,
-        ``,
-        `QUESTION TEXT:`,
-        question.prompt,
-        ``,
-        `ANSWER CHOICES:`,
-        ...question.choices.map((c, i) => `  ${String.fromCharCode(65 + i)}. ${c}`),
-        ``,
-        `MARKED CORRECT: ${String.fromCharCode(65 + question.correctIndex)}. ${question.choices[question.correctIndex]}`,
-        ``,
-        `EXPLANATION:`,
-        question.explanation,
-        `─────────────────────────────────────`,
-        `ISSUE REPORTED: ${reasonLabel}`,
-        ``,
-        `ADDITIONAL DETAILS:`,
-        details.trim() || '(none provided)',
-      ].join('\n'),
-    )
-
-    return `mailto:${REPORT_EMAIL}?subject=${subject}&body=${body}`
-  }
-
-  function handleSend() {
+  async function handleSend() {
     if (!selectedReason) return
-    window.location.href = buildMailtoLink()
-    setSent(true)
+
+    setSubmitting(true)
+    try {
+      const reasonObj = REASONS.find((r) => r.id === selectedReason)
+      const response = await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questionNumber,
+          section: question.section,
+          topic: question.topic,
+          difficulty: question.difficulty,
+          questionId: question.id,
+          prompt: question.prompt,
+          choices: question.choices,
+          correctIndex: question.correctIndex,
+          explanation: question.explanation,
+          reason: reasonObj,
+          details,
+        }),
+      })
+
+      if (response.ok) {
+        setSent(true)
+      } else {
+        console.error('Report submission failed')
+      }
+    } catch (error) {
+      console.error('Error submitting report:', error)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -85,10 +78,9 @@ export function ReportQuestionModal({ question, questionNumber, onClose }: Props
               <i className="ti ti-check text-2xl text-emerald-600" aria-hidden="true" />
             </span>
             <div>
-              <p className="font-semibold text-foreground">Report sent</p>
+              <p className="font-semibold text-foreground">Report submitted</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your email client should have opened with the report pre-filled and addressed
-                to {REPORT_EMAIL}. Thank you for helping improve question quality.
+                Thank you for reporting this issue. Your feedback has been sent to {REPORT_EMAIL} and will be reviewed shortly.
               </p>
             </div>
             <button
@@ -183,11 +175,20 @@ export function ReportQuestionModal({ question, questionNumber, onClose }: Props
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={!selectedReason}
+                disabled={!selectedReason || submitting}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-80 disabled:opacity-40"
               >
-                <i className="ti ti-send text-sm" aria-hidden="true" />
-                Send report
+                {submitting ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-background border-r-transparent" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <i className="ti ti-send text-sm" aria-hidden="true" />
+                    Send report
+                  </>
+                )}
               </button>
             </div>
 
