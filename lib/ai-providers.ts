@@ -1,44 +1,37 @@
 import type { LanguageModel } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAI } from '@ai-sdk/openai'
 
 /**
- * Gemini is powered directly by a Google AI Studio API key
- * (GOOGLE_GENERATIVE_AI_API_KEY) — no credit card or Vercel AI Gateway billing
- * required. If the key is missing, the chain is empty and the API routes fall
- * back to their deterministic non-AI output.
- *
- * Per the product requirement, Gemini generates the study plan, practice
- * questions, and the diagnostic review.
+ * OpenAI powers all AI features — study plan, practice questions, diagnostic
+ * review, and score-report image analysis. Requires OPENAI_API_KEY. If the
+ * key is missing, all chains are empty and every route falls back to its
+ * deterministic non-AI output.
  */
 
-const googleApiKey =
-  process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY
-
-const google = googleApiKey
-  ? createGoogleGenerativeAI({ apiKey: googleApiKey })
+const openaiInstance = process.env.OPENAI_API_KEY
+  ? createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null
 
-export const hasAIKeys = !!google
+export const hasAIKeys = !!openaiInstance
 
 export interface ModelAttempt {
   provider: string
   model: LanguageModel
 }
 
-/** Text/structured generation chain. Gemini (direct API key). */
+/** Text / structured generation chain. GPT-4o primary, GPT-4o-mini fallback. */
 export function textModelChain(): ModelAttempt[] {
-  if (!google) return []
+  if (!openaiInstance) return []
   return [
-    { provider: 'Gemini 2.5 Flash', model: google('gemini-2.5-flash') },
-    { provider: 'Gemini 2.0 Flash', model: google('gemini-2.0-flash') },
+    { provider: 'GPT-4o', model: openaiInstance('gpt-4o') },
+    { provider: 'GPT-4o-mini', model: openaiInstance('gpt-4o-mini') },
   ]
 }
 
-/** Vision chain for reading uploaded score reports (Gemini is multimodal). */
+/** Vision chain for reading uploaded score reports. GPT-4o has native vision. */
 export function visionModelChain(): ModelAttempt[] {
-  if (!google) return []
+  if (!openaiInstance) return []
   return [
-    { provider: 'Gemini 2.5 Flash', model: google('gemini-2.5-flash') },
-    { provider: 'Gemini 2.0 Flash', model: google('gemini-2.0-flash') },
+    { provider: 'GPT-4o', model: openaiInstance('gpt-4o') },
   ]
 }

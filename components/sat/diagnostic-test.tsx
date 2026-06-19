@@ -6,7 +6,9 @@ import type { PanicTheme } from '@/lib/theme'
 import { diagnosticFallback } from '@/lib/practice-bank'
 import { cn } from '@/lib/utils'
 
-const QUESTION_COUNT = 15
+const MATH_COUNT = 15
+const RW_COUNT = 15
+const QUESTION_COUNT = MATH_COUNT + RW_COUNT
 
 interface Props {
   triage: TriageData
@@ -23,20 +25,32 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
 
   useEffect(() => {
     let cancelled = false
+    async function fetchSection(section: 'Math' | 'Reading & Writing', count: number): Promise<PracticeQuestion[]> {
+      const res = await fetch('/api/practice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section, topics: triage.weakAreas, count }),
+      })
+      if (!res.ok) throw new Error(`status ${res.status}`)
+      const data = await res.json()
+      return (data.questions || []) as PracticeQuestion[]
+    }
+
     async function load() {
       try {
-        const res = await fetch('/api/practice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            section: 'Both',
-            topics: triage.weakAreas,
-            count: QUESTION_COUNT,
-          }),
-        })
-        if (!res.ok) throw new Error(`status ${res.status}`)
-        const data = await res.json()
-        const qs: PracticeQuestion[] = (data.questions || []).slice(0, QUESTION_COUNT)
+        // Fetch both sections in parallel
+        const [mathQs, rwQs] = await Promise.all([
+          fetchSection('Math', MATH_COUNT),
+          fetchSection('Reading & Writing', RW_COUNT),
+        ])
+        // Interleave: Math 1, R&W 1, Math 2, R&W 2, …
+        const merged: PracticeQuestion[] = []
+        const max = Math.max(mathQs.length, rwQs.length)
+        for (let i = 0; i < max; i++) {
+          if (mathQs[i]) merged.push(mathQs[i])
+          if (rwQs[i]) merged.push(rwQs[i])
+        }
+        const qs = merged.slice(0, QUESTION_COUNT)
         if (!cancelled) {
           setQuestions(qs.length >= QUESTION_COUNT ? qs : diagnosticFallback(QUESTION_COUNT))
           setAnswers(new Array(QUESTION_COUNT).fill(null))
@@ -52,9 +66,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
       }
     }
     load()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [triage.weakAreas])
 
   if (loading) {
@@ -68,8 +80,8 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           <div>
             <p className="text-lg font-bold text-foreground">Building your diagnostic</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              15 quick questions across Math and Reading &amp; Writing so we know exactly what to
-              focus on.
+              30 questions — 15 Math and 15 Reading &amp; Writing — so we can pinpoint exactly
+              where to focus.
             </p>
           </div>
         </div>
@@ -136,7 +148,8 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           />
         </div>
         <p className="text-sm text-muted-foreground">
-          Answer honestly — we are not grading you, we are finding your highest-impact topics.
+          15 Math + 15 Reading &amp; Writing — answer honestly, we are finding your highest-impact
+          topics, not grading you.
         </p>
       </header>
 
