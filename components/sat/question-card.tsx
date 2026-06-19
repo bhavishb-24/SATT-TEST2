@@ -17,6 +17,12 @@ interface QuestionCardProps {
   onSubmit: () => void
   onNext: () => void
   isLastQuestion: boolean
+  /**
+   * 'practice' (default): Check answer + reveal explanation flow with built-in buttons.
+   * 'test': selection only, no feedback or buttons (parent controls navigation).
+   * 'review': always revealed (shows correct answer + explanation), no buttons.
+   */
+  mode?: 'practice' | 'test' | 'review'
   accentTheme?: {
     accentBg: string
     accentBorder: string
@@ -34,6 +40,7 @@ export function QuestionCard({
   onSubmit,
   onNext,
   isLastQuestion,
+  mode = 'practice',
   accentTheme = {
     accentBg: 'bg-primary text-primary-foreground',
     accentBorder: 'border-primary',
@@ -42,6 +49,11 @@ export function QuestionCard({
 }: QuestionCardProps) {
   const isMath = question.section === 'Math'
   const isAIGenerated = question.id.startsWith('ai-')
+
+  // In review mode the answer is always shown; in test mode it is never shown
+  // during the test; in practice mode it follows the `revealed` prop.
+  const rev = mode === 'review' ? true : mode === 'test' ? false : revealed
+  const showActions = mode === 'practice'
   
   // Calculator state
   const [calcOpen, setCalcOpen] = useState(false)
@@ -224,7 +236,7 @@ export function QuestionCard({
             const isEliminated = eliminated.has(i)
             
             let stateClass = 'border-border bg-background hover:border-foreground/30'
-            if (revealed) {
+            if (rev) {
               if (isCorrect)
                 stateClass = 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
               else if (isSelected)
@@ -241,7 +253,7 @@ export function QuestionCard({
                 <button
                   type="button"
                   onClick={() => onSelect(i)}
-                  disabled={revealed}
+                  disabled={rev}
                   className={cn(
                     'flex flex-1 items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors',
                     stateClass,
@@ -250,7 +262,7 @@ export function QuestionCard({
                   <span
                     className={cn(
                       'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
-                      isSelected && !revealed
+                      isSelected && !rev
                         ? cn(accentTheme.accentBg, 'text-card border-transparent')
                         : 'border-border text-muted-foreground',
                     )}
@@ -258,20 +270,20 @@ export function QuestionCard({
                     {String.fromCharCode(65 + i)}
                   </span>
                   <span className="text-foreground">{choice}</span>
-                  {revealed && isCorrect && (
+                  {rev && isCorrect && (
                     <i
                       className="ti ti-check ml-auto text-emerald-600 dark:text-emerald-400"
                       aria-hidden="true"
                     />
                   )}
-                  {revealed && isSelected && !isCorrect && (
+                  {rev && isSelected && !isCorrect && (
                     <i
                       className="ti ti-x ml-auto text-red-600 dark:text-red-400"
                       aria-hidden="true"
                     />
                   )}
                 </button>
-                {!revealed && (
+                {!rev && (
                   <button
                     type="button"
                     onClick={() => toggleEliminate(i)}
@@ -292,7 +304,7 @@ export function QuestionCard({
         </div>
 
         {/* Explanation */}
-        {revealed && (
+        {rev && (
           <div className="mt-4 rounded-lg bg-muted p-4 animate-fade-in">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {selected === question.correctIndex ? 'Correct' : 'Explanation'}
@@ -303,7 +315,8 @@ export function QuestionCard({
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* Action buttons (practice mode only) */}
+        {showActions && (
         <div className="mt-6">
           {!revealed ? (
             <button
@@ -331,6 +344,7 @@ export function QuestionCard({
             </button>
           )}
         </div>
+        )}
       </div>
 
       {/* Calculator panel */}

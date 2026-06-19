@@ -16,6 +16,7 @@ import { Sidebar } from './sidebar'
 import { MobileNav } from './mobile-nav'
 import { HomeView } from './home-view'
 import { PracticeView } from './practice-view'
+import { MockTestView } from './mock-test-view'
 import { FormulaView } from './formula-view'
 import { FlashcardsView } from './flashcards-view'
 import { FocusView } from './focus-view'
@@ -41,6 +42,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   home: { title: 'Dashboard', sub: 'Your command center for tonight' },
   plan: { title: 'Study Plan', sub: 'Highest-impact topics first' },
   practice: { title: 'Practice Drills', sub: 'Target your weak areas' },
+  mocktest: { title: 'Mock Tests', sub: 'Full-length SAT-style practice tests' },
   flashcards: { title: 'Flashcards', sub: 'Quick recall review' },
   formulas: { title: 'Formula Sheet', sub: 'Must-know references' },
   focus: { title: 'Focus Timer', sub: 'Stay sharp with pomodoro blocks' },
@@ -149,6 +151,10 @@ export function Dashboard({
                 theme={theme}
                 onAnswer={statsApi.recordPractice}
               />
+            )}
+
+            {view === 'mocktest' && (
+              <MockTestView theme={theme} onAnswer={statsApi.recordPractice} />
             )}
 
             {view === 'flashcards' && (

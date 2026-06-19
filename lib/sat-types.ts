@@ -124,6 +124,7 @@ export type DashboardView =
   | 'home'
   | 'plan'
   | 'practice'
+  | 'mocktest'
   | 'formulas'
   | 'flashcards'
   | 'focus'
