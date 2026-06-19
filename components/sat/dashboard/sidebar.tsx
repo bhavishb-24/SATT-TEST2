@@ -45,7 +45,7 @@ export function Sidebar({
             theme.accentBg,
           )}
         >
-          <i className="ti ti-bolt text-lg text-white" aria-hidden="true" />
+          <i className="ti ti-school text-lg text-white" aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-bold leading-tight text-foreground">
