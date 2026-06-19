@@ -108,7 +108,7 @@ export function StudyPlan({
         <button
           type="button"
           onClick={downloadFormulaSheetPdf}
-          className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-foreground px-4 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+          className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           <span className="ti ti-download text-base" aria-hidden="true" />
           Download PDF
