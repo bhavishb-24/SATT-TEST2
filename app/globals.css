@@ -143,6 +143,30 @@
   animation: var(--animate-fade-in);
 }
 
+@keyframes breathe {
+  0%, 100% { transform: scale(0.75); opacity: 0.6; }
+  40% { transform: scale(1); opacity: 1; }
+  60% { transform: scale(1); opacity: 1; }
+}
+
+/* CSS-only SVG checkmark for topic complete screen */
+.check-circle__circle {
+  stroke: var(--primary);
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.check-circle__check {
+  stroke: var(--primary);
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+  transform-origin: 50% 50%;
+}
+@keyframes stroke {
+  100% { stroke-dashoffset: 0; }
+}
+
 /* Hide scrollbars on horizontal chip rows but keep scroll */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

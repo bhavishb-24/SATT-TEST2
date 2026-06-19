@@ -13,6 +13,8 @@ import { useVoice } from '@/lib/use-voice'
 import { useStats } from '@/lib/use-stats'
 import { TriageForm } from '@/components/sat/triage-form'
 import { LoadingScreen } from '@/components/sat/loading-screen'
+import { CoachWelcome } from '@/components/sat/coach-welcome'
+import { CoachFlow } from '@/components/sat/coach-flow'
 import { Dashboard } from '@/components/sat/dashboard/dashboard'
 import { PanicOverlay } from '@/components/sat/panic-overlay'
 import { FloatingControls } from '@/components/sat/floating-controls'
@@ -24,6 +26,8 @@ export default function Page() {
   const [topics, setTopics] = useState<PlanTopic[]>([])
   const [completed, setCompleted] = useState<Set<string>>(new Set())
   const [panicOpen, setPanicOpen] = useState(false)
+  // When true the full Dashboard is overlaid on top of the coach flow
+  const [showFullPlan, setShowFullPlan] = useState(false)
   const lastSpokenStep = useRef<string>('')
 
   const statsApi = useStats()
@@ -102,7 +106,7 @@ export default function Page() {
 
       setResponse(result)
       setTopics(result.plan.topics)
-      setScreen('dashboard')
+      setScreen('coachWelcome')
 
       if (voice.enabled) {
         const msg =
@@ -159,6 +163,71 @@ export default function Page() {
 
       {screen === 'loading' && <LoadingScreen />}
 
+      {screen === 'coachWelcome' && response && triage && (
+        <CoachWelcome
+          triage={triage}
+          response={response}
+          onReady={() => setScreen('coach')}
+        />
+      )}
+
+      {screen === 'coach' && response && triage && (
+        <>
+          <CoachFlow
+            triage={triage}
+            response={response}
+            topics={topics}
+            completed={completed}
+            voiceEnabled={voice.enabled}
+            speak={speak}
+            onComplete={handleComplete}
+            onGoToChecklist={() => {
+              setScreen('dashboard')
+            }}
+            onShowFullPlan={() => setShowFullPlan(true)}
+          />
+
+          {/* Full plan overlay — bottom sheet when student taps "See full plan" */}
+          {showFullPlan && (
+            <div
+              className="fixed inset-0 z-40 flex flex-col justify-end bg-foreground/30 backdrop-blur-sm"
+              onClick={() => setShowFullPlan(false)}
+            >
+              <div
+                className="max-h-[90dvh] overflow-y-auto rounded-t-3xl bg-background shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sticky top-0 flex items-center justify-between border-b border-border bg-background px-5 py-4">
+                  <h2 className="text-base font-semibold text-foreground">Full plan overview</h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullPlan(false)}
+                    className="min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground"
+                    aria-label="Close"
+                  >
+                    <span className="ti ti-x text-lg" aria-hidden="true" />
+                  </button>
+                </div>
+                <div className="p-5">
+                  <Dashboard
+                    triage={triage}
+                    response={response}
+                    topics={topics}
+                    completed={completed}
+                    statsApi={statsApi}
+                    voiceEnabled={voice.enabled}
+                    speak={speak}
+                    onComplete={handleComplete}
+                    onReorder={handleReorder}
+                    onActiveStep={handleActiveStep}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {screen === 'dashboard' && response && triage && (
         <Dashboard
           triage={triage}
@@ -175,7 +244,7 @@ export default function Page() {
       )}
 
       {/* Floating voice + panic controls available on every screen after triage. */}
-      {screen !== 'landing' && screen !== 'loading' && (
+      {screen !== 'landing' && screen !== 'loading' && screen !== 'triage' && (
         <FloatingControls
           voiceSupported={voice.supported}
           voiceEnabled={voice.enabled}

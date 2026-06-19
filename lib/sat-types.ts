@@ -65,7 +65,23 @@ export type Screen =
   | 'landing'
   | 'triage'
   | 'loading'
+  | 'coachWelcome'
+  | 'coach'
   | 'dashboard'
+
+export type CoachMode =
+  | 'welcome'
+  | 'topicIntro'
+  | 'stepByStep'
+  | 'checkIn'
+  | 'topicComplete'
+  | 'break'
+  | 'allDone'
+
+export interface CoachAdaptation {
+  topic: string
+  message: string
+}
 
 export type DashboardView =
   | 'home'
