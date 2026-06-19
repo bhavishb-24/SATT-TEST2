@@ -4,19 +4,9 @@ import { SITE } from '@/lib/site'
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8 lg:py-24">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8 lg:py-12">
         {/* Left — message */}
         <div className="flex flex-col items-start gap-6">
-          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-            </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              Open now — no waitlist, no sign-up
-            </span>
-          </div>
-
           <h1 className="text-balance font-serif text-5xl font-normal leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl">
             Wealthy students hire an SAT tutor the night before.
             <span className="mt-2 block italic text-primary">Now you have one too. Free.</span>
