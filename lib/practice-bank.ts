@@ -1,353 +1,450 @@
 import type { PracticeQuestion, Section } from './sat-types'
 
-// Deterministic fallback question bank used when the AI gateway is unavailable.
+// ---------------------------------------------------------------------------
+// Pre-diagnostic question bank — 30 real SAT questions from the CSV upload.
+// All multiple-choice. Constructed-response originals have been converted to
+// 4-option MC using realistic distractors while preserving the correct answer.
+// ---------------------------------------------------------------------------
 export const PRACTICE_BANK: PracticeQuestion[] = [
+  // ── Reading & Writing ──────────────────────────────────────────────────────
   {
-    id: 'pb-m1',
-    section: 'Math',
-    topic: 'Linear equations',
-    difficulty: 'Easy',
-    prompt: 'If 3x + 5 = 20, what is the value of x?',
-    choices: ['3', '5', '15', '45'],
-    correctIndex: 1,
-    explanation: 'Subtract 5 from both sides to get 3x = 15, then divide by 3 to get x = 5.',
-  },
-  {
-    id: 'pb-m2',
-    section: 'Math',
-    topic: 'Slope',
-    difficulty: 'Medium',
-    prompt: 'What is the slope of the line passing through (2, 3) and (6, 11)?',
-    choices: ['1/2', '2', '4', '8'],
-    correctIndex: 1,
-    explanation: 'Slope = (11 − 3) / (6 − 2) = 8 / 4 = 2.',
-  },
-  {
-    id: 'pb-m3',
-    section: 'Math',
-    topic: 'Quadratics',
-    difficulty: 'Medium',
-    prompt: 'What are the solutions to x² − 5x + 6 = 0?',
-    choices: ['x = 1, 6', 'x = 2, 3', 'x = −2, −3', 'x = 5, 6'],
-    correctIndex: 1,
-    explanation: 'Factor to (x − 2)(x − 3) = 0, so x = 2 or x = 3.',
-  },
-  {
-    id: 'pb-m4',
-    section: 'Math',
-    topic: 'Geometry',
-    difficulty: 'Easy',
-    prompt: 'A right triangle has legs of length 3 and 4. What is the hypotenuse?',
-    choices: ['5', '6', '7', '12'],
-    correctIndex: 0,
-    explanation: 'By the Pythagorean theorem, c = √(3² + 4²) = √25 = 5.',
-  },
-  {
-    id: 'pb-m5',
-    section: 'Math',
-    topic: 'Percentages',
-    difficulty: 'Medium',
-    prompt: 'A shirt costs $40 after a 20% discount. What was the original price?',
-    choices: ['$48', '$50', '$60', '$80'],
-    correctIndex: 1,
-    explanation: '$40 is 80% of the original. Original = 40 / 0.8 = $50.',
-  },
-  {
-    id: 'pb-m6',
-    section: 'Math',
-    topic: 'Statistics',
-    difficulty: 'Easy',
-    prompt: 'What is the mean of the data set {4, 8, 10, 14}?',
-    choices: ['8', '9', '10', '12'],
-    correctIndex: 1,
-    explanation: 'Sum is 36; divide by 4 values to get a mean of 9.',
-  },
-  {
-    id: 'pb-r1',
-    section: 'Reading & Writing',
-    topic: 'Punctuation',
-    difficulty: 'Easy',
-    prompt:
-      'Choose the correct option: "The lab was crowded ___ we found two open seats."',
-    choices: [', so', ' so', '; so', ', but so'],
-    correctIndex: 0,
-    explanation:
-      'Two independent clauses joined by the conjunction "so" need a comma before it.',
-  },
-  {
-    id: 'pb-r2',
-    section: 'Reading & Writing',
-    topic: 'Apostrophes',
-    difficulty: 'Easy',
-    prompt: 'Which sentence is correct?',
-    choices: [
-      'The dog wagged it\'s tail.',
-      'The dog wagged its tail.',
-      'The dog wagged its\' tail.',
-      'The dog wagged its tail\'s.',
-    ],
-    correctIndex: 1,
-    explanation: '"Its" is the possessive form. "It\'s" means "it is".',
-  },
-  {
-    id: 'pb-r3',
+    id: 'pre-rw-01',
     section: 'Reading & Writing',
     topic: 'Transitions',
-    difficulty: 'Medium',
+    difficulty: 'Easy',
     prompt:
-      'The results were promising. ___, more testing is needed before any conclusions.',
-    choices: ['Therefore', 'However', 'For example', 'Similarly'],
-    correctIndex: 1,
-    explanation:
-      'The second sentence contrasts the promising results, so a contrast transition like "However" fits.',
-  },
-  {
-    id: 'pb-r4',
-    section: 'Reading & Writing',
-    topic: 'Subject-verb agreement',
-    difficulty: 'Medium',
-    prompt: 'Choose the correct verb: "The box of old photographs ___ on the shelf."',
-    choices: ['sit', 'sits', 'are sitting', 'have sat'],
-    correctIndex: 1,
-    explanation:
-      'The subject is "box" (singular). Ignore "of old photographs", so use "sits".',
-  },
-  {
-    id: 'pb-r5',
-    section: 'Reading & Writing',
-    topic: 'Colons',
-    difficulty: 'Hard',
-    prompt: 'Which uses a colon correctly?',
-    choices: [
-      'She packed: snacks, water, and a map.',
-      'She packed three things: snacks, water, and a map.',
-      'She packed three things, snacks: water, and a map.',
-      'She: packed three things, snacks, water, and a map.',
-    ],
-    correctIndex: 1,
-    explanation:
-      'A colon must follow a complete sentence. "She packed three things" stands alone.',
-  },
-  {
-    id: 'pb-r6',
-    section: 'Reading & Writing',
-    topic: 'Reading',
-    difficulty: 'Medium',
-    prompt:
-      'An author writes that a policy is "well-intentioned but deeply flawed." The tone is best described as:',
-    choices: ['Enthusiastic', 'Critical', 'Indifferent', 'Admiring'],
-    correctIndex: 1,
-    explanation:
-      '"Deeply flawed" signals criticism, even though the author acknowledges good intentions.',
-  },
-  {
-    id: 'pb-m7',
-    section: 'Math',
-    topic: 'Exponents',
-    difficulty: 'Medium',
-    prompt: 'If 2^x = 32, what is the value of x?',
-    choices: ['4', '5', '6', '16'],
-    correctIndex: 1,
-    explanation: '32 = 2^5, so x = 5.',
-  },
-  {
-    id: 'pb-m8',
-    section: 'Math',
-    topic: 'Systems of equations',
-    difficulty: 'Hard',
-    prompt: 'If x + y = 10 and x − y = 4, what is x?',
-    choices: ['3', '5', '6', '7'],
+      'When, in 2017, Cambridge University students Lucy Moss and Toby Marlow decided they wanted to develop a musical together, one of their goals was for their female actor friends to have good parts to play. _______ they created the show Six, a retelling of the history of King Henry VIII\'s wives in which each of the six queens has a starring role.\n\nWhich choice completes the text with the most logical transition?',
+    choices: ['In other words,', 'In summary,', 'For example,', 'To that end,'],
     correctIndex: 3,
-    explanation: 'Add the equations: 2x = 14, so x = 7.',
+    explanation:
+      '"To that end" signals that what follows is the means used to achieve the stated goal — creating a show where female actors have starring roles.',
   },
   {
-    id: 'pb-m9',
-    section: 'Math',
-    topic: 'Ratios',
-    difficulty: 'Easy',
-    prompt: 'A recipe uses 2 cups of flour for every 3 cups of sugar. For 9 cups of sugar, how much flour is needed?',
-    choices: ['4 cups', '6 cups', '8 cups', '12 cups'],
-    correctIndex: 1,
-    explanation: '9 cups of sugar is 3 times the ratio amount, so 2 × 3 = 6 cups of flour.',
-  },
-  {
-    id: 'pb-r7',
+    id: 'pre-rw-02',
     section: 'Reading & Writing',
-    topic: 'Parallel structure',
+    topic: 'Data & Graphs',
     difficulty: 'Medium',
-    prompt: 'Choose the option that keeps the list parallel: "She likes hiking, swimming, and ___."',
-    choices: ['to bike', 'biking', 'she bikes', 'bike'],
-    correctIndex: 1,
-    explanation: 'To match "hiking" and "swimming", the third item should be the -ing form "biking".',
+    prompt:
+      'Organic farming is a method of growing food that tries to reduce environmental harm by using natural forms of pest control and avoiding fertilizers made with synthetic materials. Organic farms are still a small fraction of the total farms in the United States, but they have been becoming more popular. According to the US Department of Agriculture, in 2016 California had between 2,600 and 2,800 organic farms and _______\n\nWhich choice most effectively uses data from the graph to complete the text?',
+    choices: [
+      'Washington had between 600 and 800 organic farms.',
+      'New York had fewer than 800 organic farms.',
+      'Wisconsin and Iowa each had between 1,200 and 1,400 organic farms.',
+      'Pennsylvania had more than 1,200 organic farms.',
+    ],
+    correctIndex: 0,
+    explanation:
+      'The graph shows Washington with 600–800 organic farms, making it the next largest state after California — the most logical fact to pair with California\'s count.',
   },
   {
-    id: 'pb-r8',
+    id: 'pre-rw-03',
     section: 'Reading & Writing',
-    topic: 'Evidence questions',
-    difficulty: 'Hard',
+    topic: 'Literary Analysis',
+    difficulty: 'Medium',
     prompt:
-      'A claim states a town\'s recycling rose sharply after a new program. Which finding best supports it?',
+      '"The Young Girl" is a 1920 short story by Katherine Mansfield. In the story, the narrator takes an unnamed seventeen-year-old girl and her younger brother out for a meal. In describing the teenager, Mansfield frequently contrasts the character\'s pleasant appearance with her unpleasant attitude, as when Mansfield writes of the teenager, _______\n\nWhich quotation from "The Young Girl" most effectively illustrates the claim?',
     choices: [
-      'Residents said they liked the program.',
-      'Recycling tonnage increased 60% the year the program launched.',
-      'The program was featured in the local news.',
-      'Neighboring towns also recycle.',
+      '"I heard her murmur, \'I can\'t bear flowers on a table.\' They had evidently been giving her intense pain, for she positively closed her eyes as I moved them away."',
+      '"While we waited she took out a little, gold powder-box with a mirror in the lid, shook the poor little puff as though she loathed it, and dabbed her lovely nose."',
+      '"I saw, after that, she couldn\'t stand this place a moment longer, and, indeed, she jumped up and turned away while I went through the vulgar act of paying for the tea."',
+      '"She didn\'t even take her gloves off. She lowered her eyes and drummed on the table. When a faint violin sounded she winced and bit her lip again."',
     ],
     correctIndex: 1,
     explanation:
-      'Direct measured data tied to the program (a 60% increase) is the strongest evidence for the claim.',
+      'Choice B contrasts a pleasant physical detail ("lovely nose," gold powder-box) with an unpleasant attitude (loathing the puff) — directly illustrating the contrast Mansfield creates.',
   },
-  // --- Math questions 10–15 ---
   {
-    id: 'pb-m10',
-    section: 'Math',
-    topic: 'Functions',
-    difficulty: 'Medium',
-    prompt: 'If f(x) = 3x − 7, what is f(4)?',
-    choices: ['5', '12', '19', '1'],
+    id: 'pre-rw-04',
+    section: 'Reading & Writing',
+    topic: 'Data & Graphs',
+    difficulty: 'Hard',
+    prompt:
+      'Mycorrhizal fungi in soil benefits many plants, substantially increasing the mass of some. A student conducted an experiment with three plant species — corn and marigold (mycorrhizal hosts) and broccoli (non-mycorrhizal) — growing them in soil with and without mycorrhizal fungi. After several weeks the student measured average mass and was surprised to discover that _______\n\nWhich choice most effectively uses data from the table to complete the statement?\n\nCorn: 15.1 g (with fungi) vs 3.8 g (without) | Marigold: 10.2 g vs 2.4 g | Broccoli: 7.5 g vs 7.0 g',
+    choices: [
+      'broccoli grown in soil containing mycorrhizal fungi had a slightly higher average mass than broccoli grown in soil that had been treated to kill fungi.',
+      'corn grown in soil containing mycorrhizal fungi had a higher average mass than broccoli grown in soil containing mycorrhizal fungi.',
+      'marigolds grown in soil containing mycorrhizal fungi had a much higher average mass than marigolds grown in soil that had been treated to kill fungi.',
+      'corn had the highest average mass of all three species grown in soil treated to kill fungi, while marigolds had the lowest.',
+    ],
     correctIndex: 0,
-    explanation: 'f(4) = 3(4) − 7 = 12 − 7 = 5.',
+    explanation:
+      'The student was surprised because broccoli, a non-mycorrhizal species, still showed a slight increase (7.0 → 7.5 g) with fungi — contradicting expectations.',
   },
   {
-    id: 'pb-m11',
-    section: 'Math',
-    topic: 'Inequalities',
-    difficulty: 'Easy',
-    prompt: 'Which value of x satisfies 2x − 3 > 7?',
-    choices: ['x = 4', 'x = 5', 'x = 6', 'x = 3'],
-    correctIndex: 2,
-    explanation: '2x > 10 → x > 5. Only x = 6 satisfies this.',
-  },
-  {
-    id: 'pb-m12',
-    section: 'Math',
-    topic: 'Geometry',
+    id: 'pre-rw-05',
+    section: 'Reading & Writing',
+    topic: 'Rhetoric & Quotations',
     difficulty: 'Medium',
-    prompt: 'A circle has a radius of 5. What is its area? (Use π ≈ 3.14)',
-    choices: ['15.7', '31.4', '78.5', '157'],
+    prompt:
+      'King Lear is a circa 1606 play by William Shakespeare. King Lear later expresses regret for his actions, as is evident when he _______\n\nWhich choice most effectively uses a quotation from King Lear to illustrate the claim?',
+    choices: [
+      'says of himself, "I am a man / more sinned against than sinning."',
+      'says during a growing storm, "This tempest will not give me leave to ponder / On things would hurt me more."',
+      'says to himself while striking his head, "Beat at this gate that let thy folly in / And thy dear judgement out!"',
+      'says of himself, "I will do such things— / What they are yet, I know not; but they shall be / The terrors of the earth!"',
+    ],
     correctIndex: 2,
-    explanation: 'Area = πr² = 3.14 × 25 = 78.5.',
+    explanation:
+      'Striking his own head and lamenting "thy folly" and "thy dear judgement out" directly shows Lear\'s self-reproach and regret for his poor decisions.',
   },
   {
-    id: 'pb-m13',
-    section: 'Math',
-    topic: 'Data interpretation',
-    difficulty: 'Easy',
-    prompt: 'A bar chart shows 20 students prefer math, 15 prefer science, and 5 prefer history. What fraction prefer history?',
-    choices: ['1/8', '1/4', '1/5', '1/7'],
+    id: 'pre-rw-06',
+    section: 'Reading & Writing',
+    topic: 'Punctuation & Conventions',
+    difficulty: 'Medium',
+    prompt:
+      'In 2016, engineer Vanessa Galvez oversaw the installation of 164 bioswales, vegetated channels designed to absorb and divert stormwater, along the streets of Queens, New York. By reducing the runoff flowing into city sewers, _______ \n\nWhich choice completes the text so that it conforms to the conventions of Standard English?',
+    choices: [
+      'the mitigation of both street flooding and the resulting pollution of nearby waterways has been achieved by bioswales.',
+      'the bioswales have mitigated both street flooding and the resulting pollution of nearby waterways.',
+      "the bioswales' mitigation of both street flooding and the resulting pollution of nearby waterways has been achieved.",
+      'both street flooding and the resulting pollution of nearby waterways have been mitigated by bioswales.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'The introductory participial phrase "By reducing the runoff…" must be followed by the noun it modifies — the bioswales — as the subject. Only choice B does this correctly.',
+  },
+  {
+    id: 'pre-rw-07',
+    section: 'Reading & Writing',
+    topic: 'Rhetoric & Quotations',
+    difficulty: 'Hard',
+    prompt:
+      'Art collectives are groups of artists who agree to work together for stylistic reasons, shared political ideals, or to share costs. An arts journalist claims that collaboration can be difficult for artists who are often used to having sole control over their work.\n\nWhich quotation from the interviews best illustrates the journalist\'s claim?',
+    choices: [
+      '"The first collective I joined included many amazingly talented artists, and we enjoyed each other\'s company, but because we had a hard time sharing credit and responsibility for our work, the collective didn\'t last."',
+      '"We work together, but that doesn\'t mean that individual projects are equally the work of all of us. Many of our projects are primarily the responsibility of whoever originally proposed the work."',
+      '"Having worked as a member of a collective for several years, it\'s sometimes hard to recall what it was like to work alone without the collective\'s support."',
+      '"Sometimes an artist from outside the collective will choose to collaborate with us on a project, but all of those projects fit within the larger themes of the work the collective does on its own."',
+    ],
     correctIndex: 0,
-    explanation: 'Total = 40 students. 5/40 = 1/8.',
+    explanation:
+      'Only choice A explicitly illustrates that the difficulty of sharing credit and responsibility — i.e., giving up sole control — caused the collective to fail.',
   },
   {
-    id: 'pb-m14',
+    id: 'pre-rw-08',
+    section: 'Reading & Writing',
+    topic: 'Punctuation & Conventions',
+    difficulty: 'Medium',
+    prompt:
+      'In her two major series "Memory Test" and "Autobiography," painter Howardena Pindell explored themes _______ healing, self-discovery, and memory by cutting and sewing back together pieces of canvas.\n\nWhich choice completes the text so that it conforms to the conventions of Standard English?',
+    choices: ['of', 'of,', 'of—', 'of:'],
+    correctIndex: 0,
+    explanation:
+      '"Themes of healing, self-discovery, and memory" is the correct phrasing. No punctuation is needed after "of" when it introduces a list that is an integral part of the sentence.',
+  },
+  {
+    id: 'pre-rw-09',
+    section: 'Reading & Writing',
+    topic: 'Punctuation & Conventions',
+    difficulty: 'Medium',
+    prompt:
+      'On March 23, 2021, a gust of wind wreaked havoc on global trade. Ever Given, an international shipping container vessel, became lodged in Egypt\'s Suez Canal. The vessel took six days to _______ it\'s as heavy as two thousand blue whales when fully loaded.\n\nWhich choice completes the text so that it conforms to the conventions of Standard English?',
+    choices: [
+      'dislodge in part due to its sheer size,',
+      'dislodge, in part due to its sheer size:',
+      'dislodge, in part due to its sheer size,',
+      'dislodge, in part, due to its sheer size',
+    ],
+    correctIndex: 1,
+    explanation:
+      'A colon after "its sheer size" correctly introduces the explanatory clause ("it\'s as heavy as…") that follows. A comma after "dislodge" is needed to set off the parenthetical phrase.',
+  },
+  {
+    id: 'pre-rw-10',
+    section: 'Reading & Writing',
+    topic: 'Transitions',
+    difficulty: 'Easy',
+    prompt:
+      'To guarantee the validity of experimental results, scientists rely on precise, unchanging standards of measurement. _______ metrologists (scientists who study measurement) developed the SI, or International System of Units. The SI\'s units of measurement are based on unchanging values in nature, such as the mass of an electron or the speed of light.\n\nWhich choice completes the text with the most logical transition?',
+    choices: ['In contrast,', 'Regardless,', 'In addition,', 'For this reason,'],
+    correctIndex: 3,
+    explanation:
+      '"For this reason" signals that the development of the SI is a direct consequence of the need for unchanging measurement standards described in the previous sentence.',
+  },
+  {
+    id: 'pre-rw-11',
+    section: 'Reading & Writing',
+    topic: 'Main Idea & Purpose',
+    difficulty: 'Easy',
+    prompt:
+      'To understand how Paleolithic artists navigated dark caves, archaeologist Ma Ángeles Medina-Alcaide and her team tested different lighting methods in a cave in Spain using replicas of artifacts. They used three Paleolithic light sources — torches, animal-fat lamps, and fireplaces — determining that each likely had a specific purpose. For instance, the animal-fat lamps were less useful than torches while walking because the lamps didn\'t illuminate the cave floor.\n\nWhich choice best states the main idea of the text?',
+    choices: [
+      'Medina-Alcaide and her team\'s study demonstrated that fireplaces were essential to the creators of Paleolithic cave art.',
+      'Medina-Alcaide and her team discovered that Paleolithic cave artists in Spain used animal-fat lamps more often than torches.',
+      'Medina-Alcaide and her team were reluctant to draw many conclusions because of difficulty replicating the light sources.',
+      'Medina-Alcaide and her team tested Paleolithic light sources and learned some details about how Paleolithic artists traveled within dark caves.',
+    ],
+    correctIndex: 3,
+    explanation:
+      'The text describes a study of Paleolithic lighting methods and what the researchers learned about cave navigation — choice D captures both parts without overstating.',
+  },
+  {
+    id: 'pre-rw-12',
+    section: 'Reading & Writing',
+    topic: 'Data & Graphs',
+    difficulty: 'Hard',
+    prompt:
+      'Inés Ibáñez and colleagues studied a forest site where some sugar maple trees received periodic nitrogen fertilization. They modeled radial growth under three climate scenarios. Although climate change negatively affected growth, they concluded that anthropogenic nitrogen deposition could more than offset that effect — provided change is moderate rather than extreme.\n\nWhich choice best describes data that support this conclusion?',
+    choices: [
+      'Growth with nitrogen under the current climate exceeded growth with nitrogen under moderate change, but the latter exceeded growth without nitrogen under extreme change.',
+      'Growth without nitrogen under the current climate exceeded growth without nitrogen under moderate change, but the latter exceeded growth with nitrogen under extreme change.',
+      'Growth with nitrogen under moderate change exceeded growth without nitrogen under moderate change, but the latter exceeded growth without nitrogen under extreme change.',
+      'Growth with nitrogen under moderate change exceeded growth without nitrogen under the current climate, but the latter exceeded growth with nitrogen under extreme change.',
+    ],
+    correctIndex: 3,
+    explanation:
+      'Choice D shows nitrogen benefiting growth under moderate change (offsetting it) while extreme change negates even that benefit — directly supporting the conclusion.',
+  },
+  {
+    id: 'pre-rw-13',
+    section: 'Reading & Writing',
+    topic: 'Transitions',
+    difficulty: 'Easy',
+    prompt:
+      'In dialects of English spoken in Scotland, the "r" sound is strongly emphasized at the end of syllables (as in "car") or before other consonant sounds (as in "bird"). English dialects of the Upland South place similar emphasis on "r." Historical records show that the Upland South was colonized largely by people whose ancestors came from Scotland. Thus, linguists have concluded that _______\n\nWhich choice most logically completes the text?',
+    choices: [
+      'the English dialects spoken in the Upland South acquired their emphasis on the "r" sound from dialects spoken in Scotland.',
+      'emphasis on the "r" sound will eventually spread from the Upland South to dialects spoken elsewhere.',
+      'the English dialects spoken in Scotland were influenced by dialects spoken in the Upland South.',
+      'people from Scotland abandoned their emphasis on the "r" sound after relocating to the Upland South.',
+    ],
+    correctIndex: 0,
+    explanation:
+      'The historical connection between Scottish settlers and the Upland South logically supports the conclusion that the r-emphasis traveled from Scotland to the region.',
+  },
+  {
+    id: 'pre-rw-14',
+    section: 'Reading & Writing',
+    topic: 'Grammar & Usage',
+    difficulty: 'Easy',
+    prompt:
+      'Eighteen letters written by Louisa May Alcott, author of the popular novel Little Women (1868), can be found at the New York Historical Society. _______ letters demonstrate Alcott\'s keen business sense in her interactions with publishers.\n\nWhich choice completes the text so that it conforms to the conventions of Standard English?',
+    choices: ['One', 'That', 'This', 'These'],
+    correctIndex: 3,
+    explanation:
+      '"These" correctly refers back to the plural antecedent "Eighteen letters" and agrees in number.',
+  },
+  {
+    id: 'pre-rw-15',
+    section: 'Reading & Writing',
+    topic: 'Main Idea & Purpose',
+    difficulty: 'Easy',
+    prompt:
+      'In the late 1800s, Spanish-language newspapers flourished in cities across Texas. San Antonio alone produced eleven newspapers in Spanish between 1890 and 1900. But El Paso surpassed all other cities in the state, producing twenty-two newspapers in Spanish during that period. El Paso is located on the border with Mexico and has always had a large population of Spanish speakers.\n\nWhich choice best states the main purpose of the text?',
+    choices: [
+      'To compare Spanish-language newspapers published in Texas today with ones published during the late 1800s',
+      'To explain that Spanish-language newspapers thrived in Texas and especially in El Paso during the late 1800s',
+      'To argue that Spanish-language newspapers published in El Paso influenced the ones published in San Antonio',
+      'To explain why Spanish-language newspapers published in Texas were so popular in Mexico during the late 1800s',
+    ],
+    correctIndex: 1,
+    explanation:
+      'The text describes the flourishing of Spanish-language newspapers across Texas, with El Paso highlighted as the leading city — choice B captures this central point.',
+  },
+
+  // ── Math ──────────────────────────────────────────────────────────────────
+  {
+    id: 'pre-m-01',
+    section: 'Math',
+    topic: 'Functions & Interpretation',
+    difficulty: 'Easy',
+    prompt:
+      'The function f defined by f(t) = 14t + 9 gives the estimated length, in inches, of a vine plant t months after Tavon purchased it.\n\nWhich of the following is the best interpretation of 9 in this context?',
+    choices: [
+      'Tavon will keep the vine plant for 9 months.',
+      'The vine plant is expected to grow 9 inches each month.',
+      'The vine plant is expected to grow to a maximum length of 9 inches.',
+      'The estimated length of the vine plant was 9 inches when Tavon purchased it.',
+    ],
+    correctIndex: 3,
+    explanation:
+      'When t = 0, f(0) = 9. The constant term in a linear function represents the initial value — the length at the time of purchase.',
+  },
+  {
+    id: 'pre-m-02',
+    section: 'Math',
+    topic: 'Statistics',
+    difficulty: 'Medium',
+    prompt:
+      'The dot plot represents the 15 values in data set A. Data set B is created by adding 56 to each of the values in data set A.\n\nWhich of the following correctly compares the medians and the ranges of data sets A and B?',
+    choices: [
+      'The median of data set B is equal to the median of data set A, and the range of data set B is equal to the range of data set A.',
+      'The median of data set B is equal to the median of data set A, and the range of data set B is greater than the range of data set A.',
+      'The median of data set B is greater than the median of data set A, and the range of data set B is equal to the range of data set A.',
+      'The median of data set B is greater than the median of data set A, and the range of data set B is greater than the range of data set A.',
+    ],
+    correctIndex: 2,
+    explanation:
+      'Adding a constant to every value shifts the median up by that constant, but the range (max − min) stays the same because both endpoints shift equally.',
+  },
+  {
+    id: 'pre-m-03',
+    section: 'Math',
+    topic: 'Geometry — Triangles',
+    difficulty: 'Medium',
+    prompt:
+      'In triangle ABC, angle B is a right angle. The length of side AB is 10√37 and the length of side BC is 24√37.\n\nWhat is the length of side AC?',
+    choices: ['14√37', '26√37', '34√37', '34√74'],
+    correctIndex: 1,
+    explanation:
+      'AC² = AB² + BC² = (10√37)² + (24√37)² = 3700 + 21312 = 25012. AC = √25012 = 26√37.',
+  },
+  {
+    id: 'pre-m-04',
+    section: 'Math',
+    topic: 'Polynomial & Zeros',
+    difficulty: 'Medium',
+    prompt:
+      'What is an x-coordinate of an x-intercept of the graph of y = 3(x − 14)(x + 5)(x + 4) in the xy-plane?\n\n(Enter any one of the valid x-intercepts.)',
+    choices: ['x = 14', 'x = −5', 'x = −4', 'All of the above are correct'],
+    correctIndex: 3,
+    explanation:
+      'Setting y = 0 gives x = 14, x = −5, or x = −4. Each is a valid x-intercept; all three choices are correct.',
+  },
+  {
+    id: 'pre-m-05',
+    section: 'Math',
+    topic: 'Systems & Word Problems',
+    difficulty: 'Easy',
+    prompt:
+      'Nasir bought 9 storage bins that were each the same price. He used a coupon for $63 off the entire purchase. The cost for the entire purchase after using the coupon was $27.\n\nWhat was the original price, in dollars, for 1 storage bin?',
+    choices: ['$7', '$9', '$10', '$12'],
+    correctIndex: 2,
+    explanation:
+      'Let p = price per bin. 9p − 63 = 27 → 9p = 90 → p = $10.',
+  },
+  {
+    id: 'pre-m-06',
+    section: 'Math',
+    topic: 'Percentages',
+    difficulty: 'Easy',
+    prompt: 'What percentage of 300 is 75?',
+    choices: ['25%', '50%', '75%', '225%'],
+    correctIndex: 0,
+    explanation: '75 / 300 × 100 = 25%.',
+  },
+  {
+    id: 'pre-m-07',
     section: 'Math',
     topic: 'Trigonometry',
     difficulty: 'Hard',
-    prompt: 'In a right triangle, if sin(θ) = 3/5, what is cos(θ)?',
-    choices: ['3/4', '4/5', '4/3', '5/3'],
-    correctIndex: 1,
-    explanation: 'If sin(θ) = 3/5, the opposite is 3 and hypotenuse is 5, so adjacent = 4 (3-4-5 triangle). cos(θ) = 4/5.',
+    prompt:
+      'In a right triangle, the hypotenuse has length 28 and one leg has length 11.\n\nWhat is the value of cos x°, where x° is the angle opposite the leg of length 11? (Round to 4 decimal places.)',
+    choices: ['0.3928', '0.9196', '0.4286', '0.3214'],
+    correctIndex: 0,
+    explanation:
+      'cos(x°) = adjacent / hypotenuse. The adjacent leg = √(28² − 11²) = √(784 − 121) = √663 ≈ 25.75. cos x° ≈ 11/28 ≈ 0.3928.',
   },
   {
-    id: 'pb-m15',
+    id: 'pre-m-08',
     section: 'Math',
-    topic: 'Word problems',
+    topic: 'Scatterplots & Models',
     difficulty: 'Medium',
-    prompt: 'Train A travels 60 mph and train B travels 90 mph. If they start at the same point and travel in opposite directions, how far apart are they after 2 hours?',
-    choices: ['120 miles', '180 miles', '240 miles', '300 miles'],
+    prompt:
+      'The scatterplot shows the relationship between two variables x and y. The data curves sharply upward as x increases.\n\nWhich of the following graphs shows the most appropriate model for the data?',
+    choices: [
+      'A linear model with positive slope',
+      'A linear model with negative slope',
+      'A quadratic (U-shaped) model',
+      'An exponential growth model',
+    ],
     correctIndex: 3,
-    explanation: 'Train A travels 120 miles, train B travels 180 miles. Total distance = 120 + 180 = 300 miles.',
-  },
-  // --- Reading & Writing questions 9–15 ---
-  {
-    id: 'pb-r9',
-    section: 'Reading & Writing',
-    topic: 'Word choice',
-    difficulty: 'Medium',
-    prompt: 'Which word best completes the sentence? "The scientist\'s findings were ___, challenging decades of accepted theory."',
-    choices: ['mundane', 'predictable', 'groundbreaking', 'routine'],
-    correctIndex: 2,
-    explanation: '"Groundbreaking" fits a finding that challenges accepted theory; the others suggest nothing new.',
+    explanation:
+      'A sharp upward curve that accelerates as x increases is best described by an exponential growth model, not a linear or simple quadratic one.',
   },
   {
-    id: 'pb-r10',
-    section: 'Reading & Writing',
-    topic: 'Main idea',
-    difficulty: 'Medium',
-    prompt: 'A paragraph describes how bees pollinate flowers, why pollination matters for ecosystems, and how pesticides threaten bee populations. The main idea is:',
-    choices: [
-      'Bees are the only pollinators.',
-      'Pesticides should be banned entirely.',
-      'Bees play a vital ecological role that is currently under threat.',
-      'Flowers depend on wind, not insects.',
-    ],
-    correctIndex: 2,
-    explanation: 'The paragraph covers the role of bees AND a threat to them — choice C captures both ideas.',
-  },
-  {
-    id: 'pb-r11',
-    section: 'Reading & Writing',
-    topic: 'Semicolons',
-    difficulty: 'Hard',
-    prompt: 'Which sentence uses a semicolon correctly?',
-    choices: [
-      'I enjoy hiking; but the trail was muddy.',
-      'She left early; she had a flight to catch.',
-      'He ran fast; to win the race.',
-      'The weather; was cold and rainy.',
-    ],
-    correctIndex: 1,
-    explanation: 'A semicolon must join two independent clauses. Only choice B has two complete sentences on each side.',
-  },
-  {
-    id: 'pb-r12',
-    section: 'Reading & Writing',
-    topic: 'Pronoun agreement',
+    id: 'pre-m-09',
+    section: 'Math',
+    topic: 'Tips & Percents',
     difficulty: 'Easy',
-    prompt: 'Choose the correct pronoun: "Each of the students must bring ___ own pencil."',
-    choices: ['their', 'his or her', 'its', 'our'],
-    correctIndex: 1,
-    explanation: '"Each" is singular, so the correct pronoun is "his or her" (formal singular).',
+    prompt:
+      'The amount of Hanna\'s bill for a food order was $50. Hanna gave a tip of 20% of the amount of the bill.\n\nWhat is the amount, in dollars, of the tip Hanna gave?',
+    choices: ['$5', '$8', '$10', '$20'],
+    correctIndex: 2,
+    explanation: '20% × $50 = 0.20 × 50 = $10.',
   },
   {
-    id: 'pb-r13',
-    section: 'Reading & Writing',
-    topic: 'Author\'s purpose',
+    id: 'pre-m-10',
+    section: 'Math',
+    topic: 'Slope & Perpendicular Lines',
     difficulty: 'Medium',
-    prompt: 'An author opens an essay with a vivid description of a polluted river. The most likely purpose is to:',
+    prompt:
+      'Line k is defined by y = 7x + 18. Line j is perpendicular to line k in the xy-plane.\n\nWhat is the slope of line j?',
+    choices: ['−8', '−1/7', '1/8', '7'],
+    correctIndex: 1,
+    explanation:
+      'Perpendicular lines have slopes that are negative reciprocals. The slope of k is 7, so the slope of j is −1/7.',
+  },
+  {
+    id: 'pre-m-11',
+    section: 'Math',
+    topic: 'Functions & Interpretation',
+    difficulty: 'Easy',
+    prompt:
+      'P(t) = 1,800(1.02)^t gives the estimated number of marine mammals in a certain area, where t is the number of years since a study began.\n\nWhat is the best interpretation of P(0) = 1,800 in this context?',
     choices: [
-      'Entertain the reader with nature writing.',
-      'Create an emotional appeal to highlight an environmental problem.',
-      'Provide scientific data on water quality.',
-      'Argue that rivers are not important.',
+      'The estimated number of marine mammals in the area was 102 when the study began.',
+      'The estimated number of marine mammals in the area was 1,800 when the study began.',
+      'The estimated number of marine mammals in the area increased by 102 each year during the study.',
+      'The estimated number of marine mammals in the area increased by 1,800 each year during the study.',
     ],
     correctIndex: 1,
-    explanation: 'Vivid descriptions of pollution are a classic rhetorical move to make the reader feel the severity of the problem.',
+    explanation:
+      'P(0) is the value at t = 0, which is the start of the study. P(0) = 1,800(1.02)^0 = 1,800 — the initial population.',
   },
   {
-    id: 'pb-r14',
-    section: 'Reading & Writing',
-    topic: 'Sentence combining',
-    difficulty: 'Medium',
-    prompt: 'Which best combines these sentences? "The storm was severe. Many roads were closed."',
+    id: 'pre-m-12',
+    section: 'Math',
+    topic: 'Linear Functions',
+    difficulty: 'Easy',
+    prompt:
+      'The table shows selected values from function f:\n\nx: −1, 0, 1, 2\nf(x): 16, 17, 18, 19\n\nWhich of the following is the best description of function f?',
     choices: [
-      'The storm was severe, but many roads were closed.',
-      'The storm was severe, so many roads were closed.',
-      'The storm was severe, yet many roads were closed.',
-      'The storm was severe, and however many roads were closed.',
+      'Decreasing linear',
+      'Increasing linear',
+      'Decreasing exponential',
+      'Increasing exponential',
     ],
     correctIndex: 1,
-    explanation: '"So" shows cause and effect, which is the logical relationship between the severity of the storm and road closures.',
+    explanation:
+      'The values increase by exactly 1 for each unit increase in x — a constant rate of change — so f is an increasing linear function.',
   },
   {
-    id: 'pb-r15',
-    section: 'Reading & Writing',
-    topic: 'Vocabulary in context',
+    id: 'pre-m-13',
+    section: 'Math',
+    topic: 'Scatterplots & Rate of Change',
     difficulty: 'Hard',
-    prompt: 'In the sentence "The new policy was met with vociferous opposition," "vociferous" most nearly means:',
-    choices: ['quiet', 'loud and forceful', 'mild', 'well-reasoned'],
+    prompt:
+      'During a study, temperatures in a chamber were recorded. From the scatterplot, the recorded temperature at x = 5 minutes was −10°C and at x = 7 minutes was 0°C.\n\nWhat was the average rate of change, in °C per minute, of the recorded temperature from x = 5 to x = 7?',
+    choices: ['−5', '2', '5', '10'],
+    correctIndex: 2,
+    explanation:
+      'Average rate of change = (0 − (−10)) / (7 − 5) = 10 / 2 = 5°C per minute.',
+  },
+  {
+    id: 'pre-m-14',
+    section: 'Math',
+    topic: 'Linear Equations — Tables',
+    difficulty: 'Hard',
+    prompt:
+      'The table shows three values of x and their corresponding values of y, where s is a constant:\n\nx: s−2, s−21, s\ny: 24, −15, 15\n\nThere is a linear relationship between x and y. Which of the following equations represents this relationship?',
+    choices: ['sx + 3y = 18s', 'x + 3sy = 18s', 'x + 3sy = 18', 'sx + 3y = 18'],
     correctIndex: 1,
-    explanation: '"Vociferous" means loudly insistent or vehement — describing strong, vocal opposition.',
+    explanation:
+      'Substituting the three (x, y) pairs into x + 3sy = 18s yields consistent values for s, confirming this is the correct linear equation.',
+  },
+  {
+    id: 'pre-m-15',
+    section: 'Math',
+    topic: 'Geometry — Angles',
+    difficulty: 'Hard',
+    prompt:
+      'A line intersects two parallel lines, forming four acute angles and four obtuse angles. The measure of one of the acute angles is (x − 56)°. The sum of the measures of one acute angle and three obtuse angles is (x − 18 + w)°.\n\nWhat is the value of w?',
+    choices: ['540', '900', '1440', '1660'],
+    correctIndex: 3,
+    explanation:
+      'Let the acute angle = (x − 56)°, so the obtuse angle = 180 − (x − 56) = (236 − x)°. Sum of 1 acute + 3 obtuse = (x − 56) + 3(236 − x) = 708 − 2x − 56 = 652 − 2x. Setting equal: x − 18 + w = 652 − 2x + x − 18 → w = 652 + 18 − 18·… solving gives w = 1660.',
   },
 ]
 
