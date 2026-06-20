@@ -2,9 +2,12 @@ import type { PlanTopic } from './sat-types'
 import type { GraphData } from '@/components/sat/lesson-graph'
 
 // A fully deterministic (no-AI) lesson engine. Every topic (section) is mapped
-// by keyword to FOUR interactive "learning targets". Each target pairs a short
-// learning tip with a hands-on challenge. Challenge types vary to keep things
-// fun and Duolingo-like:
+// by keyword to FOUR interactive "learning targets". Each target is a complete
+// mini-lesson that runs:
+//   1. a short learning TIP,
+//   2. a worked EXAMPLE that explains how to solve this question type on the SAT,
+//   3. a hands-on PRACTICE challenge.
+// Challenge types vary to keep things fun and Duolingo-like:
 //   - 'mc'         multiple choice (optionally with a graph)
 //   - 'highlight'  drag-to-select the evidence sentence (no AI grading)
 //   - 'order'      tap the steps into the correct sequence
@@ -55,9 +58,23 @@ export type Challenge =
   | OrderChallenge
   | FillBlankChallenge
 
+// A worked example shown before the practice question. It demonstrates the
+// method on a concrete problem and ends with an SAT-specific strategy tip.
+export interface TargetExample {
+  // The example problem or scenario.
+  problem: string
+  // Optional supporting visual.
+  graph?: GraphData
+  // Step-by-step worked solution.
+  steps: string[]
+  // One-line "how to handle this on the SAT" takeaway.
+  satStrategy: string
+}
+
 export interface LearningTarget {
   title: string
   tip: string
+  example: TargetExample
   challenge: Challenge
 }
 
@@ -75,6 +92,16 @@ function linearAlgebraLesson(): TopicLesson {
       {
         title: 'Isolate the variable',
         tip: 'To solve a linear equation, undo addition/subtraction first, then undo multiplication/division. Whatever you do to one side, do to the other.',
+        example: {
+          problem: 'Worked example: solve 2x − 3 = 7.',
+          steps: [
+            'Add 3 to both sides to undo the −3:  2x = 10.',
+            'Divide both sides by 2 to undo the ×2:  x = 5.',
+            'Check: 2(5) − 3 = 10 − 3 = 7. ✓',
+          ],
+          satStrategy:
+            'On the SAT, work backwards through the order of operations — undo +/− before ×/÷ — and always plug your answer back in to confirm.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'If 3x + 4 = 19, what is the value of x?',
@@ -86,6 +113,26 @@ function linearAlgebraLesson(): TopicLesson {
       {
         title: 'Read slope & intercept',
         tip: 'In y = mx + b, m is the slope (steepness) and b is the y-intercept (where the line crosses the y-axis).',
+        example: {
+          problem: 'Worked example: identify the slope and intercept of y = −2x + 4.',
+          graph: {
+            kind: 'line',
+            slope: -2,
+            intercept: 4,
+            xMin: -1,
+            xMax: 4,
+            yMin: -4,
+            yMax: 8,
+            points: [{ x: 0, y: 4, label: '(0, 4)' }],
+          },
+          steps: [
+            'Match to y = mx + b:  m = −2 and b = 4.',
+            'The slope is −2, so the line falls 2 units for every 1 unit right.',
+            'The y-intercept is 4 — the line crosses the y-axis at (0, 4).',
+          ],
+          satStrategy:
+            'The SAT loves "what is the slope/intercept" questions. Just rewrite the line in y = mx + b form and read off the numbers — no graphing needed.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'What is the slope of the line shown below, y = 3x − 2?',
@@ -107,6 +154,16 @@ function linearAlgebraLesson(): TopicLesson {
       {
         title: 'Order the solving steps',
         tip: 'Solving 2x + 5 = 17 has a clear order: deal with the +5 before the ×2. Put the steps in sequence.',
+        example: {
+          problem: 'Worked example: solve 5x + 2 = 22 step by step.',
+          steps: [
+            'Start: 5x + 2 = 22.',
+            'Subtract 2 from both sides → 5x = 20.',
+            'Divide both sides by 5 → x = 4.',
+          ],
+          satStrategy:
+            'Sequence matters: on the SAT, isolate the variable term first (move constants away), then divide off the coefficient last.',
+        },
         challenge: {
           kind: 'order',
           prompt: 'Tap the steps in the correct order to solve 2x + 5 = 17.',
@@ -121,6 +178,16 @@ function linearAlgebraLesson(): TopicLesson {
       {
         title: 'Translate words to math',
         tip: '"is" becomes =, "more than" becomes +, "twice" becomes 2×. Build the equation piece by piece.',
+        example: {
+          problem: 'Worked example: "3 less than four times a number is 9." Write the equation.',
+          steps: [
+            '"four times a number" → 4x.',
+            '"3 less than 4x" → 4x − 3.',
+            '"is 9" → = 9.  Final equation: 4x − 3 = 9.',
+          ],
+          satStrategy:
+            'Translate word problems left-to-right, one phrase at a time. Watch the order of "less than" — it flips: "3 less than 4x" is 4x − 3, not 3 − 4x.',
+        },
         challenge: {
           kind: 'fill-blank',
           prompt: 'Complete the equation for: "5 more than twice a number is 17."',
@@ -149,12 +216,33 @@ const SALES_BARS: GraphData = {
   ],
 }
 
+const TEMP_BARS: GraphData = {
+  kind: 'bar',
+  yLabel: 'High °F',
+  bars: [
+    { label: 'Mon', value: 60 },
+    { label: 'Tue', value: 68 },
+    { label: 'Wed', value: 72 },
+  ],
+}
+
 function dataAnalysisLesson(): TopicLesson {
   return {
     targets: [
       {
         title: 'Read the labels first',
         tip: 'Before any math, read the title and both axis labels. Most data questions test careful reading, not hard arithmetic.',
+        example: {
+          problem: 'Worked example: what does the height of each bar show in this temperature chart?',
+          graph: TEMP_BARS,
+          steps: [
+            'Read the y-axis label: "High °F".',
+            'Read the x-axis labels: the days Mon, Tue, Wed.',
+            'So each bar’s height = the daily high temperature in °F.',
+          ],
+          satStrategy:
+            'On the SAT, glance at the axis labels before reading the answer choices — half the wrong answers describe the wrong axis.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'In the chart below, what does the height of each bar represent?',
@@ -167,6 +255,17 @@ function dataAnalysisLesson(): TopicLesson {
       {
         title: 'Compare two bars',
         tip: 'To compare two values, read each off the axis and subtract — do not eyeball it.',
+        example: {
+          problem: 'Worked example: how much warmer was Wednesday than Monday?',
+          graph: TEMP_BARS,
+          steps: [
+            'Read Wednesday’s bar: 72 °F.',
+            'Read Monday’s bar: 60 °F.',
+            'Subtract: 72 − 60 = 12 °F warmer.',
+          ],
+          satStrategy:
+            '"How many more/fewer" always means subtract. Read both exact values off the axis, then take the difference.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'How many more units were sold in March than in February?',
@@ -179,6 +278,17 @@ function dataAnalysisLesson(): TopicLesson {
       {
         title: 'Spot the trend',
         tip: 'A trend is the overall direction. Check whether values mostly rise, fall, or stay flat across the categories.',
+        example: {
+          problem: 'Worked example: describe the temperature trend Mon → Wed.',
+          graph: TEMP_BARS,
+          steps: [
+            'List the values: 60 → 68 → 72.',
+            'Each day is higher than the one before.',
+            'So the trend is steadily increasing.',
+          ],
+          satStrategy:
+            'For "which best describes" trend questions, scan left to right: is it going up, down, or flat? Match that one word to the answer.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'Which best describes sales from January to March?',
@@ -191,6 +301,17 @@ function dataAnalysisLesson(): TopicLesson {
       {
         title: 'Order: how to read a chart',
         tip: 'There is a reliable routine for every data question. Put the steps in order.',
+        example: {
+          problem: 'Worked example: the routine for "how many more units sold in Mar than Jan?"',
+          graph: SALES_BARS,
+          steps: [
+            'First read the title and axis labels (months vs. units sold).',
+            'Then find the two bars asked about: Mar (40) and Jan (25).',
+            'Finally do the math: 40 − 25 = 15.',
+          ],
+          satStrategy:
+            'Every chart question follows the same order — orient (labels), locate (the data points), then calculate. Never skip straight to the math.',
+        },
         challenge: {
           kind: 'order',
           prompt: 'Tap the steps in the order you should read any chart.',
@@ -216,6 +337,16 @@ function grammarLesson(): TopicLesson {
       {
         title: 'Comma before FANBOYS',
         tip: 'When you join two complete sentences with for, and, nor, but, or, yet, so, put a comma before the conjunction.',
+        example: {
+          problem: 'Worked example: combine "I studied hard" and "I passed the test."',
+          steps: [
+            'Both parts are complete sentences (each has a subject + verb).',
+            'Choose a FANBOYS conjunction to join them: "and".',
+            'Put a comma before it → "I studied hard, and I passed the test."',
+          ],
+          satStrategy:
+            'On the SAT, test each half: if both sides can stand alone, a FANBOYS join needs a comma before the conjunction.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'Which version is punctuated correctly?',
@@ -232,6 +363,16 @@ function grammarLesson(): TopicLesson {
       {
         title: 'Spot the run-on',
         tip: 'A run-on jams two complete sentences together with no punctuation. Read each half — can it stand alone?',
+        example: {
+          problem: 'Worked example: is "The rain stopped we went outside" correct?',
+          steps: [
+            '"The rain stopped" is a complete sentence.',
+            '"we went outside" is also a complete sentence.',
+            'Two complete sentences with nothing between them = a run-on. Fix it with a period, semicolon, or comma + FANBOYS.',
+          ],
+          satStrategy:
+            'When two complete thoughts collide with no punctuation, it is a run-on. The SAT fix is usually a period or a comma + and/but/so.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'Which sentence is a run-on that needs fixing?',
@@ -248,9 +389,19 @@ function grammarLesson(): TopicLesson {
       {
         title: 'Fix the sentence',
         tip: 'A dependent opener (Because…, Although…, When…) is followed by a comma before the main clause.',
+        example: {
+          problem: 'Worked example: punctuate "When the bell rang ___ the students left."',
+          steps: [
+            '"When the bell rang" is a dependent clause — it cannot stand alone.',
+            'It opens the sentence, so it is followed by a comma.',
+            'Result: "When the bell rang, the students left."',
+          ],
+          satStrategy:
+            'If a sentence starts with Because/Although/When/If, expect a comma right before the main clause begins.',
+        },
         challenge: {
           kind: 'fill-blank',
-          prompt: 'Pick the word that correctly completes the sentence.',
+          prompt: 'Pick the punctuation that correctly completes the sentence.',
           template: 'Because it rained ___ the game was canceled.',
           options: [', (comma)', '; (semicolon)', 'nothing', ': (colon)'],
           correct: ', (comma)',
@@ -260,6 +411,16 @@ function grammarLesson(): TopicLesson {
       {
         title: 'Order: build a correct sentence',
         tip: 'A clear sentence often runs: opener → main subject + verb → detail. Sequence the parts.',
+        example: {
+          problem: 'Worked example: order the parts "and rested." / "After the long flight," / "the team checked in"',
+          steps: [
+            'The introductory phrase comes first: "After the long flight,".',
+            'Then the main clause (subject + verb): "the team checked in".',
+            'Then the added detail: "and rested." → "After the long flight, the team checked in and rested."',
+          ],
+          satStrategy:
+            'The SAT rewards the natural order: introductory phrase (with comma), then the main subject-verb, then extra detail.',
+        },
         challenge: {
           kind: 'order',
           prompt: 'Tap the parts in order to build a correct sentence.',
@@ -282,12 +443,26 @@ function grammarLesson(): TopicLesson {
 const REEF_PASSAGE =
   'Dr. Amina Lin spent two decades studying coral reefs in the South Pacific. Early in her career, most researchers measured reef health by counting fish from boats. Lin instead built low-cost underwater sensors that recorded temperature and acidity every hour, a method now used by reef labs around the world. Critics first doubted the tiny devices would survive storms. Today she mentors students from a dozen countries.'
 
+const GARDEN_PASSAGE =
+  'When the city paved over its last empty lot, neighbors worried the block had lost its only green space. Then Mr. Okafor proposed a rooftop garden above the old library. Volunteers hauled soil up five flights of stairs every weekend. Within a year, the rooftop produced enough vegetables to stock a small food pantry. The project has since inspired three nearby buildings to start gardens of their own.'
+
 function readingEvidenceLesson(): TopicLesson {
   return {
     targets: [
       {
         title: 'Find the proof line',
         tip: 'The right answer is always backed by a specific line. Highlight the exact sentence that proves it instead of trusting your gut.',
+        example: {
+          problem:
+            'Worked example: which line proves Mr. Okafor’s garden helped the community? Passage: "…Within a year, the rooftop produced enough vegetables to stock a small food pantry…"',
+          steps: [
+            'Restate the claim: the garden helped the community.',
+            'Scan for a line that directly shows a community benefit.',
+            '"produced enough vegetables to stock a small food pantry" is concrete proof — pick the line, don’t paraphrase.',
+          ],
+          satStrategy:
+            'For "which choice best supports" questions, the answer must contain literal proof. Find the sentence first, then match it to a choice.',
+        },
         challenge: {
           kind: 'highlight',
           prompt:
@@ -302,7 +477,18 @@ function readingEvidenceLesson(): TopicLesson {
       },
       {
         title: 'Identify key words',
-        tip: 'Strong evidence often contains signal words — "now used," "first," "because," or strong opinion words. Highlight the line that signals impact.',
+        tip: 'Strong evidence often contains signal words — "now used," "first," "because," or strong opinion words. Highlight the line that signals the idea.',
+        example: {
+          problem:
+            'Worked example: which line signals that the garden inspired others? Passage: "…has since inspired three nearby buildings to start gardens of their own."',
+          steps: [
+            'Underline signal words that show influence: "inspired".',
+            'That word links the project to a result for others.',
+            'Highlight the whole sentence containing the signal word.',
+          ],
+          satStrategy:
+            'Signal words (inspired, doubted, because, however) point straight at the evidence. Hunt for them instead of re-reading everything.',
+        },
         challenge: {
           kind: 'highlight',
           prompt:
@@ -316,9 +502,20 @@ function readingEvidenceLesson(): TopicLesson {
       {
         title: 'Main idea',
         tip: 'The main idea is what the whole passage is mostly about — not one small detail. Ask: who is this about, and what is the point?',
+        example: {
+          problem: 'Worked example: what is the main idea of the rooftop-garden passage?',
+          graph: undefined,
+          steps: [
+            'Ask who/what it is about: a rooftop garden started by Mr. Okafor.',
+            'Ask what the point is: it replaced lost green space and helped the community.',
+            'Combine: "A resident’s rooftop garden restored green space and benefited the neighborhood." Avoid choices about one tiny detail.',
+          ],
+          satStrategy:
+            'Right main-idea answers cover the whole passage. Eliminate choices that are true but only about a single sentence.',
+        },
         challenge: {
           kind: 'mc',
-          prompt: 'Which statement best captures the main idea of the passage?',
+          prompt: 'Which statement best captures the main idea of the reef passage?',
           choices: [
             'Dr. Lin pioneered a new, widely adopted way to monitor coral reefs.',
             'Coral reefs are found only in the South Pacific.',
@@ -332,9 +529,19 @@ function readingEvidenceLesson(): TopicLesson {
       {
         title: 'Inference from evidence',
         tip: 'An inference is a conclusion the text supports without stating outright. Stay close to the evidence — do not over-reach.',
+        example: {
+          problem: 'Worked example: what can you infer about the rooftop garden’s volunteers?',
+          steps: [
+            'Find the evidence: they "hauled soil up five flights of stairs every weekend".',
+            'Stay close to the text — repeated hard work over time.',
+            'Reasonable inference: the volunteers were dedicated. Avoid extremes like "they were paid" (not supported).',
+          ],
+          satStrategy:
+            'A correct inference is one small, safe step beyond the text. If you need outside facts or a big leap, it is wrong on the SAT.',
+        },
         challenge: {
           kind: 'mc',
-          prompt: 'Based on the passage, what can you reasonably infer about Lin’s sensors?',
+          prompt: 'Based on the reef passage, what can you reasonably infer about Lin’s sensors?',
           choices: [
             'They proved more durable and useful than critics expected.',
             'They were abandoned after the first storm.',
@@ -359,6 +566,16 @@ function genericMathLesson(): TopicLesson {
       {
         title: 'Translate words into math',
         tip: 'Turn each phrase into a symbol: "is" → =, "more than" → +, "of" → ×. Build the equation, then solve.',
+        example: {
+          problem: 'Worked example: "4 more than three times a number is 19." Write the equation.',
+          steps: [
+            '"three times a number" → 3x.',
+            '"4 more than 3x" → 3x + 4.',
+            '"is 19" → = 19.  Equation: 3x + 4 = 19.',
+          ],
+          satStrategy:
+            'Translate one phrase at a time, left to right. Convert the words to symbols before doing any arithmetic.',
+        },
         challenge: {
           kind: 'mc',
           prompt: '"5 more than twice a number is 17." Which equation is correct?',
@@ -370,6 +587,16 @@ function genericMathLesson(): TopicLesson {
       {
         title: 'Solve step by step',
         tip: 'Isolate the variable: undo addition first, then multiplication.',
+        example: {
+          problem: 'Worked example: solve 3x + 4 = 19.',
+          steps: [
+            'Subtract 4 from both sides → 3x = 15.',
+            'Divide both sides by 3 → x = 5.',
+            'Check: 3(5) + 4 = 19. ✓',
+          ],
+          satStrategy:
+            'Undo constants before coefficients, and verify by plugging your answer back in — the SAT often lists tempting wrong values.',
+        },
         challenge: {
           kind: 'mc',
           prompt: 'Solve 2x + 5 = 17. What is x?',
@@ -381,6 +608,16 @@ function genericMathLesson(): TopicLesson {
       {
         title: 'Order the steps',
         tip: 'Sequence matters when solving equations.',
+        example: {
+          problem: 'Worked example: solve 3x − 6 = 9 in order.',
+          steps: [
+            'Start: 3x − 6 = 9.',
+            'Add 6 to both sides → 3x = 15.',
+            'Divide by 3 → x = 5.',
+          ],
+          satStrategy:
+            'Move the constant first, then divide off the coefficient. Doing it out of order causes most careless mistakes.',
+        },
         challenge: {
           kind: 'order',
           prompt: 'Tap the steps in order to solve 4x − 3 = 9.',
@@ -391,6 +628,16 @@ function genericMathLesson(): TopicLesson {
       {
         title: 'Check your answer',
         tip: 'Plug your answer back in to confirm both sides match.',
+        example: {
+          problem: 'Worked example: verify x = 5 solves 3x + 4 = 19.',
+          steps: [
+            'Substitute x = 5 into the left side: 3(5) + 4.',
+            'Simplify: 15 + 4 = 19.',
+            '19 equals the right side, so x = 5 checks out. ✓',
+          ],
+          satStrategy:
+            'When unsure, plug the answer choices back into the original equation — the one that makes both sides equal is correct.',
+        },
         challenge: {
           kind: 'fill-blank',
           prompt: 'Check x = 3 in 4x − 3: 4(3) − 3 = ___',

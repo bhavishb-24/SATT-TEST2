@@ -16,6 +16,9 @@ export function TopicLesson({ lesson, completed, onComplete }: Props) {
   // Index of the target currently being worked on. When completed, jump to the
   // end-state summary.
   const [current, setCurrent] = useState(completed ? targets.length : 0)
+  // Each target runs as a mini-lesson: 'learn' shows the tip + worked example,
+  // 'practice' shows the hands-on challenge.
+  const [phase, setPhase] = useState<'learn' | 'practice'>('learn')
 
   const allDone = current >= targets.length
 
@@ -25,6 +28,7 @@ export function TopicLesson({ lesson, completed, onComplete }: Props) {
       onComplete()
     } else {
       setCurrent((c) => c + 1)
+      setPhase('learn')
     }
   }
 
@@ -40,7 +44,10 @@ export function TopicLesson({ lesson, completed, onComplete }: Props) {
         </p>
         <button
           type="button"
-          onClick={() => setCurrent(0)}
+          onClick={() => {
+            setCurrent(0)
+            setPhase('learn')
+          }}
           className="mt-1 text-xs font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-300"
         >
           Review the targets again
@@ -76,22 +83,89 @@ export function TopicLesson({ lesson, completed, onComplete }: Props) {
         })}
       </div>
 
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <span className="ti ti-target-arrow text-primary" aria-hidden="true" />
-        Target {current + 1} of {targets.length}: {target.title}
-      </p>
-
-      {/* Tip banner */}
-      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-        <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
-          <span className="ti ti-bulb" aria-hidden="true" />
-          Learning tip
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="ti ti-target-arrow text-primary" aria-hidden="true" />
+          Target {current + 1} of {targets.length}: {target.title}
         </p>
-        <p className="text-sm leading-relaxed text-foreground">{target.tip}</p>
+        {/* Mini step indicator: Learn → Practice */}
+        <div className="flex shrink-0 items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
+          <span className={phase === 'learn' ? 'text-primary' : 'text-muted-foreground'}>Learn</span>
+          <span className="ti ti-chevron-right text-muted-foreground" aria-hidden="true" />
+          <span className={phase === 'practice' ? 'text-primary' : 'text-muted-foreground'}>Practice</span>
+        </div>
       </div>
 
-      {/* Challenge — keyed so all internal state resets between targets */}
-      <ChallengeView key={current} challenge={target.challenge} onSolved={handleSolved} last={current + 1 >= targets.length} />
+      {phase === 'learn' ? (
+        <div className="flex flex-col gap-4">
+          {/* Tip banner */}
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+              <span className="ti ti-bulb" aria-hidden="true" />
+              Learning tip
+            </p>
+            <p className="text-sm leading-relaxed text-foreground">{target.tip}</p>
+          </div>
+
+          {/* Worked example */}
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-foreground">
+              <span className="ti ti-pencil text-primary" aria-hidden="true" />
+              Worked example
+            </p>
+            <p className="mb-3 text-sm font-medium leading-relaxed text-foreground">
+              {target.example.problem}
+            </p>
+            {target.example.graph && (
+              <div className="mb-3 flex justify-center">
+                <LessonGraph data={target.example.graph} />
+              </div>
+            )}
+            <ol className="flex flex-col gap-2">
+              {target.example.steps.map((step, i) => (
+                <li key={i} className="flex gap-2 text-sm leading-relaxed text-foreground">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                    {i + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-3 flex gap-2 rounded-lg bg-primary/5 p-3">
+              <span className="ti ti-bookmark mt-0.5 text-primary" aria-hidden="true" />
+              <p className="text-sm leading-relaxed text-foreground">
+                <span className="font-bold">On the SAT: </span>
+                {target.example.satStrategy}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setPhase('practice')}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+          >
+            Try the practice question
+            <span className="ti ti-arrow-right" aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* Compact tip reminder during practice */}
+          <div className="flex gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+            <span className="ti ti-bulb mt-0.5 text-primary" aria-hidden="true" />
+            <p className="text-xs leading-relaxed text-foreground">{target.tip}</p>
+          </div>
+
+          {/* Challenge — keyed so all internal state resets between targets */}
+          <ChallengeView
+            key={current}
+            challenge={target.challenge}
+            onSolved={handleSolved}
+            last={current + 1 >= targets.length}
+          />
+        </div>
+      )}
     </div>
   )
 }
