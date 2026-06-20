@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import type {
   DashboardView,
+  DiagnosticRecord,
   PlanResponse,
   PlanTopic,
   TriageData,
@@ -23,6 +24,7 @@ import { ProgressView } from './progress-view'
 import { StudyPlan } from '../study-plan'
 import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
+import { PostDiagnostic } from '../post-diagnostic'
 
 interface DashboardProps {
   triage: TriageData
@@ -35,6 +37,14 @@ interface DashboardProps {
   onComplete: (topicName: string, confident: boolean) => void
   onReorder: (index: number, dir: -1 | 1) => void
   onActiveStep: (text: string) => void
+  /** The original pre-plan diagnostic, used as the comparison baseline. */
+  preDiagnostic: DiagnosticRecord | null
+  /** The most recent post-plan diagnostic, if any. */
+  postDiagnostic: DiagnosticRecord | null
+  /** Persist a completed post-plan diagnostic. */
+  onSavePostDiagnostic: (record: DiagnosticRecord) => void
+  /** Rebuild the study plan from a diagnostic record. */
+  onRebuildPlan: (record: DiagnosticRecord) => void
 }
 
 const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
@@ -59,8 +69,14 @@ export function Dashboard({
   onComplete,
   onReorder,
   onActiveStep,
+  preDiagnostic,
+  postDiagnostic,
+  onSavePostDiagnostic,
+  onRebuildPlan,
 }: DashboardProps) {
   const [view, setView] = useState<DashboardView>('home')
+  // Full-screen post-plan progress check overlay.
+  const [postDiagnosticOpen, setPostDiagnosticOpen] = useState(false)
   // The interactive product tour auto-starts the first time the dashboard loads.
   const [tourActive, setTourActive] = useState(true)
   const finishTour = useCallback(() => setTourActive(false), [])
@@ -173,6 +189,8 @@ export function Dashboard({
                 topics={topics}
                 completedTopics={completed}
                 onContinue={() => setView('morning')}
+                onStartPostDiagnostic={() => setPostDiagnosticOpen(true)}
+                hasPostDiagnostic={!!postDiagnostic}
               />
             )}
 
@@ -186,6 +204,20 @@ export function Dashboard({
       <MobileNav active={view} onNavigate={setView} theme={theme} />
 
       {tourActive && <DashboardTour onNavigate={setView} onFinish={finishTour} />}
+
+      {postDiagnosticOpen && (
+        <PostDiagnostic
+          pre={preDiagnostic}
+          triage={triage}
+          theme={theme}
+          onClose={() => setPostDiagnosticOpen(false)}
+          onSaved={onSavePostDiagnostic}
+          onRebuildPlan={(record) => {
+            setPostDiagnosticOpen(false)
+            onRebuildPlan(record)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -9,18 +9,34 @@ import { MathText } from '@/components/sat/math-text'
 import { DesmosPanel } from '@/components/sat/desmos-panel'
 import { ReportQuestionModal } from '@/components/sat/report-question-modal'
 
-const MATH_COUNT = 15
-const RW_COUNT = 15
-const QUESTION_COUNT = MATH_COUNT + RW_COUNT
+const DEFAULT_MATH_COUNT = 15
+const DEFAULT_RW_COUNT = 15
 
 interface Props {
   triage: TriageData
   theme: PanicTheme
   onComplete: (results: DiagnosticResult[]) => void
   onSkip?: () => void
+  /** Number of Math questions (default 15). */
+  mathCount?: number
+  /** Number of Reading & Writing questions (default 15). */
+  rwCount?: number
+  /** Override the heading shown at the top of the test. */
+  title?: string
 }
 
-export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
+export function DiagnosticTest({
+  triage,
+  theme,
+  onComplete,
+  onSkip,
+  mathCount = DEFAULT_MATH_COUNT,
+  rwCount = DEFAULT_RW_COUNT,
+  title = 'Diagnostic test',
+}: Props) {
+  const MATH_COUNT = mathCount
+  const RW_COUNT = rwCount
+  const QUESTION_COUNT = MATH_COUNT + RW_COUNT
   const [questions, setQuestions] = useState<PracticeQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [index, setIndex] = useState(0)
@@ -66,17 +82,30 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
           if (mathQs[i]) merged.push(mathQs[i])
           if (rwQs[i]) merged.push(rwQs[i])
         }
-        const qs = merged.slice(0, QUESTION_COUNT)
+        let qs = merged.slice(0, QUESTION_COUNT)
+        // Top up with fallback questions (deduped by id) if the AI returned
+        // fewer than we need — important for the larger post-plan diagnostic.
+        if (qs.length < QUESTION_COUNT) {
+          const seen = new Set(qs.map((q) => q.id))
+          for (const fb of diagnosticFallback(MATH_COUNT, RW_COUNT)) {
+            if (qs.length >= QUESTION_COUNT) break
+            if (!seen.has(fb.id)) {
+              qs.push(fb)
+              seen.add(fb.id)
+            }
+          }
+        }
         if (!cancelled) {
-          setQuestions(qs.length >= QUESTION_COUNT ? qs : diagnosticFallback(QUESTION_COUNT))
-          setAnswers(new Array(QUESTION_COUNT).fill(null))
+          setQuestions(qs)
+          setAnswers(new Array(qs.length).fill(null))
           setLoading(false)
         }
       } catch (err) {
         console.log('[v0] diagnostic fetch failed, using fallback:', err)
         if (!cancelled) {
-          setQuestions(diagnosticFallback(QUESTION_COUNT))
-          setAnswers(new Array(QUESTION_COUNT).fill(null))
+          const fb = diagnosticFallback(MATH_COUNT, RW_COUNT)
+          setQuestions(fb)
+          setAnswers(new Array(fb.length).fill(null))
           setLoading(false)
         }
       }
@@ -85,7 +114,7 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
     return () => {
       cancelled = true
     }
-  }, [triage.weakAreas])
+  }, [triage.weakAreas, MATH_COUNT, RW_COUNT, QUESTION_COUNT])
 
 
   if (loading) {
@@ -99,8 +128,7 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
           <div>
             <p className="text-lg font-bold text-foreground">Building your diagnostic</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              30 questions — 15 Math and 15 Reading &amp; Writing — so we can pinpoint exactly
-              where to focus.
+              {`${QUESTION_COUNT} questions — ${MATH_COUNT} Math and ${RW_COUNT} Reading & Writing — so we can pinpoint exactly where to focus.`}
             </p>
           </div>
         </div>
@@ -217,7 +245,7 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="font-serif text-2xl font-normal tracking-tight lg:text-3xl">
-            Diagnostic test
+            {title}
           </h1>
           <div className="flex items-center gap-3">
             {onSkip && (
@@ -243,7 +271,7 @@ export function DiagnosticTest({ triage, theme, onComplete, onSkip }: Props) {
         </div>
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            15 Math + 15 Reading &amp; Writing — be honest, we are finding weak spots, not grading you.
+            {`${MATH_COUNT} Math + ${RW_COUNT} Reading & Writing — be honest, we are finding weak spots, not grading you.`}
           </p>
         </div>
       </header>

@@ -339,6 +339,10 @@ export default function Page() {
           onComplete={handleComplete}
           onReorder={handleReorder}
           onActiveStep={handleActiveStep}
+          preDiagnostic={auth.diagnostic}
+          postDiagnostic={auth.postDiagnostic}
+          onSavePostDiagnostic={auth.savePostDiagnostic}
+          onRebuildPlan={(record) => triage && generatePlan(triage, record)}
         />
       )}
 

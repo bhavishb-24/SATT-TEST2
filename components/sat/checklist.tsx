@@ -11,6 +11,10 @@ interface Props {
   topics: PlanTopic[]
   completedTopics: Set<string>
   onContinue: () => void
+  /** Launch the post-plan progress check (30 Math + 30 R&W). */
+  onStartPostDiagnostic: () => void
+  /** Whether a post-diagnostic has already been completed. */
+  hasPostDiagnostic: boolean
 }
 
 interface CheckItemProps {
@@ -60,7 +64,14 @@ function CheckItem({ label, checked, onToggle, href, auto }: CheckItemProps) {
 }
 
 
-export function Checklist({ triage, topics, completedTopics, onContinue }: Props) {
+export function Checklist({
+  triage,
+  topics,
+  completedTopics,
+  onContinue,
+  onStartPostDiagnostic,
+  hasPostDiagnostic,
+}: Props) {
   const times = deriveTimes(triage.testStartTime)
   const wakeLabel = times?.wakeUpLabel ?? ''
   const sprint = triage.timeBudget === 'sprint'
@@ -235,6 +246,33 @@ export function Checklist({ triage, topics, completedTopics, onContinue }: Props
           )}
         </section>
       )}
+
+      {/* Post-plan progress check */}
+      <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15">
+            <span className="ti ti-progress-check text-xl text-primary" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold text-foreground">
+              {hasPostDiagnostic ? 'Run another progress check' : 'See how far you have come'}
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              Take a fresh 60-question diagnostic (30 Math + 30 Reading &amp; Writing) and we&apos;ll
+              compare it to your very first one — what improved, what you did well, and what to keep
+              studying.
+            </p>
+            <button
+              type="button"
+              onClick={onStartPostDiagnostic}
+              className="mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <span className="ti ti-clipboard-check" aria-hidden="true" />
+              {hasPostDiagnostic ? 'Take a new diagnostic check' : 'Take diagnostic test'}
+            </button>
+          </div>
+        </div>
+      </section>
 
       <button
         type="button"

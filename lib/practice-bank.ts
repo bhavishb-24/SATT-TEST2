@@ -360,16 +360,27 @@ export function fallbackQuestions(
       ? PRACTICE_BANK
       : PRACTICE_BANK.filter((q) => q.section === section)
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  // When more questions are requested than the bank holds (e.g. the 30-per-section
+  // post-diagnostic), cycle through the pool again with suffixed ids so every
+  // question stays unique by id and React keys don't collide.
+  if (count > shuffled.length && shuffled.length > 0) {
+    const out: PracticeQuestion[] = []
+    for (let i = 0; i < count; i++) {
+      const base = shuffled[i % shuffled.length]
+      const pass = Math.floor(i / shuffled.length)
+      out.push(pass === 0 ? base : { ...base, id: `${base.id}-r${pass}` })
+    }
+    return out
+  }
   return shuffled.slice(0, Math.min(count, shuffled.length))
 }
 
 /**
- * A balanced diagnostic set (used when the AI is unavailable).
- * Always 15 Math + 15 Reading & Writing interleaved.
+ * A balanced diagnostic set (used when the AI is unavailable). Defaults to the
+ * 15 Math + 15 Reading & Writing pre-diagnostic, but accepts larger counts for
+ * the post-plan diagnostic (e.g. 30 + 30).
  */
-export function diagnosticFallback(count = 30): PracticeQuestion[] {
-  const mathCount = 15
-  const rwCount = 15
+export function diagnosticFallback(mathCount = 15, rwCount = 15): PracticeQuestion[] {
   const math = fallbackQuestions('Math', mathCount)
   const rw = fallbackQuestions('Reading & Writing', rwCount)
   // Interleave so the test alternates sections.
