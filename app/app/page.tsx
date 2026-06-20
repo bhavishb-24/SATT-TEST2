@@ -185,9 +185,13 @@ export default function Page() {
         diagnosticSummary = `Scored ${record.correct}/${record.total} (Math ${record.mathCorrect}/${record.mathTotal}, R&W ${record.rwCorrect}/${record.rwTotal}). Missed topics: ${missed.join(', ') || 'none'}. Coach-identified weak areas: ${record.review.identified_weak_areas.join(', ') || 'none'}.`
       }
 
-      // Merge diagnostic weak areas into the targeted weak areas.
+      // When rebuilding from a post-diagnostic, its identified weak areas are
+      // fresher and more accurate than the original triage selection, so let
+      // them replace — not just extend — the original list. If there is no
+      // post-diagnostic record yet, fall back to merging both sources.
+      const postWeak = record?.review.identified_weak_areas ?? []
       const mergedWeak = Array.from(
-        new Set([...(data.weakAreas || []), ...(record?.review.identified_weak_areas ?? [])]),
+        new Set(postWeak.length > 0 ? postWeak : [...(data.weakAreas || []), ...postWeak]),
       )
 
       let result: PlanResponse
@@ -218,6 +222,7 @@ export default function Page() {
 
       setResponse(result)
       setTopics(result.plan.topics)
+      setCompleted(new Set())
       setPlanLoading(false)
       setScreen('dashboard')
 

@@ -213,8 +213,10 @@ export function Dashboard({
           onClose={() => setPostDiagnosticOpen(false)}
           onSaved={onSavePostDiagnostic}
           onRebuildPlan={(record) => {
+            // Close the overlay first, then defer one tick so it fully
+            // unmounts before generatePlan transitions the screen to 'loading'.
             setPostDiagnosticOpen(false)
-            onRebuildPlan(record)
+            setTimeout(() => onRebuildPlan(record), 0)
           }}
         />
       )}
