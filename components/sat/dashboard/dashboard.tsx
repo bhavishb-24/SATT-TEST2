@@ -25,6 +25,7 @@ import { StudyPlan } from '../study-plan'
 import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
 import { PostDiagnostic } from '../post-diagnostic'
+import { ScanQuestionModal } from './scan-question-modal'
 
 interface DashboardProps {
   triage: TriageData
@@ -56,6 +57,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   progress: { title: 'Progress', sub: 'Track what you have done' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
+  asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
 }
 
 export function Dashboard({
@@ -201,6 +203,11 @@ export function Dashboard({
             {view === 'morning' && (
               <MorningMode plan={response.plan} triage={triage} />
             )}
+
+            {view === 'asktutor' && (
+              <ScanQuestionModal theme={theme} />
+            )}
+
           </div>
         </main>
       </div>

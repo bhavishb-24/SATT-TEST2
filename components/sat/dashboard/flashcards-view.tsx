@@ -109,7 +109,15 @@ export function FlashcardsView({ theme, onReview, weakAreas = [] }: FlashcardsVi
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-5 text-center">
-        <h2 className="text-xl font-bold text-foreground">Flashcards</h2>
+        <div className="flex items-center justify-center gap-2">
+          <h2 className="text-xl font-bold text-foreground">Flashcards</h2>
+          {aiSource && (
+            <span className="flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <i className="ti ti-sparkles text-[11px]" aria-hidden="true" />
+              AI generated
+            </span>
+          )}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {aiSource && weakAreas.length > 0
             ? `Personalized for your weak areas \u2014 tap to flip`

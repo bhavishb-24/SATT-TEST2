@@ -129,6 +129,7 @@ export type DashboardView =
   | 'progress'
   | 'checklist'
   | 'morning'
+  | 'asktutor'
 
 export interface AppStats {
   topicsCompleted: number

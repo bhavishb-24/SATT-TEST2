@@ -68,6 +68,12 @@ const STEPS: TourStep[] = [
     body: 'Your test-day warm-up to wake your brain up and get in the zone before you walk in.',
   },
   {
+    target: 'nav-asktutor',
+    view: 'asktutor',
+    title: 'Ask AI Tutor',
+    body: "Stuck on a question? Snap a photo and I'll walk you through it Socratic-style — no spoilers, just guidance.",
+  },
+  {
     target: 'panic',
     title: 'Feeling overwhelmed?',
     body: "Tap here any time you're spiraling. I'll walk you through a quick reset so you can refocus.",
