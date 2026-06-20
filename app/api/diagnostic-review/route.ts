@@ -1,5 +1,4 @@
 import { generateText, Output } from 'ai'
-import type { LanguageModel } from 'ai'
 import { z } from 'zod'
 import { textModelChain } from '@/lib/ai-providers'
 
@@ -44,7 +43,7 @@ Analyze the results and return the structured review.`
 }
 
 async function tryModel(
-  model: LanguageModel,
+  model: string,
   label: string,
   prompt: string,
 ): Promise<Review | null> {

@@ -1,5 +1,4 @@
 import { generateText, Output } from 'ai'
-import type { LanguageModel } from 'ai'
 import { z } from 'zod'
 import { buildFallbackPlan } from '@/lib/fallback-plan'
 import { textModelChain } from '@/lib/ai-providers'
@@ -90,7 +89,7 @@ function normalize(plan: StudyPlan, sprint: boolean, sleepLabel: string, wakeLab
 }
 
 async function tryModel(
-  model: LanguageModel,
+  model: string,
   label: string,
   system: string,
   prompt: string,
