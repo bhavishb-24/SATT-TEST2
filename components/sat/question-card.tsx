@@ -138,12 +138,7 @@ export function QuestionCard({
             {question.difficulty}
           </span>
           <span className="text-xs text-muted-foreground">{question.topic}</span>
-          {isAIGenerated && (
-            <span className="flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              <i className="ti ti-sparkles text-[10px]" aria-hidden="true" />
-              AI
-            </span>
-          )}
+
         </div>
         <span className="text-xs font-medium text-muted-foreground tabular-nums">
           Q{questionNumber}

@@ -6,7 +6,7 @@ import { FadeInOnScroll } from '@/components/marketing/fade-in-on-scroll'
 const FAQS = [
   {
     q: 'Is it really free?',
-    a: 'Yes. SAT Emergency Room is completely free to use. There is no account, no credit card, and no paywall. We built it because good last-minute help should not be a luxury.',
+    a: 'Yes. SAT Sage is completely free to use. There is no account, no credit card, and no paywall. We built it because good last-minute help should not be a luxury.',
   },
   {
     q: 'Do I need to create an account?',

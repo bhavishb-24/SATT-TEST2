@@ -318,14 +318,6 @@ export function DiagnosticTest({
           <span className="text-xs text-muted-foreground">·</span>
           <span className="text-xs font-medium text-muted-foreground">{current.difficulty}</span>
 
-          {/* AI generated badge */}
-          {isAIGenerated && (
-            <span className="flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              <i className="ti ti-sparkles text-[10px]" aria-hidden="true" />
-              AI Generated
-            </span>
-          )}
-
           {/* Spacer */}
           <div className="ml-auto flex items-center gap-1.5">
             {/* Report button */}

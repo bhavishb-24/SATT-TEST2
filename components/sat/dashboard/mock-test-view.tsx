@@ -121,10 +121,6 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-foreground">Mock Tests</h2>
-                <span className="flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  <i className="ti ti-sparkles text-[10px]" aria-hidden="true" />
-                  AI generated
-                </span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Full-length, SAT-style practice tests to take when you&apos;re ready

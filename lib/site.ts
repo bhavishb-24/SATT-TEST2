@@ -1,6 +1,6 @@
 export const SITE = {
-  name: 'SAT Emergency Room',
-  shortName: 'SAT ER',
+  name: 'SAT Sage',
+  shortName: 'SAT Sage',
   tagline: 'Your free last-minute SAT coach',
   appPath: '/app',
   supportEmail: 'help@satemergencyroom.com',

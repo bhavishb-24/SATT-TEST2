@@ -5,7 +5,7 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'How SAT Emergency Room handles your data. Short version: no account, no selling data, and your answers stay in your browser.',
+    'How SAT Sage handles your data. Short version: no account, no selling data, and your answers stay in your browser.',
 }
 
 export default function PrivacyPage() {

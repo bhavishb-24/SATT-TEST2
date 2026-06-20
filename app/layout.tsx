@@ -15,17 +15,17 @@ const instrumentSerif = Instrument_Serif({
   style: ['normal', 'italic'],
 })
 
-const SITE_URL = 'https://sat-emergency-room.vercel.app'
+const SITE_URL = 'https://sat-sage.vercel.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'SAT Emergency Room — Your free last-minute SAT coach',
-    template: '%s — SAT Emergency Room',
+    default: 'SAT Sage — Your free last-minute SAT coach',
+    template: '%s — SAT Sage',
   },
   description:
     'A free, AI-powered SAT study coach for the night before the test. Get a personalized plan, practice drills, formulas, and a calm path from panic to ready — no sign-up required.',
-  applicationName: 'SAT Emergency Room',
+  applicationName: 'SAT Sage',
   keywords: [
     'SAT prep',
     'last minute SAT',
@@ -35,19 +35,19 @@ export const metadata: Metadata = {
     'SAT practice',
     'SAT formulas',
   ],
-  authors: [{ name: 'SAT Emergency Room' }],
+  authors: [{ name: 'SAT Sage' }],
   openGraph: {
     type: 'website',
     url: SITE_URL,
-    title: 'SAT Emergency Room — Your free last-minute SAT coach',
+    title: 'SAT Sage — Your free last-minute SAT coach',
     description:
       'Wealthy students hire a tutor the night before. Now you have one too — free. A calm, personalized plan to go from panic to ready.',
-    siteName: 'SAT Emergency Room',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SAT Emergency Room' }],
+    siteName: 'SAT Sage',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SAT Sage' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SAT Emergency Room — Your free last-minute SAT coach',
+    title: 'SAT Sage — Your free last-minute SAT coach',
     description:
       'A free, AI-powered SAT coach for the night before the test. From panic to a clear plan.',
     images: ['/og-image.png'],

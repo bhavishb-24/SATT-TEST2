@@ -54,14 +54,13 @@ export function deriveTimes(testStartTime: string): DerivedTimes | null {
 }
 
 // Returns the next Date today/tomorrow for a target minutes-of-day, relative to now.
-// The sleep deadline is the evening before the test, so we anchor it to "tonight".
+// Uses the browser's local time so the countdown reflects the user's actual clock.
 export function nextOccurrence(targetMinutes: number, now: Date): Date {
   const d = new Date(now)
   const normalized = ((targetMinutes % 1440) + 1440) % 1440
   d.setHours(Math.floor(normalized / 60), normalized % 60, 0, 0)
-  // For a late-night study session, the sleep deadline (e.g. 11pm) is today;
-  // an early wake-up (e.g. 7am) is tomorrow.
-  if (d.getTime() < now.getTime() - 2 * 60 * 60 * 1000) {
+  // If the target time has already passed today, count down to tomorrow.
+  if (d.getTime() <= now.getTime()) {
     d.setDate(d.getDate() + 1)
   }
   return d

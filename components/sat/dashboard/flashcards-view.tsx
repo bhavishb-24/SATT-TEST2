@@ -172,12 +172,7 @@ export function FlashcardsView({ theme, onReview, weakAreas = [] }: FlashcardsVi
               Card {index + 1} of {total}
             </span>
             <span className="flex items-center gap-3">
-              {aiSource && (
-                <span className={cn('flex items-center gap-1 font-medium', theme.accentText)}>
-                  <i className="ti ti-sparkles" aria-hidden="true" />
-                  AI
-                </span>
-              )}
+
               <span className="text-emerald-600 dark:text-emerald-400">
                 {known} known
               </span>
