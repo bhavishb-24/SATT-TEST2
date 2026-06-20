@@ -23,6 +23,11 @@ interface Props {
   rwCount?: number
   /** Override the heading shown at the top of the test. */
   title?: string
+  /**
+   * When provided, bypass the AI fetch entirely and use these questions
+   * directly — used by the post-diagnostic to guarantee specific questions.
+   */
+  questionBank?: PracticeQuestion[]
 }
 
 export function DiagnosticTest({
@@ -33,6 +38,7 @@ export function DiagnosticTest({
   mathCount = DEFAULT_MATH_COUNT,
   rwCount = DEFAULT_RW_COUNT,
   title = 'Diagnostic test',
+  questionBank,
 }: Props) {
   const MATH_COUNT = mathCount
   const RW_COUNT = rwCount
@@ -55,6 +61,15 @@ export function DiagnosticTest({
   const promptRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // When a fixed question bank is supplied (e.g. post-diagnostic), skip the
+    // AI fetch entirely and load those questions immediately.
+    if (questionBank && questionBank.length > 0) {
+      setQuestions(questionBank)
+      setAnswers(new Array(questionBank.length).fill(null))
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
     async function fetchSection(
       section: 'Math' | 'Reading & Writing',
@@ -114,7 +129,7 @@ export function DiagnosticTest({
     return () => {
       cancelled = true
     }
-  }, [triage.weakAreas, MATH_COUNT, RW_COUNT, QUESTION_COUNT])
+  }, [triage.weakAreas, MATH_COUNT, RW_COUNT, QUESTION_COUNT, questionBank])
 
 
   if (loading) {

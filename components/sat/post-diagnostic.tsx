@@ -12,6 +12,7 @@ import { compareDiagnostics } from '@/lib/diagnostic-compare'
 import { cn } from '@/lib/utils'
 import { DiagnosticTest } from './diagnostic-test'
 import { DiagnosticComparison } from './diagnostic-comparison'
+import { POST_DIAGNOSTIC_BANK } from '@/lib/post-diagnostic-bank'
 
 const POST_MATH_COUNT = 30
 const POST_RW_COUNT = 30
@@ -177,6 +178,7 @@ export function PostDiagnostic({
           mathCount={POST_MATH_COUNT}
           rwCount={POST_RW_COUNT}
           title="Progress check"
+          questionBank={POST_DIAGNOSTIC_BANK}
           onComplete={handleComplete}
           onSkip={onClose}
         />
