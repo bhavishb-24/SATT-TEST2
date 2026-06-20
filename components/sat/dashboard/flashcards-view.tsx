@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Flashcard, Section } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { FLASHCARDS } from '@/lib/flashcard-data'
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 interface FlashcardsViewProps {
   theme: PanicTheme
   onReview: (known: boolean) => void
+  weakAreas?: string[]
 }
 
 type Filter = Section | 'All'
@@ -17,13 +18,43 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
-export function FlashcardsView({ theme, onReview }: FlashcardsViewProps) {
+export function FlashcardsView({ theme, onReview, weakAreas = [] }: FlashcardsViewProps) {
   const [filter, setFilter] = useState<Filter>('All')
   const [deck, setDeck] = useState<Flashcard[]>(() => shuffle(FLASHCARDS))
+  const [loading, setLoading] = useState(true)
+  const [aiSource, setAiSource] = useState(false)
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [known, setKnown] = useState(0)
   const [reviewing, setReviewing] = useState(0)
+
+  // Fetch AI-generated flashcards tailored to the student's weak areas.
+  useEffect(() => {
+    let cancelled = false
+    async function fetchCards() {
+      try {
+        const res = await fetch('/api/flashcards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ weakAreas, section: 'Both', count: 24 }),
+        })
+        if (!res.ok) throw new Error(`status ${res.status}`)
+        const data = await res.json()
+        if (!cancelled && data.flashcards?.length > 0) {
+          setDeck(shuffle(data.flashcards))
+          setAiSource(data.source === 'ai')
+        }
+      } catch {
+        // Silently fall back to the static bank already set as default state.
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchCards()
+    return () => { cancelled = true }
+  // Only fetch once on mount — weakAreas doesn't change during the session.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const filteredDeck = useMemo(() => {
     return filter === 'All' ? deck : deck.filter((c) => c.section === filter)
@@ -35,7 +66,6 @@ export function FlashcardsView({ theme, onReview }: FlashcardsViewProps) {
 
   function rebuild(newFilter: Filter) {
     setFilter(newFilter)
-    setDeck(shuffle(FLASHCARDS))
     setIndex(0)
     setFlipped(false)
     setKnown(0)
@@ -51,11 +81,29 @@ export function FlashcardsView({ theme, onReview }: FlashcardsViewProps) {
   }
 
   function restart() {
-    setDeck(shuffle(FLASHCARDS))
+    setDeck(shuffle(deck))
     setIndex(0)
     setFlipped(false)
     setKnown(0)
     setReviewing(0)
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-xl">
+        <div className="mb-5 text-center">
+          <h2 className="text-xl font-bold text-foreground">Flashcards</h2>
+        </div>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-12 text-center">
+          <i className={cn('ti ti-loader-2 animate-spin text-3xl', theme.accentText)} aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">
+            {weakAreas.length > 0
+              ? `Building cards for your weak areas\u2026`
+              : 'Loading flashcards\u2026'}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -63,7 +111,9 @@ export function FlashcardsView({ theme, onReview }: FlashcardsViewProps) {
       <div className="mb-5 text-center">
         <h2 className="text-xl font-bold text-foreground">Flashcards</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap a card to flip. Rate yourself to track what you know.
+          {aiSource && weakAreas.length > 0
+            ? `Personalized for your weak areas \u2014 tap to flip`
+            : 'Tap a card to flip. Rate yourself to track what you know.'}
         </p>
       </div>
 
@@ -101,7 +151,7 @@ export function FlashcardsView({ theme, onReview }: FlashcardsViewProps) {
           </div>
           <h3 className="mt-4 text-lg font-bold text-foreground">Deck complete</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {known} known · {reviewing} to review
+            {known} known &middot; {reviewing} to review
           </p>
           <button
             type="button"
@@ -122,6 +172,12 @@ export function FlashcardsView({ theme, onReview }: FlashcardsViewProps) {
               Card {index + 1} of {total}
             </span>
             <span className="flex items-center gap-3">
+              {aiSource && (
+                <span className={cn('flex items-center gap-1 font-medium', theme.accentText)}>
+                  <i className="ti ti-sparkles" aria-hidden="true" />
+                  AI
+                </span>
+              )}
               <span className="text-emerald-600 dark:text-emerald-400">
                 {known} known
               </span>

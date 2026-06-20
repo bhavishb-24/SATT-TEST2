@@ -176,7 +176,11 @@ export function Dashboard({
             )}
 
             {view === 'flashcards' && (
-              <FlashcardsView theme={theme} onReview={statsApi.recordFlashcard} />
+              <FlashcardsView
+                theme={theme}
+                onReview={statsApi.recordFlashcard}
+                weakAreas={triage.weakAreas}
+              />
             )}
 
             {view === 'progress' && (
