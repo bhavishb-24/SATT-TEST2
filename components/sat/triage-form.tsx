@@ -192,7 +192,7 @@ export function TriageForm({ onSubmit }: Props) {
           value={panic}
           onChange={(e) => setPanic(Number(e.target.value))}
           aria-label="Panic level from 1 to 5"
-          className="range-slider"
+          className="range-slider transition-all duration-200"
           style={{ '--range-fill': `${((panic - 1) / 4) * 100}%` } as React.CSSProperties}
         />
         <div className="mt-1 flex justify-between text-xs text-muted-foreground">
@@ -200,7 +200,9 @@ export function TriageForm({ onSubmit }: Props) {
           <span>Pretty stressed</span>
           <span>Full panic</span>
         </div>
-        <p className={`mt-3 text-sm font-semibold ${theme.accentText}`}>{theme.label}</p>
+        <p className={`mt-3 text-sm font-semibold transition-all duration-300 ease-out ${theme.accentText}`}>
+          {theme.label}
+        </p>
         {theme.urgentCopy && (
           <p className="mt-1 text-sm font-bold text-red-600 dark:text-red-400">
             {theme.urgentCopy}
