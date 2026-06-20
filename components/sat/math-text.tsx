@@ -23,11 +23,11 @@ function parse(input: string): Segment[] {
   // Order matters: try display first (\[ \]), then inline (\( \)), then $…$
   // Use [\s\S] instead of . with the s flag so we stay ES2017-compatible.
   //
-  // The $…$ branch intentionally excludes currency patterns: we require that
-  // the opening $ is NOT immediately followed by a digit (e.g. $63, $10).
-  // Real LaTeX inline math like $x^2$ or $\frac{1}{2}$ starts with a letter,
-  // backslash, or operator — never a bare digit used for money.
-  const pattern = /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$(?!\d)([^$\n]+?)\$/g
+  // The $…$ branch uses two guards to avoid matching currency strings:
+  //   1. (?!\d)  — opening $ must NOT be immediately followed by a digit ($63, $10)
+  //   2. (?<!\d) — closing $ must NOT be immediately preceded by a digit ($27, $50)
+  // Real LaTeX inline math like $x^2$ or $\frac{1}{2}$ satisfies both guards.
+  const pattern = /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$(?!\d)([^$\n]+?)(?<!\d)\$/g
   const segments: Segment[] = []
   let last = 0
   for (const match of input.matchAll(pattern)) {
