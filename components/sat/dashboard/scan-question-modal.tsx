@@ -391,7 +391,7 @@ export function ScanQuestionModal({ theme }: ScanQuestionModalProps) {
             <i className="ti ti-send-2 text-base" aria-hidden="true" />
           </button>
         </div>
-        <div className="mt-2 text-center">
+        <div className="mt-2 flex items-center justify-between gap-2">
           <button
             onClick={requestAnswer}
             disabled={streaming}
@@ -399,6 +399,10 @@ export function ScanQuestionModal({ theme }: ScanQuestionModalProps) {
           >
             Just show me the answer
           </button>
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <i className="ti ti-alert-triangle text-[11px]" aria-hidden="true" />
+            AI can make mistakes &mdash; always double-check
+          </span>
         </div>
       </div>
     </div>
