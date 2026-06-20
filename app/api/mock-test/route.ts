@@ -1,4 +1,5 @@
 import { generateText, Output } from 'ai'
+import type { LanguageModel } from 'ai'
 import { z } from 'zod'
 import { buildMockTests } from '@/lib/mock-test-bank'
 import { textModelChain } from '@/lib/ai-providers'
@@ -48,7 +49,7 @@ function normalizeSection(raw: string): Section {
 }
 
 async function tryModel(
-  model: string,
+  model: LanguageModel,
   label: string,
 ): Promise<PracticeQuestion[] | null> {
   try {

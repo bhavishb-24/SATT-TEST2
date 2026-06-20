@@ -1,4 +1,5 @@
 import { generateText, Output } from 'ai'
+import type { LanguageModel } from 'ai'
 import { z } from 'zod'
 import { fallbackQuestions } from '@/lib/practice-bank'
 import { textModelChain } from '@/lib/ai-providers'
@@ -38,7 +39,7 @@ Return them in the structured format requested.`
 }
 
 async function tryModel(
-  model: string,
+  model: LanguageModel,
   label: string,
   prompt: string,
 ): Promise<PracticeQuestion[] | null> {
