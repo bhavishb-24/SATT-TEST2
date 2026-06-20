@@ -1,6 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { cn } from '@/lib/utils'
 import type { PanicTheme } from '@/lib/theme'
 
@@ -320,12 +323,22 @@ export function ScanQuestionModal({ theme }: ScanQuestionModalProps) {
                 )}
               >
                 {msg.content ? (
-                  msg.content.split('\n').map((line, j) => (
-                    <span key={j}>
-                      {line}
-                      {j < msg.content.split('\n').length - 1 && <br />}
-                    </span>
-                  ))
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal space-y-1">{children}</ol>,
+                      ul: ({ children }) => <ul className="mb-2 ml-4 list-disc space-y-1">{children}</ul>,
+                      li: ({ children }) => <li>{children}</li>,
+                      code: ({ children }) => (
+                        <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">{children}</code>
+                      ),
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
                 ) : (
                   <span className="flex items-center gap-1" aria-label="Thinking">
                     {[0, 1, 2].map((d) => (
