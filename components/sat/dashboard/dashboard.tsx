@@ -57,6 +57,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   progress: { title: 'Progress', sub: 'Track what you have done' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
+  asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
 }
 
 export function Dashboard({
@@ -78,8 +79,6 @@ export function Dashboard({
   const [view, setView] = useState<DashboardView>('home')
   // Full-screen post-plan progress check overlay.
   const [postDiagnosticOpen, setPostDiagnosticOpen] = useState(false)
-  // "Stuck? Scan it" question scanner modal.
-  const [scanOpen, setScanOpen] = useState(false)
   // The interactive product tour auto-starts the first time the dashboard loads.
   const [tourActive, setTourActive] = useState(true)
   const finishTour = useCallback(() => setTourActive(false), [])
@@ -204,6 +203,11 @@ export function Dashboard({
             {view === 'morning' && (
               <MorningMode plan={response.plan} triage={triage} />
             )}
+
+            {view === 'asktutor' && (
+              <ScanQuestionModal theme={theme} />
+            )}
+
           </div>
         </main>
       </div>
@@ -211,25 +215,6 @@ export function Dashboard({
       <MobileNav active={view} onNavigate={setView} theme={theme} />
 
       {tourActive && <DashboardTour onNavigate={setView} onFinish={finishTour} />}
-
-      {/* Floating "Stuck? Scan it" button */}
-      {!scanOpen && !postDiagnosticOpen && (
-        <button
-          onClick={() => setScanOpen(true)}
-          className={cn(
-            'fixed bottom-24 right-5 z-30 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 lg:bottom-6',
-            theme.accentBg,
-          )}
-          aria-label="Stuck? Scan a question"
-        >
-          <i className="ti ti-camera text-base" aria-hidden="true" />
-          <span className="hidden sm:inline">Stuck? Scan it</span>
-        </button>
-      )}
-
-      {scanOpen && (
-        <ScanQuestionModal theme={theme} onClose={() => setScanOpen(false)} />
-      )}
 
       {postDiagnosticOpen && (
         <PostDiagnostic

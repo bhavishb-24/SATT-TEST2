@@ -19,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'flashcards', label: 'Flashcards', icon: 'ti-cards' },
   { view: 'checklist', label: 'Night Checklist', icon: 'ti-checklist' },
   { view: 'morning', label: 'Morning Mode', icon: 'ti-sunrise' },
+  { view: 'asktutor', label: 'Ask AI Tutor', icon: 'ti-camera-question' },
 ]
 
 interface SidebarProps {
