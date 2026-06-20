@@ -24,6 +24,7 @@ export function MobileNav({ active, onNavigate, theme }: MobileNavProps) {
             <li key={item.view} className="shrink-0">
               <button
                 type="button"
+                data-tour={`nav-${item.view}`}
                 onClick={() => onNavigate(item.view)}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(

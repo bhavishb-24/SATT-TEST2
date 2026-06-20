@@ -3,9 +3,8 @@ import { createOpenAI } from '@ai-sdk/openai'
 
 /**
  * OpenAI powers all AI features — study plan, practice questions, diagnostic
- * review, and score-report image analysis. Requires OPENAI_API_KEY. If the
- * key is missing, all chains are empty and every route falls back to its
- * deterministic non-AI output.
+ * review, and score-report image analysis. Requires OPENAI_API_KEY.
+ * If the key is missing every route falls back to its deterministic output.
  */
 
 const openaiInstance = process.env.OPENAI_API_KEY

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import type { DashboardView } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -39,14 +40,13 @@ export function Sidebar({
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-5 py-5">
-        <span
-          className={cn(
-            'flex h-9 w-9 items-center justify-center rounded-lg',
-            theme.accentBg,
-          )}
-        >
-          <i className="ti ti-bolt text-lg text-white" aria-hidden="true" />
-        </span>
+        <Image
+          src="/logo.png"
+          alt="SAT Emergency Room logo"
+          width={36}
+          height={36}
+          className="h-9 w-9 rounded-lg object-contain"
+        />
         <div className="min-w-0">
           <p className="truncate text-sm font-bold leading-tight text-foreground">
             SAT Emergency Room
@@ -57,7 +57,7 @@ export function Sidebar({
 
       {/* Countdown */}
       <div className="px-3">
-        <div className={cn('rounded-xl p-3', theme.accentBgSoft)}>
+        <div data-tour="countdown" className={cn('rounded-xl p-3', theme.accentBgSoft)}>
           <p className={cn('text-xs font-medium', theme.accentText)}>Time until test</p>
           <p className={cn('text-xl font-bold tabular-nums', theme.accentText)}>
             {countdownLabel}
@@ -75,6 +75,7 @@ export function Sidebar({
               <li key={item.view}>
                 <button
                   type="button"
+                  data-tour={`nav-${item.view}`}
                   onClick={() => onNavigate(item.view)}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(

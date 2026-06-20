@@ -9,17 +9,40 @@ import { MathText } from '@/components/sat/math-text'
 import { DesmosPanel } from '@/components/sat/desmos-panel'
 import { ReportQuestionModal } from '@/components/sat/report-question-modal'
 
-const MATH_COUNT = 15
-const RW_COUNT = 15
-const QUESTION_COUNT = MATH_COUNT + RW_COUNT
+const DEFAULT_MATH_COUNT = 15
+const DEFAULT_RW_COUNT = 15
 
 interface Props {
   triage: TriageData
   theme: PanicTheme
   onComplete: (results: DiagnosticResult[]) => void
+  onSkip?: () => void
+  /** Number of Math questions (default 15). */
+  mathCount?: number
+  /** Number of Reading & Writing questions (default 15). */
+  rwCount?: number
+  /** Override the heading shown at the top of the test. */
+  title?: string
+  /**
+   * When provided, bypass the AI fetch entirely and use these questions
+   * directly — used by the post-diagnostic to guarantee specific questions.
+   */
+  questionBank?: PracticeQuestion[]
 }
 
-export function DiagnosticTest({ triage, theme, onComplete }: Props) {
+export function DiagnosticTest({
+  triage,
+  theme,
+  onComplete,
+  onSkip,
+  mathCount = DEFAULT_MATH_COUNT,
+  rwCount = DEFAULT_RW_COUNT,
+  title = 'Diagnostic test',
+  questionBank,
+}: Props) {
+  const MATH_COUNT = mathCount
+  const RW_COUNT = rwCount
+  const QUESTION_COUNT = MATH_COUNT + RW_COUNT
   const [questions, setQuestions] = useState<PracticeQuestion[]>([])
   const [loading, setLoading] = useState(true)
   const [index, setIndex] = useState(0)
@@ -38,6 +61,15 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
   const promptRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // When a fixed question bank is supplied (e.g. post-diagnostic), skip the
+    // AI fetch entirely and load those questions immediately.
+    if (questionBank && questionBank.length > 0) {
+      setQuestions(questionBank)
+      setAnswers(new Array(questionBank.length).fill(null))
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
     async function fetchSection(
       section: 'Math' | 'Reading & Writing',
@@ -65,17 +97,30 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           if (mathQs[i]) merged.push(mathQs[i])
           if (rwQs[i]) merged.push(rwQs[i])
         }
-        const qs = merged.slice(0, QUESTION_COUNT)
+        let qs = merged.slice(0, QUESTION_COUNT)
+        // Top up with fallback questions (deduped by id) if the AI returned
+        // fewer than we need — important for the larger post-plan diagnostic.
+        if (qs.length < QUESTION_COUNT) {
+          const seen = new Set(qs.map((q) => q.id))
+          for (const fb of diagnosticFallback(MATH_COUNT, RW_COUNT)) {
+            if (qs.length >= QUESTION_COUNT) break
+            if (!seen.has(fb.id)) {
+              qs.push(fb)
+              seen.add(fb.id)
+            }
+          }
+        }
         if (!cancelled) {
-          setQuestions(qs.length >= QUESTION_COUNT ? qs : diagnosticFallback(QUESTION_COUNT))
-          setAnswers(new Array(QUESTION_COUNT).fill(null))
+          setQuestions(qs)
+          setAnswers(new Array(qs.length).fill(null))
           setLoading(false)
         }
       } catch (err) {
         console.log('[v0] diagnostic fetch failed, using fallback:', err)
         if (!cancelled) {
-          setQuestions(diagnosticFallback(QUESTION_COUNT))
-          setAnswers(new Array(QUESTION_COUNT).fill(null))
+          const fb = diagnosticFallback(MATH_COUNT, RW_COUNT)
+          setQuestions(fb)
+          setAnswers(new Array(fb.length).fill(null))
           setLoading(false)
         }
       }
@@ -84,17 +129,8 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
     return () => {
       cancelled = true
     }
-  }, [triage.weakAreas])
+  }, [triage.weakAreas, MATH_COUNT, RW_COUNT, QUESTION_COUNT, questionBank])
 
-  // Restore saved highlight marks whenever the question index changes.
-  // Must be declared before any conditional return to comply with Rules of Hooks.
-  useEffect(() => {
-    if (!promptRef.current) return
-    const saved = highlightedHtml[index]
-    if (saved) {
-      promptRef.current.innerHTML = saved
-    }
-  }, [index]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -107,8 +143,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           <div>
             <p className="text-lg font-bold text-foreground">Building your diagnostic</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              30 questions — 15 Math and 15 Reading &amp; Writing — so we can pinpoint exactly
-              where to focus.
+              {`${QUESTION_COUNT} questions — ${MATH_COUNT} Math and ${RW_COUNT} Reading & Writing — so we can pinpoint exactly where to focus.`}
             </p>
           </div>
         </div>
@@ -225,11 +260,23 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="font-serif text-2xl font-normal tracking-tight lg:text-3xl">
-            Diagnostic test
+            {title}
           </h1>
-          <span className="text-sm font-medium tabular-nums text-muted-foreground">
-            {index + 1} / {total}
-          </span>
+          <div className="flex items-center gap-3">
+            {onSkip && (
+              <button
+                type="button"
+                onClick={onSkip}
+                className="flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+              >
+                <i className="ti ti-player-skip-forward text-sm" aria-hidden="true" />
+                Skip (demo)
+              </button>
+            )}
+            <span className="text-sm font-medium tabular-nums text-muted-foreground">
+              {index + 1} / {total}
+            </span>
+          </div>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
@@ -239,7 +286,7 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
         </div>
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            15 Math + 15 Reading &amp; Writing — be honest, we are finding weak spots, not grading you.
+            {`${MATH_COUNT} Math + ${RW_COUNT} Reading & Writing — be honest, we are finding weak spots, not grading you.`}
           </p>
         </div>
       </header>
@@ -349,19 +396,32 @@ export function DiagnosticTest({ triage, theme, onComplete }: Props) {
           </div>
         )}
 
-        {/* Question prompt — div so we can set innerHTML to restore <mark> spans.
-            MathText renders the initial content; the useEffect patches in saved
-            highlight marks on top without triggering a React re-render clash. */}
-        <div
-          ref={promptRef}
-          onMouseUp={highlightMode ? applyHighlight : undefined}
-          className={cn(
-            'text-base font-medium leading-relaxed text-foreground',
-            highlightMode && 'cursor-text select-text',
-          )}
-        >
-          <MathText>{current.prompt}</MathText>
-        </div>
+        {/* Question prompt — when saved highlight HTML exists we render it via
+            dangerouslySetInnerHTML so React doesn't fight the <mark> nodes.
+            When there are no highlights we use MathText normally. */}
+        {highlightedHtml[index] ? (
+          <div
+            ref={promptRef}
+            onMouseUp={highlightMode ? applyHighlight : undefined}
+            className={cn(
+              'text-base font-medium leading-relaxed text-foreground',
+              highlightMode && 'cursor-text select-text',
+            )}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: highlightedHtml[index] }}
+          />
+        ) : (
+          <div
+            ref={promptRef}
+            onMouseUp={highlightMode ? applyHighlight : undefined}
+            className={cn(
+              'text-base font-medium leading-relaxed text-foreground',
+              highlightMode && 'cursor-text select-text',
+            )}
+          >
+            <MathText>{current.prompt}</MathText>
+          </div>
+        )}
 
         {/* Answer choices */}
         <div className="mt-6 flex flex-col gap-2.5" role="radiogroup" aria-label="Answer choices">

@@ -55,24 +55,24 @@ export function MorningMode({ plan, triage }: Props) {
 
   if (finished) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 rounded-2xl bg-foreground px-8 py-16 text-center text-background">
-        <p className="text-sm font-medium uppercase tracking-widest opacity-70">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 rounded-2xl border border-primary/30 bg-primary/10 px-8 py-16 text-center">
+        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
           {now ? now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''}
         </p>
-        <h1 className="text-4xl font-extrabold leading-tight text-balance">
+        <h1 className="text-4xl font-extrabold leading-tight text-balance text-foreground">
           Go get it.
         </h1>
-        <p className="text-lg opacity-90">You put in the work.</p>
+        <p className="text-lg text-muted-foreground">You put in the work.</p>
       </div>
     )
   }
 
   return (
     <div className="animate-fade-in mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <header className="rounded-2xl bg-foreground p-5 text-background">
-        <p className="text-sm font-medium opacity-80">T-minus until your SAT</p>
-        <p className="text-3xl font-extrabold tabular-nums">{countdown}</p>
-        <p className="mt-2 text-base font-semibold">You’re ready. Here’s your morning.</p>
+      <header className="rounded-2xl border border-primary/30 bg-primary/10 p-5">
+        <p className="text-sm font-medium text-muted-foreground">T-minus until your SAT</p>
+        <p className="text-3xl font-extrabold tabular-nums text-primary">{countdown}</p>
+        <p className="mt-2 text-base font-semibold text-foreground">You&apos;re ready. Here&apos;s your morning.</p>
       </header>
 
       {/* 10-minute warm-up */}

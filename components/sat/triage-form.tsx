@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from 'react'
 import {
-  LEARNING_STYLES,
   MATH_WEAK_AREAS,
   PREVIOUS_PREP,
   RW_WEAK_AREAS,
@@ -55,10 +54,7 @@ export function TriageForm({ onSubmit }: Props) {
   const [goalMath, setGoalMath] = useState('')
   const [goalRW, setGoalRW] = useState('')
   const [weakAreas, setWeakAreas] = useState<string[]>([])
-  const [learningStyle, setLearningStyle] = useState('doing')
   const [previousPrep, setPreviousPrep] = useState<string[]>([])
-  const [emergencyContact, setEmergencyContact] = useState('')
-  const [contactConfirmed, setContactConfirmed] = useState(false)
 
   // Score report upload state
   const [reportState, setReportState] = useState<
@@ -167,9 +163,9 @@ export function TriageForm({ onSubmit }: Props) {
       goalMath,
       goalRW,
       weakAreas,
-      learningStyle,
+      learningStyle: '',
       previousPrep,
-      emergencyContact,
+      emergencyContact: '',
       scoreReportText,
     })
   }
@@ -196,15 +192,17 @@ export function TriageForm({ onSubmit }: Props) {
           value={panic}
           onChange={(e) => setPanic(Number(e.target.value))}
           aria-label="Panic level from 1 to 5"
-          className="h-11 w-full cursor-pointer accent-current"
-          style={{ color: 'var(--tw-prose-body)' }}
+          className="range-slider transition-all duration-200"
+          style={{ '--range-fill': `${((panic - 1) / 4) * 100}%` } as React.CSSProperties}
         />
         <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>Feeling okay</span>
           <span>Pretty stressed</span>
           <span>Full panic</span>
         </div>
-        <p className={`mt-3 text-sm font-semibold ${theme.accentText}`}>{theme.label}</p>
+        <p className={`mt-3 text-sm font-semibold transition-all duration-300 ease-out ${theme.accentText}`}>
+          {theme.label}
+        </p>
         {theme.urgentCopy && (
           <p className="mt-1 text-sm font-bold text-red-600 dark:text-red-400">
             {theme.urgentCopy}
@@ -378,33 +376,6 @@ export function TriageForm({ onSubmit }: Props) {
         )}
       </section>
 
-      {/* Section F — Learning style */}
-      <section className="flex flex-col gap-3">
-        <SectionLabel>How do you learn best?</SectionLabel>
-        <div className="grid grid-cols-3 gap-2">
-          {LEARNING_STYLES.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setLearningStyle(s.id)}
-              aria-pressed={learningStyle === s.id}
-              className={`flex min-h-[88px] flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-center transition-colors ${
-                learningStyle === s.id
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border bg-card hover:border-primary/50'
-              }`}
-            >
-              <span
-                className={`${s.icon} ti text-xl ${learningStyle === s.id ? 'text-primary' : 'text-muted-foreground'}`}
-                aria-hidden="true"
-              />
-              <span className="text-xs font-semibold leading-tight">{s.label}</span>
-              <span className="text-[10px] leading-tight text-muted-foreground">{s.sub}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
       {/* Section G — Previous prep */}
       <section className="flex flex-col gap-3">
         <SectionLabel>What have you tried before?</SectionLabel>
@@ -418,38 +389,6 @@ export function TriageForm({ onSubmit }: Props) {
             />
           ))}
         </div>
-      </section>
-
-      {/* Section H — Emergency contact */}
-      <section className="flex flex-col gap-3">
-        <SectionLabel>Share your progress with someone (optional)</SectionLabel>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            inputMode="email"
-            value={emergencyContact}
-            onChange={(e) => {
-              setEmergencyContact(e.target.value)
-              setContactConfirmed(false)
-            }}
-            placeholder="Phone or email"
-            className="min-h-[44px] flex-1 rounded-xl border border-border bg-card px-4 text-sm"
-          />
-          <button
-            type="button"
-            disabled={!emergencyContact.trim()}
-            onClick={() => setContactConfirmed(true)}
-            className="min-h-[44px] rounded-xl bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-40"
-          >
-            Share
-          </button>
-        </div>
-        {contactConfirmed && (
-          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            Saved. We’ll show {emergencyContact} as your support contact (nothing is sent during
-            this demo).
-          </p>
-        )}
       </section>
 
       </div>

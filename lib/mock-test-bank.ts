@@ -1,680 +1,525 @@
 import type { PracticeQuestion } from './sat-types'
 
-/**
- * A curated bank of SAT-style questions modeled on the digital SAT's format and
- * topic distribution. 30 Math + 30 Reading & Writing questions. These are
- * shuffled and split into 3 non-overlapping full-length practice tests
- * (10 Math + 10 Reading & Writing each) by `buildMockTests()`.
- */
-export const MOCK_BANK: PracticeQuestion[] = [
-  // ─────────────────────────── MATH (30) ───────────────────────────
-  // Heart of Algebra
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock Test 1 — SAT Practice Test 10
+// 10 Reading & Writing + 10 Math, sourced directly from the official CSV.
+// Graph-dependent or OCR-garbled questions are omitted; constructed-response
+// questions are converted to 4-choice MC with realistic distractors.
+// Dollar signs are written as words to prevent LaTeX mis-parsing.
+// ─────────────────────────────────────────────────────────────────────────────
+const MOCK_TEST_1_QUESTIONS: PracticeQuestion[] = [
+  // ── Reading & Writing ─────────────────────────────────────────────────────
   {
-    id: 'mock-m1',
-    section: 'Math',
-    topic: 'Linear equations',
-    difficulty: 'Easy',
-    prompt: 'If 5x − 3 = 2x + 12, what is the value of x?',
-    choices: ['3', '5', '7', '9'],
-    correctIndex: 1,
-    explanation: 'Subtract 2x from both sides: 3x − 3 = 12. Add 3: 3x = 15, so x = 5.',
-  },
-  {
-    id: 'mock-m2',
-    section: 'Math',
-    topic: 'Systems of equations',
-    difficulty: 'Medium',
-    prompt: 'If 2x + y = 11 and x − y = 1, what is the value of y?',
-    choices: ['2', '3', '4', '5'],
-    correctIndex: 1,
-    explanation: 'Add the equations: 3x = 12, so x = 4. Substitute into x − y = 1: 4 − y = 1, so y = 3.',
-  },
-  {
-    id: 'mock-m3',
-    section: 'Math',
-    topic: 'Linear models',
+    id: 'mt1-rw-01',
+    section: 'Reading & Writing',
+    topic: 'Words in Context',
     difficulty: 'Easy',
     prompt:
-      'A gym charges a $25 sign-up fee plus $15 per month. Which equation gives the total cost c after m months?',
-    choices: ['c = 25m + 15', 'c = 15m + 25', 'c = 40m', 'c = 15m − 25'],
-    correctIndex: 1,
-    explanation: 'The monthly rate $15 multiplies the number of months m, and the $25 fee is a one-time constant: c = 15m + 25.',
-  },
-  {
-    id: 'mock-m4',
-    section: 'Math',
-    topic: 'Slope',
-    difficulty: 'Medium',
-    prompt: 'What is the slope of the line passing through the points (1, 2) and (4, 11)?',
-    choices: ['2', '3', '4', '9'],
-    correctIndex: 1,
-    explanation: 'Slope = (11 − 2) / (4 − 1) = 9 / 3 = 3.',
-  },
-  {
-    id: 'mock-m5',
-    section: 'Math',
-    topic: 'Inequalities',
-    difficulty: 'Medium',
-    prompt: 'If 3x + 4 ≤ 19, what is the greatest possible integer value of x?',
-    choices: ['4', '5', '6', '7'],
-    correctIndex: 1,
-    explanation: 'Subtract 4: 3x ≤ 15. Divide by 3: x ≤ 5. The greatest integer value is 5.',
-  },
-  // Problem Solving & Data Analysis
-  {
-    id: 'mock-m6',
-    section: 'Math',
-    topic: 'Percentages',
-    difficulty: 'Easy',
-    prompt: '30 is what percent of 120?',
-    choices: ['20%', '25%', '30%', '40%'],
-    correctIndex: 1,
-    explanation: '30 / 120 = 0.25, which is 25%.',
-  },
-  {
-    id: 'mock-m7',
-    section: 'Math',
-    topic: 'Percent change',
-    difficulty: 'Medium',
-    prompt: 'A product\'s price increased from $80 to $100. What was the percent increase?',
-    choices: ['20%', '25%', '30%', '125%'],
-    correctIndex: 1,
-    explanation: 'Increase = $20. Percent increase = 20 / 80 = 0.25 = 25%.',
-  },
-  {
-    id: 'mock-m8',
-    section: 'Math',
-    topic: 'Ratios',
-    difficulty: 'Medium',
-    prompt: 'In a class, the ratio of boys to girls is 5 to 3. If there are 24 girls, how many boys are there?',
-    choices: ['15', '24', '40', '64'],
-    correctIndex: 2,
-    explanation: 'Each ratio unit = 24 / 3 = 8 students. Boys = 5 × 8 = 40.',
-  },
-  {
-    id: 'mock-m9',
-    section: 'Math',
-    topic: 'Proportions',
-    difficulty: 'Easy',
-    prompt: 'If 3 pounds of apples cost $7.50, how much do 5 pounds cost at the same rate?',
-    choices: ['$10.00', '$11.50', '$12.50', '$15.00'],
-    correctIndex: 2,
-    explanation: 'Price per pound = 7.50 / 3 = $2.50. For 5 pounds: 2.50 × 5 = $12.50.',
-  },
-  {
-    id: 'mock-m10',
-    section: 'Math',
-    topic: 'Statistics',
-    difficulty: 'Easy',
-    prompt: 'What is the mean of the data set {12, 15, 18, 21, 24}?',
-    choices: ['15', '18', '20', '21'],
-    correctIndex: 1,
-    explanation: 'Sum = 90. Divide by 5 values: 90 / 5 = 18.',
-  },
-  {
-    id: 'mock-m11',
-    section: 'Math',
-    topic: 'Statistics',
-    difficulty: 'Medium',
-    prompt: 'What is the median of the data set {3, 7, 9, 12, 20}?',
-    choices: ['7', '9', '10', '12'],
-    correctIndex: 1,
-    explanation: 'With five ordered values, the median is the middle value, which is 9.',
-  },
-  {
-    id: 'mock-m12',
-    section: 'Math',
-    topic: 'Probability',
-    difficulty: 'Medium',
-    prompt: 'A bag contains 4 red marbles and 6 blue marbles. If one marble is drawn at random, what is the probability it is red?',
-    choices: ['2/5', '3/5', '2/3', '1/2'],
+      'The general store was essential to daily life in the rural United States during the 1800s because it provided the supplies that the people living in nearby communities needed. Also, the store was a _______ of information. People socializing at the general store would share news and help spread it throughout their communities.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['source', 'rival', 'condition', 'waste'],
     correctIndex: 0,
-    explanation: 'P(red) = 4 / (4 + 6) = 4/10 = 2/5.',
+    explanation: 'The store served as a place from which information spread — making it a "source" of information.',
   },
   {
-    id: 'mock-m13',
-    section: 'Math',
-    topic: 'Data interpretation',
-    difficulty: 'Easy',
-    prompt: 'In a survey of 200 people, 25% said they prefer tea. How many people prefer tea?',
-    choices: ['25', '50', '75', '150'],
-    correctIndex: 1,
-    explanation: '25% of 200 = 0.25 × 200 = 50 people.',
-  },
-  {
-    id: 'mock-m14',
-    section: 'Math',
-    topic: 'Rates',
-    difficulty: 'Easy',
-    prompt: 'A car travels 240 miles in 4 hours. What is its average speed in miles per hour?',
-    choices: ['40', '50', '60', '80'],
-    correctIndex: 2,
-    explanation: 'Speed = distance / time = 240 / 4 = 60 mph.',
-  },
-  {
-    id: 'mock-m15',
-    section: 'Math',
-    topic: 'Linear models',
-    difficulty: 'Medium',
-    prompt: 'A table shows that when x = 1, 2, 3, the values of y are 5, 8, 11. If y = 3x + 2, what is y when x = 10?',
-    choices: ['29', '30', '32', '35'],
-    correctIndex: 2,
-    explanation: 'y = 3(10) + 2 = 30 + 2 = 32.',
-  },
-  // Passport to Advanced Math
-  {
-    id: 'mock-m16',
-    section: 'Math',
-    topic: 'Exponents',
-    difficulty: 'Easy',
-    prompt: 'Simplify: (x³)(x⁴).',
-    choices: ['x⁷', 'x¹²', 'x', 'x³⁴'],
-    correctIndex: 0,
-    explanation: 'When multiplying powers with the same base, add the exponents: 3 + 4 = 7, so x⁷.',
-  },
-  {
-    id: 'mock-m17',
-    section: 'Math',
-    topic: 'Exponents',
-    difficulty: 'Medium',
-    prompt: 'If 3ˣ = 81, what is the value of x?',
-    choices: ['3', '4', '5', '27'],
-    correctIndex: 1,
-    explanation: '81 = 3⁴, so x = 4.',
-  },
-  {
-    id: 'mock-m18',
-    section: 'Math',
-    topic: 'Quadratics',
-    difficulty: 'Medium',
-    prompt: 'What are the solutions to x² − 7x + 10 = 0?',
-    choices: ['x = 2 and x = 5', 'x = −2 and x = −5', 'x = 1 and x = 10', 'x = 3 and x = 4'],
-    correctIndex: 0,
-    explanation: 'Factor: (x − 2)(x − 5) = 0, so x = 2 or x = 5.',
-  },
-  {
-    id: 'mock-m19',
-    section: 'Math',
-    topic: 'Quadratics',
-    difficulty: 'Medium',
-    prompt: 'The graph of y = (x − 3)² + 2 is a parabola. What are the coordinates of its vertex?',
-    choices: ['(3, 2)', '(−3, 2)', '(3, −2)', '(2, 3)'],
-    correctIndex: 0,
-    explanation: 'In vertex form y = (x − h)² + k, the vertex is (h, k) = (3, 2).',
-  },
-  {
-    id: 'mock-m20',
-    section: 'Math',
-    topic: 'Functions',
-    difficulty: 'Medium',
-    prompt: 'If f(x) = 2x² − 1, what is f(3)?',
-    choices: ['11', '17', '35', '18'],
-    correctIndex: 1,
-    explanation: 'f(3) = 2(3²) − 1 = 2(9) − 1 = 18 − 1 = 17.',
-  },
-  {
-    id: 'mock-m21',
-    section: 'Math',
-    topic: 'Functions',
-    difficulty: 'Hard',
-    prompt: 'If f(x) = x + 2 and g(x) = 3x, what is g(f(2))?',
-    choices: ['8', '10', '12', '14'],
-    correctIndex: 2,
-    explanation: 'f(2) = 2 + 2 = 4. Then g(4) = 3 × 4 = 12.',
-  },
-  {
-    id: 'mock-m22',
-    section: 'Math',
-    topic: 'Polynomials',
-    difficulty: 'Medium',
-    prompt: 'Which expression is equivalent to x² − 9?',
-    choices: ['(x − 3)(x + 3)', '(x − 9)(x + 1)', '(x − 3)(x − 3)', '(x + 9)(x − 1)'],
-    correctIndex: 0,
-    explanation: 'This is a difference of squares: x² − 9 = (x − 3)(x + 3).',
-  },
-  // Geometry & Trigonometry
-  {
-    id: 'mock-m23',
-    section: 'Math',
-    topic: 'Geometry',
-    difficulty: 'Easy',
-    prompt: 'A rectangle has a length of 8 and a width of 5. What is its area?',
-    choices: ['13', '26', '40', '45'],
-    correctIndex: 2,
-    explanation: 'Area of a rectangle = length × width = 8 × 5 = 40.',
-  },
-  {
-    id: 'mock-m24',
-    section: 'Math',
-    topic: 'Circles',
-    difficulty: 'Medium',
-    prompt: 'A circle has a radius of 3. What is its area?',
-    choices: ['3π', '6π', '9π', '12π'],
-    correctIndex: 2,
-    explanation: 'Area = πr² = π(3²) = 9π.',
-  },
-  {
-    id: 'mock-m25',
-    section: 'Math',
-    topic: 'Circles',
-    difficulty: 'Easy',
-    prompt: 'A circle has a radius of 5. What is its circumference?',
-    choices: ['5π', '10π', '25π', '20π'],
-    correctIndex: 1,
-    explanation: 'Circumference = 2πr = 2π(5) = 10π.',
-  },
-  {
-    id: 'mock-m26',
-    section: 'Math',
-    topic: 'Geometry',
-    difficulty: 'Easy',
-    prompt: 'Two angles of a triangle measure 50° and 60°. What is the measure of the third angle?',
-    choices: ['60°', '70°', '80°', '90°'],
-    correctIndex: 1,
-    explanation: 'Angles in a triangle sum to 180°. Third angle = 180 − 50 − 60 = 70°.',
-  },
-  {
-    id: 'mock-m27',
-    section: 'Math',
-    topic: 'Geometry',
-    difficulty: 'Medium',
-    prompt: 'A right triangle has legs of length 6 and 8. What is the length of the hypotenuse?',
-    choices: ['10', '12', '14', '48'],
-    correctIndex: 0,
-    explanation: 'By the Pythagorean theorem: c = √(6² + 8²) = √(36 + 64) = √100 = 10.',
-  },
-  {
-    id: 'mock-m28',
-    section: 'Math',
-    topic: 'Volume',
-    difficulty: 'Easy',
-    prompt: 'A rectangular box has dimensions 2 by 3 by 4. What is its volume?',
-    choices: ['9', '18', '24', '29'],
-    correctIndex: 2,
-    explanation: 'Volume = length × width × height = 2 × 3 × 4 = 24.',
-  },
-  {
-    id: 'mock-m29',
-    section: 'Math',
-    topic: 'Trigonometry',
-    difficulty: 'Hard',
-    prompt: 'In a right triangle, the side opposite angle θ is 5 and the hypotenuse is 13. What is sin(θ)?',
-    choices: ['5/13', '12/13', '5/12', '13/5'],
-    correctIndex: 0,
-    explanation: 'sin(θ) = opposite / hypotenuse = 5/13.',
-  },
-  {
-    id: 'mock-m30',
-    section: 'Math',
-    topic: 'Trigonometry',
-    difficulty: 'Hard',
-    prompt: 'In a right triangle, the side opposite angle θ is 3 and the side adjacent to θ is 4. What is tan(θ)?',
-    choices: ['3/4', '4/3', '3/5', '4/5'],
-    correctIndex: 0,
-    explanation: 'tan(θ) = opposite / adjacent = 3/4.',
-  },
-
-  // ──────────────────── READING & WRITING (30) ────────────────────
-  // Standard English Conventions — Boundaries
-  {
-    id: 'mock-r1',
+    id: 'mt1-rw-02',
     section: 'Reading & Writing',
-    topic: 'Conjunctions',
+    topic: 'Words in Context',
     difficulty: 'Easy',
     prompt:
-      'Which choice completes the text so that it conforms to the conventions of Standard English? "The museum was crowded, ___ we still enjoyed the exhibit."',
-    choices: ['but', 'so', 'because', 'therefore'],
-    correctIndex: 0,
-    explanation: 'The two clauses contrast, so the coordinating conjunction "but" correctly joins them after the comma.',
+      'For painter Jacob Lawrence, being _______ was an important part of the artistic process. Because he paid close attention to all the details of his Harlem neighborhood, Lawrence\'s artwork captured nuances in the beauty and vitality of the Black experience during the Harlem Renaissance and the Great Migration.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['skeptical', 'observant', 'critical', 'confident'],
+    correctIndex: 1,
+    explanation: 'Paying "close attention to all the details" describes someone who is "observant."',
   },
   {
-    id: 'mock-r2',
+    id: 'mt1-rw-03',
     section: 'Reading & Writing',
-    topic: 'Apostrophes',
+    topic: 'Words in Context',
     difficulty: 'Easy',
-    prompt: 'Which choice completes the text correctly? "The committee released ___ final report on Friday."',
-    choices: ['its', "it's", "its'", 'it is'],
-    correctIndex: 0,
-    explanation: '"Its" is the possessive form. "It\'s" means "it is," which does not fit here.',
-  },
-  {
-    id: 'mock-r3',
-    section: 'Reading & Writing',
-    topic: 'Semicolons',
-    difficulty: 'Medium',
-    prompt: 'Which sentence is punctuated correctly?',
-    choices: [
-      'The experiment succeeded; the hypothesis was confirmed.',
-      'The experiment succeeded, the hypothesis was confirmed.',
-      'The experiment succeeded; and the hypothesis was confirmed.',
-      'The experiment, succeeded; the hypothesis was confirmed.',
-    ],
-    correctIndex: 0,
-    explanation: 'A semicolon correctly joins two independent clauses without a conjunction.',
-  },
-  {
-    id: 'mock-r4',
-    section: 'Reading & Writing',
-    topic: 'Colons',
-    difficulty: 'Medium',
-    prompt: 'Which choice uses a colon correctly?',
-    choices: [
-      'She had one goal: to win the championship.',
-      'She had: one goal to win the championship.',
-      'She had one: goal to win the championship.',
-      'She had one goal to: win the championship.',
-    ],
-    correctIndex: 0,
-    explanation: 'A colon must follow a complete sentence and introduce an explanation. "She had one goal" stands alone.',
-  },
-  {
-    id: 'mock-r5',
-    section: 'Reading & Writing',
-    topic: 'Punctuation',
-    difficulty: 'Hard',
-    prompt: 'Choose the correctly punctuated sentence.',
-    choices: [
-      "The author's first novel—published in 1995, won several awards.",
-      "The author's first novel, published in 1995—won several awards.",
-      "The author's first novel—published in 1995—won several awards.",
-      "The author's first novel published in 1995—won several awards.",
-    ],
-    correctIndex: 2,
-    explanation: 'A parenthetical phrase set off by dashes must use a dash on both sides for balanced punctuation.',
-  },
-  {
-    id: 'mock-r6',
-    section: 'Reading & Writing',
-    topic: 'Joining clauses',
-    difficulty: 'Medium',
-    prompt: 'Which choice correctly joins the clauses? "The rain stopped ___ the sun came out."',
-    choices: [', and', ', ', '; ', ' and'],
-    correctIndex: 0,
-    explanation: 'Two independent clauses are correctly joined by a comma followed by the coordinating conjunction "and."',
-  },
-  // Standard English Conventions — Form, Structure, and Sense
-  {
-    id: 'mock-r7',
-    section: 'Reading & Writing',
-    topic: 'Subject-verb agreement',
-    difficulty: 'Medium',
-    prompt: 'Which choice completes the text correctly? "The collection of rare coins ___ extremely valuable."',
-    choices: ['is', 'are', 'were', 'have been'],
-    correctIndex: 0,
-    explanation: 'The subject is "collection" (singular). Ignore the phrase "of rare coins," so use "is."',
-  },
-  {
-    id: 'mock-r8',
-    section: 'Reading & Writing',
-    topic: 'Pronoun agreement',
-    difficulty: 'Medium',
-    prompt: 'Which choice completes the text correctly? "Neither of the boys finished ___ homework."',
-    choices: ['his', 'their', 'its', "they're"],
-    correctIndex: 0,
-    explanation: '"Neither" is singular, so it takes the singular pronoun "his."',
-  },
-  {
-    id: 'mock-r9',
-    section: 'Reading & Writing',
-    topic: 'Modifiers',
-    difficulty: 'Hard',
-    prompt: 'Which choice completes the sentence correctly? "Running to catch the bus, ___."',
-    choices: [
-      "the keys fell from Maria's hand.",
-      'Maria dropped her keys.',
-      'her keys were dropped by Maria.',
-      'the bus was almost missed by Maria.',
-    ],
+    prompt:
+      'Former astronaut Ellen Ochoa says that although she doesn\'t have a definite idea of when it might happen, she _______ that humans will someday need to be able to live in other environments than those found on Earth. This conjecture informs her interest in future research missions to the moon.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['demands', 'speculates', 'doubts', 'establishes'],
     correctIndex: 1,
-    explanation: 'The introductory phrase "Running to catch the bus" must modify the person running, so "Maria" should follow the comma.',
+    explanation: 'The word "conjecture" in the next sentence signals a guess or hypothesis, matching "speculates."',
   },
   {
-    id: 'mock-r10',
+    id: 'mt1-rw-04',
     section: 'Reading & Writing',
-    topic: 'Parallel structure',
-    difficulty: 'Medium',
-    prompt: 'Which choice keeps the list parallel? "The job requires reading, writing, and ___."',
-    choices: ['to speak', 'speaking', 'speak', 'spoke'],
-    correctIndex: 1,
-    explanation: 'To match "reading" and "writing," the third item must also be a gerund: "speaking."',
-  },
-  {
-    id: 'mock-r11',
-    section: 'Reading & Writing',
-    topic: 'Verb tense',
-    difficulty: 'Medium',
-    prompt: 'Which choice completes the text correctly? "By the time we arrived, the movie had already ___."',
-    choices: ['began', 'begun', 'begin', 'beginning'],
-    correctIndex: 1,
-    explanation: 'After the helping verb "had," the past participle "begun" is required.',
-  },
-  {
-    id: 'mock-r12',
-    section: 'Reading & Writing',
-    topic: 'Subject-verb agreement',
+    topic: 'Words in Context',
     difficulty: 'Easy',
-    prompt: 'Which choice completes the text correctly? "Tom and Jerry ___ going to the store."',
-    choices: ['is', 'are', 'was', 'has been'],
-    correctIndex: 1,
-    explanation: 'The compound subject "Tom and Jerry" is plural, so it takes the plural verb "are."',
-  },
-  {
-    id: 'mock-r13',
-    section: 'Reading & Writing',
-    topic: 'Plural vs. possessive',
-    difficulty: 'Medium',
-    prompt: 'Which choice completes the text correctly? "The ___ uniforms were blue." (referring to multiple players)',
-    choices: ['players', "player's", "players'", "players's"],
-    correctIndex: 2,
-    explanation: 'To show plural possession (uniforms belonging to multiple players), use "players\'" with the apostrophe after the s.',
-  },
-  {
-    id: 'mock-r14',
-    section: 'Reading & Writing',
-    topic: 'Pronoun case',
-    difficulty: 'Hard',
-    prompt: 'Which choice completes the text in Standard English? "My brother is taller than ___."',
-    choices: ['me', 'I', 'myself', 'mine'],
-    correctIndex: 1,
-    explanation: 'The implied verb is "am" (taller than I am), so the subject pronoun "I" is correct in formal English.',
-  },
-  // Transitions
-  {
-    id: 'mock-r15',
-    section: 'Reading & Writing',
-    topic: 'Transitions',
-    difficulty: 'Medium',
-    prompt: 'Which transition best fits? "The new policy promised lower costs; ___, expenses actually rose."',
-    choices: ['however', 'therefore', 'moreover', 'likewise'],
+    prompt:
+      'The parasitic dodder plant increases its reproductive success by flowering at the same time as the host plant it has latched onto. In 2020, Jianqiang Wu and his colleagues determined that the tiny dodder achieves this _______ with its host by absorbing and utilizing a protein the host produces when it is about to flower.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['synchronization', 'hibernation', 'prediction', 'moderation'],
     correctIndex: 0,
-    explanation: 'The result contradicts the promise, so a contrast transition like "however" is needed.',
+    explanation: '"Flowering at the same time" is a form of timing coordination, which is "synchronization."',
   },
   {
-    id: 'mock-r16',
+    id: 'mt1-rw-05',
     section: 'Reading & Writing',
-    topic: 'Transitions',
-    difficulty: 'Medium',
-    prompt: 'Which transition best fits? "It rained heavily; ___, the game was canceled."',
-    choices: ['therefore', 'however', 'nevertheless', 'instead'],
-    correctIndex: 0,
-    explanation: 'The cancellation is a result of the rain, so a cause-and-effect transition like "therefore" fits.',
+    topic: 'Main Idea & Purpose',
+    difficulty: 'Easy',
+    prompt:
+      'Jazz tap is a dance form that was first developed in African American communities. Jazz tap was heavily influenced by jazz music, which became widely popular in the United States in the 1920s. Tap dancers were inspired by jazz music\'s quick rhythms and by the way jazz musicians would make up melodies as they played. As jazz music continued to develop in the 1930s and 1940s, jazz tap evolved with it. Because of jazz music\'s influence, jazz tap quickly developed into a dance form that was very different from earlier kinds of tap dance.\n\nWhich choice best states the main purpose of the text?',
+    choices: [
+      'It explains why audiences prefer some kinds of music over others.',
+      'It discusses the development of a dance form.',
+      'It describes how to play a musical instrument.',
+      'It emphasizes the popularity of a famous dancer.',
+    ],
+    correctIndex: 1,
+    explanation: 'The passage traces how jazz tap evolved alongside jazz music — its main purpose is to discuss the development of this dance form.',
   },
   {
-    id: 'mock-r17',
+    id: 'mt1-rw-06',
+    section: 'Reading & Writing',
+    topic: 'Text Structure & Function',
+    difficulty: 'Medium',
+    prompt:
+      'The following text is adapted from Zora Neale Hurston\'s 1921 short story "John Redding Goes to Sea." John is a child who lives in a town in the woods.\n\nPerhaps ten-year-old John was puzzling to the folk there in the Florida woods for he was an imaginative child and fond of day-dreams. The St. John River flowed a scarce three hundred feet from his back door. On its banks at this point grow numerous palms, luxuriant magnolias and bay trees. On the bosom of the stream float millions of delicately colored hyacinths. He loved to wander down to the water\'s edge, and, casting in dry twigs, watch them sail away downstream to Jacksonville, the sea, the wide world and he wanted to follow them.\n\nWhich choice best describes the function of the underlined sentence in the text as a whole?',
+    choices: [
+      'It provides an extended description of a location that John likes to visit.',
+      'It reveals that some residents of John\'s town are confused by his behavior.',
+      'It illustrates the uniqueness of John\'s imagination compared to the imaginations of other children.',
+      'It suggests that John longs to experience a larger life outside the Florida woods.',
+    ],
+    correctIndex: 3,
+    explanation: 'Watching twigs sail away and wanting to follow them shows John\'s longing for a wider world beyond his surroundings.',
+  },
+  {
+    id: 'mt1-rw-07',
+    section: 'Reading & Writing',
+    topic: 'Literary Analysis',
+    difficulty: 'Medium',
+    prompt:
+      'The following text is adapted from Oscar Wilde\'s 1891 novel The Picture of Dorian Gray. Dorian Gray is taking his first look at a portrait that Hallward has painted of him.\n\nDorian passed listlessly in front of his picture and turned towards it. When he saw it he drew back, and his cheeks flushed for a moment with pleasure. A look of joy came into his eyes, as if he had recognized himself for the first time. He stood there motionless and in wonder, dimly conscious that Hallward was speaking to him, but not catching the meaning of his words. The sense of his own beauty came on him like a revelation. He had never felt it before.\n\nAccording to the text, what is true about Dorian?',
+    choices: [
+      'He wants to know Hallward\'s opinion of the portrait.',
+      'He is delighted by what he sees in the portrait.',
+      'He prefers portraits to other types of paintings.',
+      'He is uncertain of Hallward\'s talent as an artist.',
+    ],
+    correctIndex: 1,
+    explanation: 'His flushed cheeks, joy, and sense of revelation all indicate delight at seeing his own beauty in the portrait.',
+  },
+  {
+    id: 'mt1-rw-08',
+    section: 'Reading & Writing',
+    topic: 'Command of Evidence',
+    difficulty: 'Medium',
+    prompt:
+      'The novelist Toni Morrison was the first Black woman to work as an editor at the publishing company Random House, from 1967 to 1983. A scholar asserts that one of Morrison\'s likely aims during her time as an editor was to strengthen the presence of Black writers on the list of Random House\'s published authors.\n\nWhich finding, if true, would most strongly support the scholar\'s claim?',
+    choices: [
+      'The percentage of authors published by Random House who were Black rose in the early 1970s and stabilized throughout the decade.',
+      'Black authors who were interviewed in the 1980s and 1990s were highly likely to cite Toni Morrison\'s novels as a principal influence on their work.',
+      'The novels written by Toni Morrison that were published after 1983 sold significantly more copies than the novels she wrote before 1983.',
+      'Works that were edited by Toni Morrison during her time at Random House displayed stylistic characteristics that distinguished them from works not edited by Morrison.',
+    ],
+    correctIndex: 0,
+    explanation: 'A rise in Black-authored publications at Random House during Morrison\'s tenure directly supports the claim that she worked to strengthen their presence.',
+  },
+  {
+    id: 'mt1-rw-09',
     section: 'Reading & Writing',
     topic: 'Transitions',
     difficulty: 'Easy',
-    prompt: 'Which transition best fits? "The software is affordable; ___, it is easy to use."',
-    choices: ['moreover', 'however', 'otherwise', 'regardless'],
-    correctIndex: 0,
-    explanation: 'The second clause adds a related benefit, so an additive transition like "moreover" fits.',
-  },
-  {
-    id: 'mock-r18',
-    section: 'Reading & Writing',
-    topic: 'Transitions',
-    difficulty: 'Easy',
-    prompt: 'Which transition best fits? "Many fruits are rich in vitamin C; ___, oranges and strawberries are excellent sources."',
-    choices: ['for example', 'however', 'therefore', 'in contrast'],
-    correctIndex: 0,
-    explanation: 'The second clause gives specific instances, so the example transition "for example" fits.',
-  },
-  // Craft and Structure — Words in Context
-  {
-    id: 'mock-r19',
-    section: 'Reading & Writing',
-    topic: 'Words in context',
-    difficulty: 'Medium',
-    prompt: 'Which word most logically completes the text? "The scientist\'s explanation was ___, leaving no room for confusion."',
-    choices: ['lucid', 'obscure', 'confusing', 'vague'],
-    correctIndex: 0,
-    explanation: '"Leaving no room for confusion" signals clarity, which matches "lucid" (clear and easy to understand).',
-  },
-  {
-    id: 'mock-r20',
-    section: 'Reading & Writing',
-    topic: 'Words in context',
-    difficulty: 'Medium',
-    prompt: 'Which word most logically completes the text? "Critics found the film ___, praising its fresh and original approach."',
-    choices: ['derivative', 'innovative', 'ordinary', 'dull'],
-    correctIndex: 1,
-    explanation: 'Praise for a "fresh and original approach" matches "innovative."',
-  },
-  {
-    id: 'mock-r21',
-    section: 'Reading & Writing',
-    topic: 'Words in context',
-    difficulty: 'Medium',
-    prompt: 'Which word most logically completes the text? "Her ___ tone suggested she doubted the salesperson\'s claims."',
-    choices: ['trusting', 'skeptical', 'cheerful', 'generous'],
-    correctIndex: 1,
-    explanation: 'Doubt is best expressed by a "skeptical" tone.',
-  },
-  {
-    id: 'mock-r22',
-    section: 'Reading & Writing',
-    topic: 'Words in context',
-    difficulty: 'Hard',
-    prompt: 'As used in the sentence, "ephemeral" most nearly means: "The fashion trend proved ephemeral, fading within months."',
-    choices: ['permanent', 'short-lived', 'expensive', 'popular'],
-    correctIndex: 1,
-    explanation: '"Fading within months" defines the word in context: "ephemeral" means short-lived.',
-  },
-  // Information and Ideas — Central Ideas, Inference, Command of Evidence
-  {
-    id: 'mock-r23',
-    section: 'Reading & Writing',
-    topic: 'Command of evidence',
-    difficulty: 'Hard',
     prompt:
-      'A student claims that the city\'s new bike-share program reduced traffic congestion. Which finding, if true, would most directly support this claim?',
+      'Euphorbia esula (leafy spurge) is a Eurasian plant that has become invasive in North America, where it displaces native vegetation and sickens cattle. E. esula can be controlled with chemical herbicides, but that approach can also kill harmless plants nearby. Recent research on introducing engineered DNA into plant species to inhibit their reproduction may offer a path toward exclusively targeting E. esula, consequently _______\n\nWhich choice most logically completes the text?',
     choices: [
-      'Residents reported that they enjoyed using the new bikes.',
-      'Average car traffic on major roads fell 18% after the program launched.',
-      'The program received a national award for its design.',
-      'Bike-share programs exist in many other cities.',
+      'making individual E. esula plants more susceptible to existing chemical herbicides.',
+      'enhancing the ecological benefits of E. esula in North America.',
+      'enabling cattle to consume E. esula without becoming sick.',
+      'reducing invasive E. esula numbers without harming other organisms.',
     ],
-    correctIndex: 1,
-    explanation: 'A measured drop in car traffic directly tied to the program\'s launch is the strongest support for reduced congestion.',
+    correctIndex: 3,
+    explanation: '"Exclusively targeting" the invasive plant without harming others logically results in reducing its numbers without harming other organisms.',
   },
   {
-    id: 'mock-r24',
-    section: 'Reading & Writing',
-    topic: 'Central ideas',
-    difficulty: 'Medium',
-    prompt:
-      'Octopuses can change the color and texture of their skin in seconds, using this ability to hide from predators, communicate with other octopuses, and startle prey. Which choice best states the main idea?',
-    choices: [
-      'Octopuses are the most intelligent sea creatures.',
-      "An octopus's skin is a remarkably versatile tool.",
-      'Octopuses have many natural predators.',
-      'Octopuses communicate only through color.',
-    ],
-    correctIndex: 1,
-    explanation: 'The text lists several different uses of the skin, supporting the idea that it is a versatile tool.',
-  },
-  {
-    id: 'mock-r25',
+    id: 'mt1-rw-10',
     section: 'Reading & Writing',
     topic: 'Inference',
+    difficulty: 'Medium',
+    prompt:
+      'A team of biologists led by Jae-Hoon Jung, Antonio D. Barbosa, and Stephanie Hutin investigated the mechanism that allows Arabidopsis thaliana (thale cress) plants to accelerate flowering at high temperatures. They replaced the protein ELF3 in the plants with a similar protein found in another species (stiff brome) that, unlike A. thaliana, displays no acceleration in flowering with increased temperature. A comparison of unmodified A. thaliana plants with the altered plants showed no difference in flowering at 22 degrees Celsius, but at 27 degrees Celsius, the unmodified plants exhibited accelerated flowering while the altered ones did not, which suggests that _______\n\nWhich choice most logically completes the text?',
+    choices: [
+      'temperature-sensitive accelerated flowering is unique to A. thaliana.',
+      'A. thaliana increases ELF3 production as temperatures rise.',
+      'ELF3 enables A. thaliana to respond to increased temperatures.',
+      'temperatures of at least 22 degrees Celsius are required for A. thaliana to flower.',
+    ],
+    correctIndex: 2,
+    explanation: 'Because replacing ELF3 eliminated temperature-sensitive flowering, ELF3 is the protein that enables A. thaliana to respond to higher temperatures.',
+  },
+
+  // ── Math ──────────────────────────────────────────────────────────────────
+  {
+    id: 'mt1-m-01',
+    section: 'Math',
+    topic: 'Linear Functions',
+    difficulty: 'Easy',
+    prompt:
+      's = 40 + 3t\n\nThe equation gives the speed s, in miles per hour, of a certain car t seconds after it began to accelerate. What is the speed, in miles per hour, of the car 5 seconds after it began to accelerate?',
+    choices: ['40', '43', '45', '55'],
+    correctIndex: 3,
+    explanation: 's = 40 + 3(5) = 40 + 15 = 55 miles per hour.',
+  },
+  {
+    id: 'mt1-m-02',
+    section: 'Math',
+    topic: 'Functions',
+    difficulty: 'Easy',
+    prompt:
+      'The function f is defined by f(x) = x^2 + x + 71. What is the value of f(2)?',
+    choices: ['73', '75', '77', '79'],
+    correctIndex: 2,
+    explanation: 'f(2) = 4 + 2 + 71 = 77.',
+  },
+  {
+    id: 'mt1-m-03',
+    section: 'Math',
+    topic: 'Word Problems',
+    difficulty: 'Easy',
+    prompt:
+      'An event planner is planning a party. It costs the event planner a one-time fee of 35 dollars to rent the venue and 10.25 dollars per attendee. The event planner has a budget of 300 dollars. What is the greatest number of attendees possible without exceeding the budget?',
+    choices: ['23', '24', '25', '26'],
+    correctIndex: 2,
+    explanation: '10.25n + 35 ≤ 300 → 10.25n ≤ 265 → n ≤ 25.85, so the greatest whole number is 25.',
+  },
+  {
+    id: 'mt1-m-04',
+    section: 'Math',
+    topic: 'Functions & Interpretation',
+    difficulty: 'Easy',
+    prompt:
+      'The function f(w) = 6w^2 gives the area of a rectangle, in square feet, if its width is w ft and its length is 6 times its width. Which of the following is the best interpretation of f(14) = 1,176?',
+    choices: [
+      'If the width of the rectangle is 14 ft, then the area of the rectangle is 1,176 sq ft.',
+      'If the width of the rectangle is 14 ft, then the length of the rectangle is 1,176 ft.',
+      'If the width of the rectangle is 1,176 ft, then the length of the rectangle is 14 ft.',
+      'If the width of the rectangle is 1,176 ft, then the area of the rectangle is 14 sq ft.',
+    ],
+    correctIndex: 0,
+    explanation: 'f(w) gives area when width is w, so f(14) = 1,176 means a width of 14 ft gives an area of 1,176 sq ft.',
+  },
+  {
+    id: 'mt1-m-05',
+    section: 'Math',
+    topic: 'Exponential Functions',
+    difficulty: 'Medium',
+    prompt:
+      'The number of bacteria in a liquid medium doubles every day. There are 44,000 bacteria in the liquid medium at the start of an observation. Which of the following represents the number of bacteria, y, in the liquid medium t days after the start of the observation?',
+    choices: ['y = (1/2)(44,000)^t', 'y = 2(44,000)^t', 'y = 44,000(1/2)^t', 'y = 44,000(2)^t'],
+    correctIndex: 3,
+    explanation: 'Starting at 44,000 and doubling each day gives y = 44,000 · 2^t.',
+  },
+  {
+    id: 'mt1-m-06',
+    section: 'Math',
+    topic: 'Geometry — Triangles',
+    difficulty: 'Medium',
+    prompt:
+      'Triangles ABC and DEF are congruent, where A corresponds to D, and B and E are right angles. The measure of angle A is 18 degrees. What is the measure of angle F?',
+    choices: ['18°', '72°', '90°', '162°'],
+    correctIndex: 1,
+    explanation: 'In triangle ABC, angles sum to 180°. Angle B = 90°, angle A = 18°, so angle C = 72°. Since A↔D, B↔E, C↔F, angle F = angle C = 72°.',
+  },
+  {
+    id: 'mt1-m-07',
+    section: 'Math',
+    topic: 'Algebra',
+    difficulty: 'Easy',
+    prompt:
+      'If 4x + 2 = 12, what is the value of 16x + 8?',
+    choices: ['40', '48', '56', '60'],
+    correctIndex: 1,
+    explanation: '16x + 8 = 4(4x + 2) = 4(12) = 48.',
+  },
+  {
+    id: 'mt1-m-08',
+    section: 'Math',
+    topic: 'Geometry — Scale',
+    difficulty: 'Medium',
+    prompt:
+      'The floor of a ballroom has an area of 600 square meters. An architect creates a scale model of the floor where the length of each side of the model is 1/10 times the length of the corresponding side of the actual floor. What is the area, in square meters, of the scale model?',
+    choices: ['6', '10', '60', '150'],
+    correctIndex: 0,
+    explanation: 'Scaling lengths by 1/10 scales areas by (1/10)^2 = 1/100. Area = 600/100 = 6 square meters.',
+  },
+  {
+    id: 'mt1-m-09',
+    section: 'Math',
+    topic: 'Percentages',
+    difficulty: 'Medium',
+    prompt:
+      'The result of increasing the quantity x by 1,800% is 684. What is the value of x?',
+    choices: ['12,996', '12,312', '38', '36'],
+    correctIndex: 3,
+    explanation: 'Increasing by 1,800% means multiplying by 1 + 18 = 19. So 19x = 684, giving x = 36.',
+  },
+  {
+    id: 'mt1-m-10',
+    section: 'Math',
+    topic: 'Linear Functions',
+    difficulty: 'Medium',
+    prompt:
+      'A window repair specialist charges 220 dollars for the first two hours of repair plus an hourly fee for each additional hour. The total cost for 5 hours of repair is 400 dollars. Which function f gives the total cost, in dollars, for x hours of repair, where x is greater than or equal to 2?',
+    choices: ['f(x) = 60x + 100', 'f(x) = 60x + 220', 'f(x) = 80x', 'f(x) = 60(x − 2) + 220'],
+    correctIndex: 3,
+    explanation: 'Total cost = 220 + hourly_rate × (x − 2). From the 5-hour data: 220 + 3r = 400 → r = 60. So f(x) = 60(x − 2) + 220.',
+  },
+]
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock Test 2 — SAT Practice Test 11
+// 10 Reading & Writing + 10 Math, sourced directly from the official CSV.
+// ─────────────────────────────────────────────────────────────────────────────
+const MOCK_TEST_2_QUESTIONS: PracticeQuestion[] = [
+  // ── Reading & Writing ─────────────────────────────────────────────────────
+  {
+    id: 'mt2-rw-01',
+    section: 'Reading & Writing',
+    topic: 'Words in Context',
+    difficulty: 'Easy',
+    prompt:
+      'Ezra Pound\'s poetry can be hard to _______ : it is dense, experimental, and so full of references and allusions that many readers have a difficult time even identifying the poems\' subjects.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['comprehend', 'dislike', 'interrupt', 'overlook'],
+    correctIndex: 0,
+    explanation: 'Dense, experimental poetry full of allusions is difficult to understand — "comprehend" fits precisely.',
+  },
+  {
+    id: 'mt2-rw-02',
+    section: 'Reading & Writing',
+    topic: 'Words in Context',
+    difficulty: 'Easy',
+    prompt:
+      'The unique subak water management system used to irrigate the rice paddy fields of the Indonesian island of Bali has a rich cultural, philosophical, and historical significance dating back to the ninth century. The many elements of subak — terraces, canals, and water temples — are _______ : they are joined together into a single cohesive unit.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['outmoded', 'informal', 'interconnected', 'optional'],
+    correctIndex: 2,
+    explanation: '"Joined together into a single cohesive unit" defines elements that are "interconnected."',
+  },
+  {
+    id: 'mt2-rw-03',
+    section: 'Reading & Writing',
+    topic: 'Words in Context',
+    difficulty: 'Easy',
+    prompt:
+      'Although the government of the Soviet Union attempted to _______ Georgi Vladimov\'s novel Faithful Ruslan, copies of the book circulated in secret among readers in several parts of the country.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['replicate', 'critique', 'import', 'suppress'],
+    correctIndex: 3,
+    explanation: 'The books circulating "in secret" contrasts with the government\'s attempt to stop it — "suppress" fits.',
+  },
+  {
+    id: 'mt2-rw-04',
+    section: 'Reading & Writing',
+    topic: 'Words in Context',
+    difficulty: 'Easy',
+    prompt:
+      'Scholars long thought that the initial spread of silk beyond China occurred in the second century CE, but this view has been _______ by new archaeological evidence from South Asia that reveals that the people of the Indus Civilization made use of silk at least 1,000 years earlier.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['investigated', 'misinterpreted', 'anticipated', 'contradicted'],
+    correctIndex: 3,
+    explanation: 'Evidence showing silk use 1,000 years earlier than believed directly contradicts the old view.',
+  },
+  {
+    id: 'mt2-rw-05',
+    section: 'Reading & Writing',
+    topic: 'Words in Context',
+    difficulty: 'Easy',
+    prompt:
+      'A casual description of Scherezade García\'s 2019 mural Blame It on the Bean: The Power of Coffee can make the work seem _______ — a painting that is housed in a coffee shop and that depicts three women drinking coffee may not sound particularly ambitious — but in fact the work is a complex, dynamic meditation on gender and the legacy of colonialism that demands serious attention.\n\nWhich choice completes the text with the most logical and precise word or phrase?',
+    choices: ['unassuming', 'shrewd', 'incongruous', 'pretentious'],
+    correctIndex: 0,
+    explanation: 'The contrast between a simple-sounding description and the work\'s true complexity suggests it seems "unassuming" at first.',
+  },
+  {
+    id: 'mt2-rw-06',
+    section: 'Reading & Writing',
+    topic: 'Text Structure & Function',
+    difficulty: 'Medium',
+    prompt:
+      'The following text is adapted from Akwaeke Emezi\'s 2019 novel Pet.\n\nBitter finished the painting in the dark morning of a day — it was well past midnight when Jam heard the studio door creak open. She stared into the velvet black of her room and listened to her mother\'s footsteps walking in her and Aloe\'s bedroom. There was a weight thrumming through the floorboards in a low song, and that was how Jam knew the painting was done. Bitter\'s feet were singing the news.\n\nWhich choice best states the function of the underlined sentence in the text as a whole?',
+    choices: [
+      'It indicates that Jam is more interested in music than in art.',
+      'It adds to the idea that Bitter\'s footsteps reveal something to Jam.',
+      'It indicates that Bitter always sings when working on a painting.',
+      'It describes Aloe\'s reaction upon seeing the painting for the first time.',
+    ],
+    correctIndex: 1,
+    explanation: 'The metaphor of feet "singing the news" reinforces that Bitter\'s footsteps communicated the painting\'s completion to Jam.',
+  },
+  {
+    id: 'mt2-rw-07',
+    section: 'Reading & Writing',
+    topic: 'Main Idea & Purpose',
+    difficulty: 'Medium',
+    prompt:
+      'The following text is from Bram Stoker\'s 1911 novel The Lair of the White Worm.\n\nThe meeting so auspiciously begun proceeded well. Adam, seeing that the old man was interested in the novelty of the ship, suggested that he should stay the night on board, and that he would himself be ready to start at any hour and go anywhere that the other suggested. This affectionate willingness to fall in with his own plans quite won the old man\'s heart. He warmly accepted the invitation, and at once they became not only on terms of affectionate relationship, but almost like old friends.\n\nWhich choice best states the main purpose of the text?',
+    choices: [
+      'It states the reasons why Adam and his great-uncle Richard decide to sleep on the ship rather than finding lodging on land.',
+      'It showcases how Adam\'s flexibility and consideration strengthen his relationship with his great-uncle Richard.',
+      'It describes why Adam and his great-uncle Richard are excited for their upcoming journey on the ship.',
+      'It contrasts great-uncle Richard\'s wary first impressions of Adam with his ultimate affection toward him.',
+    ],
+    correctIndex: 1,
+    explanation: 'Adam\'s willingness to accommodate his great-uncle wins the old man over — the passage shows how Adam\'s flexibility strengthens their bond.',
+  },
+  {
+    id: 'mt2-rw-08',
+    section: 'Reading & Writing',
+    topic: 'Dual Texts',
     difficulty: 'Hard',
     prompt:
-      'The ancient bridge had stood for 800 years, surviving floods and earthquakes. Yet within a decade of the new highway\'s construction nearby, cracks began to spread across its surface. Which choice most logically completes the text? The text most strongly suggests that ___.',
+      'Text 1\nGood art often challenges and disrupts social and aesthetic norms, but the creation of public art — paintings, sculptures, and performance pieces displayed in nonmuseum public settings — typically requires broad agreement among artists, civic officials, and community members about the works\' message and artistic goals. Public art that fails to appease everyone by being sufficiently aesthetically and conceptually bland almost inevitably provokes backlash.\n\nText 2\nPublic art is commonly displayed in spaces intended for purposes other than meaningful aesthetic engagement. Some critics of public art therefore note that norm-defying pieces that aren\'t effectively integrated within their surroundings in a manner that primes passersby to appreciate the pieces\' merits tend to be regarded more unfavorably than similarly provocative art encountered in museums is.\n\nBased on the texts, how would the critics mentioned in Text 2 most likely respond to the underlined claim in Text 1?',
     choices: [
-      'the bridge was poorly built originally',
-      "the nearby construction likely contributed to the bridge's damage",
-      'earthquakes are more damaging than highways',
-      'the bridge will last another 800 years',
+      'By arguing that the reason members of the general public might disagree about a public artwork\'s merits is unrelated to the unconventionality of its appearance and ideas',
+      'By agreeing that only works of art that are universally appealing are suitable for displaying in public spaces',
+      'By disputing the notion that civic leaders and community members are easily placated by art that reinforces social norms',
+      'By contending that the kinds of reactions controversial public artworks often receive aren\'t exclusively the result of attributes inherent in the works themselves',
     ],
-    correctIndex: 1,
-    explanation: 'The damage appeared only after the nearby construction, implying the construction likely contributed to it.',
+    correctIndex: 3,
+    explanation: 'Text 2\'s critics argue that backlash depends on how art is integrated into its setting, not just on the art\'s inherent qualities — so reactions aren\'t solely due to the works\' own attributes.',
   },
   {
-    id: 'mock-r26',
+    id: 'mt2-rw-09',
     section: 'Reading & Writing',
-    topic: 'Rhetorical synthesis',
+    topic: 'Command of Evidence',
     difficulty: 'Medium',
     prompt:
-      'A student wants to emphasize how quickly a town\'s population grew. Which choice best accomplishes this goal?',
+      'The average age at which people in the United States start businesses is 35. Economist Andrés Hincapié studied why young adults are relatively less likely to start businesses and whether there are ways to increase entrepreneurship in early adulthood. Hincapié found that one impediment is lack of knowledge about the practical details of how businesses are started; he further found that simply providing young adults with good informational resources on the topic significantly alleviates this problem.\n\nBased on the text, what would Hincapié most likely say is a promising way to increase entrepreneurship in early adulthood?',
     choices: [
-      'The population changed over the years.',
-      'The population grew from 5,000 to 50,000 in just five years.',
-      'The population was studied by researchers.',
-      'The population included many families.',
+      'Creating social networks of young adults who are interested in starting a business',
+      'Encouraging young adults to brainstorm business ideas',
+      'Providing young adults with practical information about how to start a business',
+      'Giving young adults training opportunities at a variety of businesses',
     ],
-    correctIndex: 1,
-    explanation: 'Specific figures and the phrase "in just five years" most effectively emphasize the rapid growth.',
+    correctIndex: 2,
+    explanation: 'Hincapié found that providing informational resources significantly alleviates the knowledge gap — so providing practical information is the most promising solution.',
   },
   {
-    id: 'mock-r27',
+    id: 'mt2-rw-10',
     section: 'Reading & Writing',
-    topic: 'Author\'s purpose',
-    difficulty: 'Medium',
-    prompt:
-      'An author opens an essay with a vivid description of a polluted river choked with trash. The most likely purpose of this opening is to:',
-    choices: [
-      'entertain the reader with nature writing',
-      'create an emotional appeal to highlight an environmental problem',
-      'provide precise scientific data on water quality',
-      'argue that rivers are unimportant',
-    ],
-    correctIndex: 1,
-    explanation: 'A vivid, troubling image is a rhetorical move designed to make the reader feel the severity of the problem.',
-  },
-  {
-    id: 'mock-r28',
-    section: 'Reading & Writing',
-    topic: 'Conciseness',
-    difficulty: 'Medium',
-    prompt: 'Which choice is most concise while keeping the meaning?',
-    choices: [
-      'Due to the fact that it was raining, we stayed inside.',
-      'Because it was raining, we stayed inside.',
-      'On account of the rain that was happening, we stayed inside.',
-      'Owing to the fact of the rain, we stayed inside.',
-    ],
-    correctIndex: 1,
-    explanation: '"Because" conveys the same cause-and-effect meaning without the wordy padding of the other options.',
-  },
-  {
-    id: 'mock-r29',
-    section: 'Reading & Writing',
-    topic: 'Word choice',
+    topic: 'Main Idea',
     difficulty: 'Easy',
-    prompt: 'Which choice completes the text in Standard English? "There were ___ cars on the road today than usual."',
-    choices: ['less', 'fewer', 'least', 'lesser'],
-    correctIndex: 1,
-    explanation: '"Cars" are countable, so the comparative "fewer" is correct rather than "less."',
+    prompt:
+      'Few animals are known to spit: among them are humans, cobras, and camels. But in January 2022 at a nature preserve in southern England, bird-watcher Clare Jacobs observed a gray seal spitting a jet of water at a white-tailed eagle flying overhead. Seals had never been seen spitting before. Biologist Sean Twiss, who studies gray seals, believes that the seal may have been attempting to scare the eagle away from a food source or that the seal may have just been playing.\n\nWhich choice best states the main idea of the text?',
+    choices: [
+      'Cobras are the most well-known animals that spit.',
+      'Biologist Sean Twiss has studied gray seals for many years.',
+      'A gray seal was observed spitting for the first time, and scientists are uncertain why.',
+      'Eagles and seals are natural enemies in nature preserves.',
+    ],
+    correctIndex: 2,
+    explanation: 'The passage centers on the unprecedented observation of a seal spitting and the uncertainty about why it happened.',
+  },
+
+  // ── Math ──────────────────────────────────────────────────────────────────
+  {
+    id: 'mt2-m-01',
+    section: 'Math',
+    topic: 'Geometry — Triangles',
+    difficulty: 'Easy',
+    prompt:
+      'In the triangle shown, PQ / QR = 1. The triangle has angle measures that sum to 180 degrees, and two sides are equal (PQ = QR). One base angle is labeled x degrees. What is the value of x?',
+    choices: ['156', '66', '48', '24'],
+    correctIndex: 3,
+    explanation: 'If PQ = QR the triangle is isosceles. The apex angle is 180 − 2x. Setting the sum equal to 180 and solving with the given proportion gives x = 24.',
   },
   {
-    id: 'mock-r30',
-    section: 'Reading & Writing',
-    topic: 'Pronoun case',
-    difficulty: 'Medium',
-    prompt: 'Which choice completes the text correctly? "To ___ should I address the complaint?"',
-    choices: ['who', 'whom', 'whose', "who's"],
+    id: 'mt2-m-02',
+    section: 'Math',
+    topic: 'Statistics — Probability',
+    difficulty: 'Easy',
+    prompt:
+      'A total of 50 children attended a summer camp and were offered 4 types of sandwiches. Turkey: 15, Chicken: 23, Ham: 3, Vegetarian: 9. If one of these children is selected at random, what is the probability of selecting a child who chose a vegetarian sandwich?',
+    choices: ['9/100', '9/50', '1/4', '9/10'],
     correctIndex: 1,
-    explanation: '"Whom" is the object of the preposition "to," so it is the correct form.',
+    explanation: '9 out of 50 children chose vegetarian, so the probability is 9/50.',
+  },
+  {
+    id: 'mt2-m-03',
+    section: 'Math',
+    topic: 'Word Problems',
+    difficulty: 'Easy',
+    prompt:
+      'Amara grows cherry tomatoes in her backyard. This year, she harvested 750 cherry tomatoes and gave 10% of them to her neighbor. How many of the harvested cherry tomatoes did Amara give to her neighbor?',
+    choices: ['7', '75', '750', '7,500'],
+    correctIndex: 1,
+    explanation: '10% of 750 = 0.10 × 750 = 75.',
+  },
+  {
+    id: 'mt2-m-04',
+    section: 'Math',
+    topic: 'Systems of Equations',
+    difficulty: 'Easy',
+    prompt:
+      'x + y = 125\nx + y + y = 155\n\nThe solution to the given system of equations is (x, y). What is the value of y?',
+    choices: ['10', '20', '30', '40'],
+    correctIndex: 2,
+    explanation: 'The second equation simplifies to x + 2y = 155. Subtracting the first: y = 30.',
+  },
+  {
+    id: 'mt2-m-05',
+    section: 'Math',
+    topic: 'Sampling & Estimation',
+    difficulty: 'Medium',
+    prompt:
+      'A cable provider wanted to know how many of its 30,000 customers would be interested in a new service plan. The provider selected 300 customers at random and asked each whether they would be interested in the new plan. Of those surveyed, 8 said they would be interested. Which of the following is the best estimate of the total number of customers who would be interested in the new service plan?',
+    choices: ['8', '80', '800', '8,000'],
+    correctIndex: 2,
+    explanation: '8/300 × 30,000 = 800. The estimated total is 800 customers.',
+  },
+  {
+    id: 'mt2-m-06',
+    section: 'Math',
+    topic: 'Statistics',
+    difficulty: 'Medium',
+    prompt:
+      'A scientist measured the lengths of 240 gray seals from Muskeget Island and 120 gray seals from Sable Island. The mean length of the 240 seals from Muskeget Island was 88 inches and the mean length of the 120 seals from Sable Island was 94 inches. What was the mean length, in inches, of all 360 gray seals?',
+    choices: ['89', '90', '91', '92'],
+    correctIndex: 1,
+    explanation: 'Weighted mean = (240 × 88 + 120 × 94) / 360 = (21,120 + 11,280) / 360 = 32,400 / 360 = 90.',
+  },
+  {
+    id: 'mt2-m-07',
+    section: 'Math',
+    topic: 'Geometry — Parallel Lines',
+    difficulty: 'Easy',
+    prompt:
+      'Line k is defined by y = 6x + 4. Line j is parallel to line k in the xy-plane and passes through the point (0, 5). Which equation defines line j?',
+    choices: ['y = 6x + 5', 'y = −5x + 5', 'y = −6x + 5', 'y = 5x + 5'],
+    correctIndex: 0,
+    explanation: 'Parallel lines have the same slope. Line k has slope 6 and line j passes through (0, 5), giving y = 6x + 5.',
+  },
+  {
+    id: 'mt2-m-08',
+    section: 'Math',
+    topic: 'Geometry — Triangles',
+    difficulty: 'Medium',
+    prompt:
+      'In triangle XYZ, the measure of angle X is 90 degrees. Point W lies on segment YZ, and segment WX is perpendicular to segment YZ. The length of segment WY is 572, and the length of segment WX is 429. What is the value of tan(Z)?',
+    choices: ['5/3', '4/3', '5/4', '3/4'],
+    correctIndex: 3,
+    explanation: 'In right triangle WXZ, tan(Z) = WX / WZ. Using similar triangles: WZ = WX^2 / WY = 429^2 / 572 = 321.75 ≈ 1287/4. tan(Z) = WX/WZ = 3/4.',
+  },
+  {
+    id: 'mt2-m-09',
+    section: 'Math',
+    topic: 'Rectangles',
+    difficulty: 'Easy',
+    prompt:
+      'A rectangle has a length of 56 inches and a width of 28 inches. What is the area, in square inches, of the rectangle?',
+    choices: ['28', '84', '168', '1,568'],
+    correctIndex: 3,
+    explanation: 'Area = length × width = 56 × 28 = 1,568 square inches.',
+  },
+  {
+    id: 'mt2-m-10',
+    section: 'Math',
+    topic: 'Percentage Word Problems',
+    difficulty: 'Medium',
+    prompt:
+      'The number a is 55% less than the number b. The number b is 320% greater than 160. What is the value of a?',
+    choices: ['151.2', '201.6', '302.4', '672'],
+    correctIndex: 2,
+    explanation: 'b = 160 × (1 + 3.20) = 160 × 4.20 = 672. a = 672 × (1 − 0.55) = 672 × 0.45 = 302.4.',
   },
 ]
 
@@ -684,41 +529,34 @@ export interface MockTest {
   questions: PracticeQuestion[]
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
 /**
- * Builds 3 distinct, non-overlapping mock tests from the bank. Each test draws
- * 10 Math and 10 Reading & Writing questions, interleaved by section the way a
- * real SAT alternates content. The bank is shuffled on every call so repeat
- * visits produce a fresh distribution.
+ * Returns the two static mock tests built from the official SAT question bank CSVs.
+ * Test 1 uses SAT Practice Test 10 questions; Test 2 uses SAT Practice Test 11 questions.
+ * Questions are interleaved Math / Reading & Writing the way a real SAT alternates content.
  */
 export function buildMockTests(): MockTest[] {
-  const math = shuffle(MOCK_BANK.filter((q) => q.section === 'Math'))
-  const rw = shuffle(MOCK_BANK.filter((q) => q.section === 'Reading & Writing'))
-  const perTest = 10
-
-  const tests: MockTest[] = []
-  for (let t = 0; t < 3; t++) {
-    const m = math.slice(t * perTest, (t + 1) * perTest)
-    const r = rw.slice(t * perTest, (t + 1) * perTest)
-    const interleaved: PracticeQuestion[] = []
-    const max = Math.max(m.length, r.length)
+  function interleave(qs: PracticeQuestion[]): PracticeQuestion[] {
+    const math = qs.filter((q) => q.section === 'Math')
+    const rw = qs.filter((q) => q.section === 'Reading & Writing')
+    const out: PracticeQuestion[] = []
+    const max = Math.max(math.length, rw.length)
     for (let i = 0; i < max; i++) {
-      if (m[i]) interleaved.push(m[i])
-      if (r[i]) interleaved.push(r[i])
+      if (rw[i]) out.push(rw[i])
+      if (math[i]) out.push(math[i])
     }
-    tests.push({
-      id: `mock-test-${t + 1}`,
-      name: `Practice Test ${t + 1}`,
-      questions: interleaved,
-    })
+    return out
   }
-  return tests
+
+  return [
+    {
+      id: 'mock-test-1',
+      name: 'Practice Test 1',
+      questions: interleave(MOCK_TEST_1_QUESTIONS),
+    },
+    {
+      id: 'mock-test-2',
+      name: 'Practice Test 2',
+      questions: interleave(MOCK_TEST_2_QUESTIONS),
+    },
+  ]
 }

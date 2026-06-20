@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { PACKING_LIST } from '@/lib/constants'
 import type { PlanTopic, TriageData } from '@/lib/sat-types'
 import { deriveTimes } from '@/lib/time-utils'
@@ -11,6 +11,10 @@ interface Props {
   topics: PlanTopic[]
   completedTopics: Set<string>
   onContinue: () => void
+  /** Launch the post-plan progress check (30 Math + 30 R&W). */
+  onStartPostDiagnostic: () => void
+  /** Whether a post-diagnostic has already been completed. */
+  hasPostDiagnostic: boolean
 }
 
 interface CheckItemProps {
@@ -59,91 +63,18 @@ function CheckItem({ label, checked, onToggle, href, auto }: CheckItemProps) {
   )
 }
 
-function PackingItem({
-  label,
-  checked,
-  onToggle,
-  cameraSupported,
-}: {
-  label: string
-  checked: boolean
-  onToggle: (val: boolean) => void
-  cameraSupported: boolean
-}) {
-  const [thumb, setThumb] = useState<string>('')
-  const inputRef = useRef<HTMLInputElement>(null)
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setThumb(reader.result as string)
-      onToggle(true)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  return (
-    <li className="flex items-center gap-3">
-      {cameraSupported ? (
-        <>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFile}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            aria-label={`Take a photo of ${label}`}
-            className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 ${
-              checked ? 'border-emerald-500' : 'border-border bg-card'
-            }`}
-          >
-            {thumb ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumb || '/placeholder.svg'} alt={`${label} packed`} className="h-full w-full object-cover" />
-            ) : (
-              <span className="ti ti-camera text-lg text-muted-foreground" aria-hidden="true" />
-            )}
-          </button>
-        </>
-      ) : (
-        <button
-          type="button"
-          onClick={() => onToggle(!checked)}
-          role="checkbox"
-          aria-checked={checked}
-          aria-label={label}
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 ${
-            checked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-border bg-card'
-          }`}
-        >
-          {checked && <span className="ti ti-check text-base" aria-hidden="true" />}
-        </button>
-      )}
-      <span className={`flex-1 text-sm ${checked ? 'text-muted-foreground line-through' : ''}`}>
-        {label}
-      </span>
-    </li>
-  )
-}
-
-export function Checklist({ triage, topics, completedTopics, onContinue }: Props) {
+export function Checklist({
+  triage,
+  topics,
+  completedTopics,
+  onContinue,
+  onStartPostDiagnostic,
+  hasPostDiagnostic,
+}: Props) {
   const times = deriveTimes(triage.testStartTime)
   const wakeLabel = times?.wakeUpLabel ?? ''
   const sprint = triage.timeBudget === 'sprint'
-
-  const [cameraSupported, setCameraSupported] = useState(true)
-  useEffect(() => {
-    setCameraSupported(
-      typeof navigator !== 'undefined' && !!navigator.mediaDevices,
-    )
-  }, [])
 
   const logisticsItems = useMemo(
     () => [
@@ -267,18 +198,15 @@ export function Checklist({ triage, topics, completedTopics, onContinue }: Props
               Packing list
             </h2>
             <p className="mb-3 text-xs text-muted-foreground">
-              {cameraSupported
-                ? 'Tap the camera to snap a photo as you pack each item.'
-                : 'Check off each item as you pack it.'}
+              Check off each item as you pack it.
             </p>
             <ul className="flex flex-col gap-3">
               {PACKING_LIST.map((p) => (
-                <PackingItem
+                <CheckItem
                   key={p}
                   label={p}
                   checked={!!packing[p]}
-                  cameraSupported={cameraSupported}
-                  onToggle={(val) => setPacking((s) => ({ ...s, [p]: val }))}
+                  onToggle={() => setPacking((s) => ({ ...s, [p]: !s[p] }))}
                 />
               ))}
             </ul>
@@ -318,6 +246,33 @@ export function Checklist({ triage, topics, completedTopics, onContinue }: Props
           )}
         </section>
       )}
+
+      {/* Post-plan progress check */}
+      <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15">
+            <span className="ti ti-progress-check text-xl text-primary" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold text-foreground">
+              {hasPostDiagnostic ? 'Run another progress check' : 'See how far you have come'}
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              Take a fresh 60-question diagnostic (30 Math + 30 Reading &amp; Writing) and we&apos;ll
+              compare it to your very first one — what improved, what you did well, and what to keep
+              studying.
+            </p>
+            <button
+              type="button"
+              onClick={onStartPostDiagnostic}
+              className="mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <span className="ti ti-clipboard-check" aria-hidden="true" />
+              {hasPostDiagnostic ? 'Take a new diagnostic check' : 'Take diagnostic test'}
+            </button>
+          </div>
+        </div>
+      </section>
 
       <button
         type="button"

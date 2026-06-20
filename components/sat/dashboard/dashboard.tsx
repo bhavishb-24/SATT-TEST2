@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type {
   DashboardView,
+  DiagnosticRecord,
   PlanResponse,
   PlanTopic,
   TriageData,
@@ -14,6 +15,7 @@ import type { StatsApi } from '@/lib/use-stats'
 import { cn } from '@/lib/utils'
 import { Sidebar } from './sidebar'
 import { MobileNav } from './mobile-nav'
+import { DashboardTour } from './dashboard-tour'
 import { HomeView } from './home-view'
 import { PracticeView } from './practice-view'
 import { MockTestView } from './mock-test-view'
@@ -22,6 +24,7 @@ import { ProgressView } from './progress-view'
 import { StudyPlan } from '../study-plan'
 import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
+import { PostDiagnostic } from '../post-diagnostic'
 
 interface DashboardProps {
   triage: TriageData
@@ -34,6 +37,14 @@ interface DashboardProps {
   onComplete: (topicName: string, confident: boolean) => void
   onReorder: (index: number, dir: -1 | 1) => void
   onActiveStep: (text: string) => void
+  /** The original pre-plan diagnostic, used as the comparison baseline. */
+  preDiagnostic: DiagnosticRecord | null
+  /** The most recent post-plan diagnostic, if any. */
+  postDiagnostic: DiagnosticRecord | null
+  /** Persist a completed post-plan diagnostic. */
+  onSavePostDiagnostic: (record: DiagnosticRecord) => void
+  /** Rebuild the study plan from a diagnostic record. */
+  onRebuildPlan: (record: DiagnosticRecord) => void
 }
 
 const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
@@ -58,8 +69,17 @@ export function Dashboard({
   onComplete,
   onReorder,
   onActiveStep,
+  preDiagnostic,
+  postDiagnostic,
+  onSavePostDiagnostic,
+  onRebuildPlan,
 }: DashboardProps) {
   const [view, setView] = useState<DashboardView>('home')
+  // Full-screen post-plan progress check overlay.
+  const [postDiagnosticOpen, setPostDiagnosticOpen] = useState(false)
+  // The interactive product tour auto-starts the first time the dashboard loads.
+  const [tourActive, setTourActive] = useState(true)
+  const finishTour = useCallback(() => setTourActive(false), [])
   const theme = getPanicTheme(triage.panic)
   const countdown = useCountdown(triage.testStartTime)
   const timeZone = useTimeZone()
@@ -156,7 +176,11 @@ export function Dashboard({
             )}
 
             {view === 'flashcards' && (
-              <FlashcardsView theme={theme} onReview={statsApi.recordFlashcard} />
+              <FlashcardsView
+                theme={theme}
+                onReview={statsApi.recordFlashcard}
+                weakAreas={triage.weakAreas}
+              />
             )}
 
             {view === 'progress' && (
@@ -169,6 +193,8 @@ export function Dashboard({
                 topics={topics}
                 completedTopics={completed}
                 onContinue={() => setView('morning')}
+                onStartPostDiagnostic={() => setPostDiagnosticOpen(true)}
+                hasPostDiagnostic={!!postDiagnostic}
               />
             )}
 
@@ -180,6 +206,24 @@ export function Dashboard({
       </div>
 
       <MobileNav active={view} onNavigate={setView} theme={theme} />
+
+      {tourActive && <DashboardTour onNavigate={setView} onFinish={finishTour} />}
+
+      {postDiagnosticOpen && (
+        <PostDiagnostic
+          pre={preDiagnostic}
+          triage={triage}
+          theme={theme}
+          onClose={() => setPostDiagnosticOpen(false)}
+          onSaved={onSavePostDiagnostic}
+          onRebuildPlan={(record) => {
+            // Close the overlay first, then defer one tick so it fully
+            // unmounts before generatePlan transitions the screen to 'loading'.
+            setPostDiagnosticOpen(false)
+            setTimeout(() => onRebuildPlan(record), 0)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -47,23 +47,23 @@ export function SleepBanner({ sleepDeadlineMinutes, wakeUpLabel, sleepLabel }: P
   }
 
   return (
-    <section className="rounded-2xl bg-foreground p-5 text-background">
+    <section className="rounded-2xl border border-primary/30 bg-primary/10 p-5">
       <div className="flex items-center gap-2">
-        <span className="ti ti-moon-filled text-xl text-amber-400" aria-hidden="true" />
+        <span className="ti ti-moon-filled text-xl text-primary" aria-hidden="true" />
         <div className="flex flex-1 items-center justify-between gap-2">
-          <p className="text-sm font-bold">Sleep by {sleepLabel}</p>
-          <p className="text-sm font-bold opacity-80">Wake up by {wakeUpLabel}</p>
+          <p className="text-sm font-bold text-foreground">Sleep by {sleepLabel}</p>
+          <p className="text-sm font-bold text-muted-foreground">Wake up by {wakeUpLabel}</p>
         </div>
       </div>
-      <div className="mt-3 rounded-xl bg-background/10 p-3 text-center">
-        <p className="text-xs opacity-60">Time until your sleep deadline</p>
-        <p className="text-2xl font-bold tabular-nums text-amber-400">
+      <div className="mt-3 rounded-xl bg-primary/10 p-3 text-center">
+        <p className="text-xs text-muted-foreground">Time until your sleep deadline</p>
+        <p className="text-2xl font-bold tabular-nums text-primary">
           {formatCountdown(msLeft)}
         </p>
       </div>
-      <p className="mt-3 text-xs leading-relaxed opacity-70">
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         After your sleep deadline, sleep beats studying. This is the one decision your AI coach
-        won’t make for you.
+        won&apos;t make for you.
       </p>
     </section>
   )

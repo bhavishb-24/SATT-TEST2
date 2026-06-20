@@ -23,10 +23,10 @@ export function formatMinutes(totalMinutes: number): string {
   return `${hours}:${minutes.toString().padStart(2, '0')} ${meridiem}`
 }
 
-// Build the list of test-start options from 7:00 AM to 10:00 AM in 30-min increments.
+// Build the list of test-start options from 7:00 AM to 10:00 AM in 1-hour increments.
 export function buildTestTimeOptions(): string[] {
   const options: string[] = []
-  for (let m = 7 * 60; m <= 10 * 60; m += 30) {
+  for (let m = 7 * 60; m <= 10 * 60; m += 60) {
     options.push(formatMinutes(m))
   }
   return options

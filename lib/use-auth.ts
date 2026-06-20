@@ -5,6 +5,7 @@ import type { DiagnosticRecord, GuestUser } from './sat-types'
 
 const USER_KEY = 'ser:guest-user'
 const DIAGNOSTIC_KEY = 'ser:diagnostic'
+const POST_DIAGNOSTIC_KEY = 'ser:post-diagnostic'
 
 const ADJECTIVES = [
   'Brave',
@@ -41,6 +42,10 @@ export interface AuthApi {
   diagnostic: DiagnosticRecord | null
   saveDiagnostic: (record: DiagnosticRecord) => void
   clearDiagnostic: () => void
+  /** The post-plan diagnostic, taken after working through the study plan. */
+  postDiagnostic: DiagnosticRecord | null
+  savePostDiagnostic: (record: DiagnosticRecord) => void
+  clearPostDiagnostic: () => void
 }
 
 /**
@@ -51,6 +56,7 @@ export interface AuthApi {
 export function useAuth(): AuthApi {
   const [user, setUser] = useState<GuestUser | null>(null)
   const [diagnostic, setDiagnostic] = useState<DiagnosticRecord | null>(null)
+  const [postDiagnostic, setPostDiagnostic] = useState<DiagnosticRecord | null>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -59,6 +65,8 @@ export function useAuth(): AuthApi {
       if (raw) setUser(JSON.parse(raw) as GuestUser)
       const diag = localStorage.getItem(DIAGNOSTIC_KEY)
       if (diag) setDiagnostic(JSON.parse(diag) as DiagnosticRecord)
+      const post = localStorage.getItem(POST_DIAGNOSTIC_KEY)
+      if (post) setPostDiagnostic(JSON.parse(post) as DiagnosticRecord)
     } catch {
       // ignore corrupt storage
     } finally {
@@ -85,11 +93,13 @@ export function useAuth(): AuthApi {
     try {
       localStorage.removeItem(USER_KEY)
       localStorage.removeItem(DIAGNOSTIC_KEY)
+      localStorage.removeItem(POST_DIAGNOSTIC_KEY)
     } catch {
       // ignore
     }
     setUser(null)
     setDiagnostic(null)
+    setPostDiagnostic(null)
   }, [])
 
   const saveDiagnostic = useCallback((record: DiagnosticRecord) => {
@@ -110,6 +120,24 @@ export function useAuth(): AuthApi {
     setDiagnostic(null)
   }, [])
 
+  const savePostDiagnostic = useCallback((record: DiagnosticRecord) => {
+    try {
+      localStorage.setItem(POST_DIAGNOSTIC_KEY, JSON.stringify(record))
+    } catch {
+      // ignore
+    }
+    setPostDiagnostic(record)
+  }, [])
+
+  const clearPostDiagnostic = useCallback(() => {
+    try {
+      localStorage.removeItem(POST_DIAGNOSTIC_KEY)
+    } catch {
+      // ignore
+    }
+    setPostDiagnostic(null)
+  }, [])
+
   return {
     user,
     ready,
@@ -118,5 +146,8 @@ export function useAuth(): AuthApi {
     diagnostic,
     saveDiagnostic,
     clearDiagnostic,
+    postDiagnostic,
+    savePostDiagnostic,
+    clearPostDiagnostic,
   }
 }
