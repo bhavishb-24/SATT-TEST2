@@ -42,14 +42,14 @@ export function Sidebar({
       <div className="flex items-center gap-2.5 px-5 py-5">
         <Image
           src="/logo.png"
-          alt="SAT Emergency Room logo"
+          alt="SAT Sage logo"
           width={36}
           height={36}
           className="h-9 w-9 rounded-lg object-contain"
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-bold leading-tight text-foreground">
-            SAT Emergency Room
+            SAT Sage
           </p>
           <p className="truncate text-xs text-muted-foreground">Night-before mode</p>
         </div>

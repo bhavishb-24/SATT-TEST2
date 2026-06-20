@@ -6,7 +6,7 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Get in touch with the SAT Emergency Room team. Questions, feedback, or a bug to report — we read everything.',
+    'Get in touch with the SAT Sage team. Questions, feedback, or a bug to report — we read everything.',
 }
 
 const CHANNELS = [

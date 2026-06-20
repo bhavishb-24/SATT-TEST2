@@ -6,7 +6,7 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Why we built SAT Emergency Room: great last-minute SAT help should not be a luxury reserved for students who can afford a tutor.',
+    'Why we built SAT Sage: great last-minute SAT help should not be a luxury reserved for students who can afford a tutor.',
 }
 
 const VALUES = [

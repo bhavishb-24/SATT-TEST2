@@ -46,7 +46,7 @@ ADDITIONAL DETAILS:
 ${details?.trim() || '(none provided)'}
 ─────────────────────────────────────
 
-Submitted from: SAT Emergency Room
+Submitted from: SAT Sage
 Timestamp: ${new Date().toISOString()}
     `.trim()
 
