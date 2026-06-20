@@ -91,12 +91,6 @@ export function PracticeView({ triage, theme, onAnswer }: PracticeViewProps) {
       <div className="mx-auto max-w-2xl">
         <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
           <h2 className="text-xl font-bold text-foreground">Practice Drills</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Fresh AI-generated questions targeting your weak areas
-            {triage.weakAreas.length > 0
-              ? `: ${triage.weakAreas.slice(0, 3).join(', ')}${triage.weakAreas.length > 3 ? '…' : ''}`
-              : '.'}
-          </p>
 
           <fieldset className="mt-6">
             <legend className="text-sm font-medium text-foreground mb-2">
