@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PlanResponse, PlanTopic, TriageData } from '@/lib/sat-types'
 import { deriveTimes } from '@/lib/time-utils'
 import { downloadFormulaSheetPdf } from '@/lib/formula-pdf'
@@ -39,6 +39,24 @@ export function StudyPlan({
   const { plan } = response
   const [breakOpen, setBreakOpen] = useState(false)
   const times = deriveTimes(triage.testStartTime)
+
+  // Sequential unlock: a card is unlocked only once every card before it is
+  // complete. The first not-yet-complete card is the "active" lesson.
+  const activeIndex = topics.findIndex((t) => !completed.has(t.name))
+  const allDone = activeIndex === -1
+  const isLocked = (i: number) => !allDone && i > activeIndex
+  const completedCount = topics.filter((t) => completed.has(t.name)).length
+
+  // When a new card becomes active (the previous one was just finished), scroll
+  // it into view so the flow advances automatically, Duolingo-style.
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+  const prevActive = useRef(activeIndex)
+  useEffect(() => {
+    if (activeIndex !== prevActive.current && activeIndex >= 0) {
+      cardRefs.current[activeIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    prevActive.current = activeIndex
+  }, [activeIndex])
 
   function handleComplete(topicName: string, confident: boolean) {
     onComplete(topicName, confident)
@@ -115,20 +133,49 @@ export function StudyPlan({
         </button>
       </section>
 
+      {/* Lesson progress */}
+      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <span className="ti ti-route text-primary" aria-hidden="true" />
+            Your learning path
+          </h3>
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+            {completedCount} / {topics.length} done
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${topics.length ? (completedCount / topics.length) * 100 : 0}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {allDone
+            ? 'Every lesson complete — incredible work.'
+            : 'Finish each lesson to unlock the next. Tip, example, then a real question.'}
+        </p>
+      </div>
+
       <div className="flex flex-col gap-4">
         {topics.map((topic, i) => (
-          <TopicCard
+          <div
             key={topic.name}
-            topic={topic}
-            index={i}
-            total={topics.length}
-            completed={completed.has(topic.name)}
-            voiceEnabled={voiceEnabled}
-            speak={speak}
-            onComplete={(confident) => handleComplete(topic.name, confident)}
-            onReorder={(dir) => onReorder(i, dir)}
-            onActiveStep={onActiveStep}
-          />
+            ref={(el) => {
+              cardRefs.current[i] = el
+            }}
+          >
+            <TopicCard
+              topic={topic}
+              index={i}
+              total={topics.length}
+              completed={completed.has(topic.name)}
+              locked={isLocked(i)}
+              isActive={i === activeIndex}
+              onComplete={(confident) => handleComplete(topic.name, confident)}
+              onReorder={(dir) => onReorder(i, dir)}
+            />
+          </div>
         ))}
       </div>
 
