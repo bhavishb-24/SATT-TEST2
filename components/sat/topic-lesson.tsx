@@ -1,82 +1,66 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import type { TopicLesson } from '@/lib/topic-lessons'
+import { useMemo, useRef, useState } from 'react'
+import type { Challenge, TopicLesson as TopicLessonData } from '@/lib/topic-lessons'
 import { isHighlightCorrect } from '@/lib/topic-lessons'
 import { LessonGraph } from './lesson-graph'
 
-type Stage = 'tip' | 'example' | 'practice' | 'done'
-
 interface Props {
-  lesson: TopicLesson
+  lesson: TopicLessonData
   completed: boolean
   onComplete: () => void
 }
 
-const STAGES: { id: Stage; label: string; icon: string }[] = [
-  { id: 'tip', label: 'Tip', icon: 'ti-bulb' },
-  { id: 'example', label: 'Example', icon: 'ti-eye' },
-  { id: 'practice', label: 'Practice', icon: 'ti-target-arrow' },
-]
-
 export function TopicLesson({ lesson, completed, onComplete }: Props) {
-  const [stage, setStage] = useState<Stage>(completed ? 'done' : 'tip')
+  const targets = lesson.targets
+  // Index of the target currently being worked on. When completed, jump to the
+  // end-state summary.
+  const [current, setCurrent] = useState(completed ? targets.length : 0)
 
-  // Multiple-choice state
-  const [picked, setPicked] = useState<number | null>(null)
-  // Highlight state
-  const [selectedText, setSelectedText] = useState('')
-  const [checked, setChecked] = useState(false)
-  const passageRef = useRef<HTMLParagraphElement>(null)
-  // Free-text state
-  const [text, setText] = useState('')
-  const [revealed, setRevealed] = useState(false)
+  const allDone = current >= targets.length
 
-  const q = lesson.question
-
-  function finish() {
-    setStage('done')
-    onComplete()
+  function handleSolved() {
+    if (current + 1 >= targets.length) {
+      setCurrent(targets.length)
+      onComplete()
+    } else {
+      setCurrent((c) => c + 1)
+    }
   }
 
-  // ---- Completed / done summary ----
-  if (stage === 'done') {
+  if (allDone) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-5 text-center dark:border-emerald-800 dark:bg-emerald-950/30">
         <span className="ti ti-circle-check-filled text-3xl text-emerald-500" aria-hidden="true" />
-        <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">Lesson complete</p>
+        <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+          All {targets.length} targets complete
+        </p>
         <p className="text-xs text-emerald-700 dark:text-emerald-300">
-          Nice work. The next topic is now unlocked.
+          Nice work — you finished every learning target in this topic.
         </p>
         <button
           type="button"
-          onClick={() => {
-            setPicked(null)
-            setSelectedText('')
-            setChecked(false)
-            setText('')
-            setRevealed(false)
-            setStage('tip')
-          }}
+          onClick={() => setCurrent(0)}
           className="mt-1 text-xs font-semibold text-emerald-700 underline underline-offset-2 dark:text-emerald-300"
         >
-          Review this lesson again
+          Review the targets again
         </button>
       </div>
     )
   }
 
+  const target = targets[current]
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Stage progress */}
+      {/* Target progress dots */}
       <div className="flex items-center gap-2">
-        {STAGES.map((s, i) => {
-          const activeIdx = STAGES.findIndex((x) => x.id === stage)
-          const state = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'todo'
+        {targets.map((t, i) => {
+          const state = i < current ? 'done' : i === current ? 'active' : 'todo'
           return (
-            <div key={s.id} className="flex flex-1 items-center gap-2">
+            <div key={t.title} className="flex flex-1 items-center gap-2">
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                   state === 'active'
                     ? 'bg-primary text-primary-foreground'
                     : state === 'done'
@@ -84,263 +68,391 @@ export function TopicLesson({ lesson, completed, onComplete }: Props) {
                       : 'bg-muted text-muted-foreground'
                 }`}
               >
-                <span className={`ti ${state === 'done' ? 'ti-check' : s.icon}`} aria-hidden="true" />
+                {state === 'done' ? <span className="ti ti-check" aria-hidden="true" /> : i + 1}
               </span>
-              <span
-                className={`text-xs font-semibold ${
-                  state === 'todo' ? 'text-muted-foreground' : 'text-foreground'
-                }`}
-              >
-                {s.label}
-              </span>
-              {i < STAGES.length - 1 && <span className="h-px flex-1 bg-border" />}
+              {i < targets.length - 1 && <span className="h-px flex-1 bg-border" />}
             </div>
           )
         })}
       </div>
 
-      {/* Tip */}
-      {stage === 'tip' && (
-        <div className="flex flex-col gap-3">
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
-              <span className="ti ti-bulb" aria-hidden="true" />
-              Learning tip
-            </p>
-            <h4 className="text-sm font-bold text-foreground">{lesson.tip.title}</h4>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{lesson.tip.body}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setStage('example')}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
-          >
-            See an example
-            <span className="ti ti-arrow-right" aria-hidden="true" />
-          </button>
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="ti ti-target-arrow text-primary" aria-hidden="true" />
+        Target {current + 1} of {targets.length}: {target.title}
+      </p>
+
+      {/* Tip banner */}
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+          <span className="ti ti-bulb" aria-hidden="true" />
+          Learning tip
+        </p>
+        <p className="text-sm leading-relaxed text-foreground">{target.tip}</p>
+      </div>
+
+      {/* Challenge — keyed so all internal state resets between targets */}
+      <ChallengeView key={current} challenge={target.challenge} onSolved={handleSolved} last={current + 1 >= targets.length} />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+
+function ChallengeView({
+  challenge,
+  onSolved,
+  last,
+}: {
+  challenge: Challenge
+  onSolved: () => void
+  last: boolean
+}) {
+  switch (challenge.kind) {
+    case 'mc':
+      return <MultipleChoice challenge={challenge} onSolved={onSolved} last={last} />
+    case 'highlight':
+      return <Highlight challenge={challenge} onSolved={onSolved} last={last} />
+    case 'order':
+      return <Order challenge={challenge} onSolved={onSolved} last={last} />
+    case 'fill-blank':
+      return <FillBlank challenge={challenge} onSolved={onSolved} last={last} />
+    default:
+      return null
+  }
+}
+
+function AdvanceButton({ onSolved, last }: { onSolved: () => void; last: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onSolved}
+      className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white"
+    >
+      {last ? 'Complete & unlock next' : 'Next target'}
+      <span className={`ti ${last ? 'ti-lock-open' : 'ti-arrow-right'}`} aria-hidden="true" />
+    </button>
+  )
+}
+
+function Feedback({ correct, children }: { correct: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className={`rounded-xl border p-3 text-sm leading-relaxed ${
+        correct
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200'
+          : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200'
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ---- Multiple choice -------------------------------------------------------
+
+function MultipleChoice({
+  challenge,
+  onSolved,
+  last,
+}: {
+  challenge: Extract<Challenge, { kind: 'mc' }>
+  onSolved: () => void
+  last: boolean
+}) {
+  const [picked, setPicked] = useState<number | null>(null)
+  const isRight = picked === challenge.correctIndex
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-medium leading-relaxed text-foreground">{challenge.prompt}</p>
+      {challenge.graph && (
+        <div className="flex justify-center">
+          <LessonGraph data={challenge.graph} />
         </div>
       )}
-
-      {/* Example */}
-      {stage === 'example' && (
-        <div className="flex flex-col gap-3">
-          <div className="rounded-xl border border-border bg-muted/40 p-4">
-            <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              <span className="ti ti-eye" aria-hidden="true" />
-              Example
-            </p>
-            <h4 className="text-sm font-bold text-foreground">{lesson.example.title}</h4>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{lesson.example.body}</p>
-            {lesson.example.graph && (
-              <div className="mt-3 flex justify-center">
-                <LessonGraph data={lesson.example.graph} />
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
+        {challenge.choices.map((choice, i) => {
+          const isPicked = picked === i
+          const isCorrect = i === challenge.correctIndex
+          let cls = 'border-border bg-card hover:border-primary/50'
+          if (isPicked && isCorrect) cls = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
+          else if (isPicked && !isCorrect) cls = 'border-red-400 bg-red-50 dark:bg-red-950/30'
+          else if (picked !== null && isCorrect) cls = 'border-emerald-400 bg-emerald-50/60 dark:bg-emerald-950/20'
+          return (
             <button
+              key={i}
               type="button"
-              onClick={() => setStage('tip')}
-              className="flex min-h-[48px] items-center justify-center gap-1 rounded-xl border border-border px-4 text-sm font-semibold text-muted-foreground"
+              onClick={() => setPicked(i)}
+              className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-4 text-left text-sm font-medium transition-colors ${cls}`}
             >
-              <span className="ti ti-arrow-left" aria-hidden="true" />
-              Back
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                {String.fromCharCode(65 + i)}
+              </span>
+              {choice}
             </button>
-            <button
-              type="button"
-              onClick={() => setStage('practice')}
-              className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
-            >
-              Try a real question
-              <span className="ti ti-arrow-right" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
+          )
+        })}
+      </div>
+      {picked !== null && (
+        <Feedback correct={isRight}>
+          <p className="mb-1 font-bold">{isRight ? 'Correct!' : 'Not quite — try again.'}</p>
+          {challenge.explanation}
+        </Feedback>
       )}
+      {isRight && <AdvanceButton onSolved={onSolved} last={last} />}
+    </div>
+  )
+}
 
-      {/* Practice */}
-      {stage === 'practice' && (
-        <div className="flex flex-col gap-3">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
-            <span className="ti ti-target-arrow" aria-hidden="true" />
-            Your turn
-          </p>
+// ---- Highlight -------------------------------------------------------------
 
-          {/* Multiple choice */}
-          {q.type === 'multiple-choice' && (
-            <>
-              <p className="text-sm font-medium leading-relaxed text-foreground">{q.prompt}</p>
-              {q.graph && (
-                <div className="flex justify-center">
-                  <LessonGraph data={q.graph} />
-                </div>
-              )}
-              <div className="flex flex-col gap-2">
-                {q.choices.map((choice, i) => {
-                  const isPicked = picked === i
-                  const isCorrect = i === q.correctIndex
-                  let cls = 'border-border bg-card hover:border-primary/50'
-                  if (isPicked && isCorrect) cls = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
-                  else if (isPicked && !isCorrect) cls = 'border-red-400 bg-red-50 dark:bg-red-950/30'
-                  else if (picked !== null && isCorrect) cls = 'border-emerald-400 bg-emerald-50/60 dark:bg-emerald-950/20'
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setPicked(i)}
-                      className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-4 text-left text-sm font-medium transition-colors ${cls}`}
-                    >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {choice}
-                    </button>
-                  )
-                })}
-              </div>
-              {picked !== null && (
-                <div
-                  className={`rounded-xl border p-3 text-sm leading-relaxed ${
-                    picked === q.correctIndex
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200'
-                      : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200'
-                  }`}
-                >
-                  <p className="mb-1 font-bold">
-                    {picked === q.correctIndex ? 'Correct!' : 'Not quite — try again.'}
-                  </p>
-                  {q.explanation}
-                </div>
-              )}
-              {picked === q.correctIndex && (
-                <button
-                  type="button"
-                  onClick={finish}
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white"
-                >
-                  Complete &amp; unlock next
-                  <span className="ti ti-lock-open" aria-hidden="true" />
-                </button>
-              )}
-            </>
+function Highlight({
+  challenge,
+  onSolved,
+  last,
+}: {
+  challenge: Extract<Challenge, { kind: 'highlight' }>
+  onSolved: () => void
+  last: boolean
+}) {
+  const [selectedText, setSelectedText] = useState('')
+  const [checked, setChecked] = useState(false)
+  const passageRef = useRef<HTMLParagraphElement>(null)
+  const correct = isHighlightCorrect(selectedText, challenge.answers)
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-medium leading-relaxed text-foreground">{challenge.prompt}</p>
+      <p
+        ref={passageRef}
+        onMouseUp={() => captureSelection(passageRef, setSelectedText, setChecked)}
+        onTouchEnd={() => captureSelection(passageRef, setSelectedText, setChecked)}
+        className="cursor-text select-text rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground"
+      >
+        {renderPassage(challenge.passage, selectedText)}
+      </p>
+      {selectedText && (
+        <p className="text-xs text-muted-foreground">
+          <span className="font-semibold text-foreground">You highlighted:</span> “{selectedText.trim()}”
+        </p>
+      )}
+      {!checked && (
+        <button
+          type="button"
+          disabled={!selectedText.trim()}
+          onClick={() => setChecked(true)}
+          className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-40"
+        >
+          <span className="ti ti-check" aria-hidden="true" />
+          Check my highlight
+        </button>
+      )}
+      {checked && (
+        <>
+          <Feedback correct={correct}>
+            <p className="mb-1 font-bold">
+              {correct ? 'Correct — that is the evidence!' : 'Not the strongest evidence. Re-read and try again.'}
+            </p>
+            {challenge.explanation}
+          </Feedback>
+          {correct ? (
+            <AdvanceButton onSolved={onSolved} last={last} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setChecked(false)
+                setSelectedText('')
+              }}
+              className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-foreground"
+            >
+              <span className="ti ti-refresh" aria-hidden="true" />
+              Try again
+            </button>
           )}
-
-          {/* Highlight */}
-          {q.type === 'highlight' && (
-            <>
-              <p className="text-sm font-medium leading-relaxed text-foreground">{q.prompt}</p>
-              <p
-                ref={passageRef}
-                onMouseUp={() => captureSelection(passageRef, setSelectedText, setChecked)}
-                onTouchEnd={() => captureSelection(passageRef, setSelectedText, setChecked)}
-                className="cursor-text select-text rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-foreground"
-              >
-                {renderPassage(q.passage, selectedText)}
-              </p>
-              {selectedText && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">You highlighted:</span> “{selectedText.trim()}”
-                </p>
-              )}
-              {!checked && (
-                <button
-                  type="button"
-                  disabled={!selectedText.trim()}
-                  onClick={() => setChecked(true)}
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-40"
-                >
-                  <span className="ti ti-check" aria-hidden="true" />
-                  Check my highlight
-                </button>
-              )}
-              {checked && (
-                <>
-                  <div
-                    className={`rounded-xl border p-3 text-sm leading-relaxed ${
-                      isHighlightCorrect(selectedText, q.answers)
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200'
-                        : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200'
-                    }`}
-                  >
-                    <p className="mb-1 font-bold">
-                      {isHighlightCorrect(selectedText, q.answers)
-                        ? 'Correct — that is the evidence!'
-                        : 'Not the strongest evidence. Re-read and try again.'}
-                    </p>
-                    {q.explanation}
-                  </div>
-                  {isHighlightCorrect(selectedText, q.answers) ? (
-                    <button
-                      type="button"
-                      onClick={finish}
-                      className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white"
-                    >
-                      Complete &amp; unlock next
-                      <span className="ti ti-lock-open" aria-hidden="true" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChecked(false)
-                        setSelectedText('')
-                      }}
-                      className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-foreground"
-                    >
-                      <span className="ti ti-refresh" aria-hidden="true" />
-                      Try again
-                    </button>
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {/* Free text */}
-          {q.type === 'free-text' && (
-            <>
-              <p className="text-sm font-medium leading-relaxed text-foreground">{q.prompt}</p>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={3}
-                placeholder="Type your answer…"
-                className="rounded-xl border border-border bg-card p-3 text-sm"
-              />
-              {!revealed ? (
-                <button
-                  type="button"
-                  disabled={!text.trim()}
-                  onClick={() => setRevealed(true)}
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-40"
-                >
-                  Check my answer
-                </button>
-              ) : (
-                <>
-                  <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm leading-relaxed">
-                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      Sample strong answer
-                    </p>
-                    <p className="text-foreground">{q.modelAnswer}</p>
-                    <p className="mt-2 text-muted-foreground">{q.explanation}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={finish}
-                    className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white"
-                  >
-                    I&apos;ve got it — unlock next
-                    <span className="ti ti-lock-open" aria-hidden="true" />
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        </>
       )}
     </div>
   )
+}
+
+// ---- Order (tap into sequence) ---------------------------------------------
+
+function Order({
+  challenge,
+  onSolved,
+  last,
+}: {
+  challenge: Extract<Challenge, { kind: 'order' }>
+  onSolved: () => void
+  last: boolean
+}) {
+  // Present a shuffled pool; the user taps items to build their sequence.
+  const shuffled = useMemo(() => shuffle(challenge.items), [challenge])
+  const [built, setBuilt] = useState<string[]>([])
+  const [checked, setChecked] = useState(false)
+
+  const remaining = shuffled.filter((item) => !built.includes(item))
+  const correct =
+    built.length === challenge.items.length &&
+    built.every((item, i) => item === challenge.items[i])
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-medium leading-relaxed text-foreground">{challenge.prompt}</p>
+
+      {/* Built sequence */}
+      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-3">
+        {built.length === 0 && (
+          <p className="text-center text-xs text-muted-foreground">Tap the steps below in order.</p>
+        )}
+        {built.map((item, i) => (
+          <div
+            key={item}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm"
+          >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {i + 1}
+            </span>
+            <span className="flex-1">{item}</span>
+            {!checked && (
+              <button
+                type="button"
+                aria-label="Remove step"
+                onClick={() => setBuilt((b) => b.filter((x) => x !== item))}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <span className="ti ti-x" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Remaining pool */}
+      {remaining.length > 0 && !checked && (
+        <div className="flex flex-col gap-2">
+          {remaining.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setBuilt((b) => [...b, item])}
+              className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-card px-4 text-left text-sm font-medium hover:border-primary/50"
+            >
+              <span className="ti ti-plus text-muted-foreground" aria-hidden="true" />
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {remaining.length === 0 && !checked && (
+        <button
+          type="button"
+          onClick={() => setChecked(true)}
+          className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+        >
+          <span className="ti ti-check" aria-hidden="true" />
+          Check my order
+        </button>
+      )}
+
+      {checked && (
+        <>
+          <Feedback correct={correct}>
+            <p className="mb-1 font-bold">{correct ? 'Perfect sequence!' : 'Not quite — reset and try again.'}</p>
+            {challenge.explanation}
+          </Feedback>
+          {correct ? (
+            <AdvanceButton onSolved={onSolved} last={last} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setChecked(false)
+                setBuilt([])
+              }}
+              className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-border text-sm font-semibold text-foreground"
+            >
+              <span className="ti ti-refresh" aria-hidden="true" />
+              Reset
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ---- Fill in the blank (tap a chip) ----------------------------------------
+
+function FillBlank({
+  challenge,
+  onSolved,
+  last,
+}: {
+  challenge: Extract<Challenge, { kind: 'fill-blank' }>
+  onSolved: () => void
+  last: boolean
+}) {
+  const [chosen, setChosen] = useState<string | null>(null)
+  const correct = chosen === challenge.correct
+  const filled = challenge.template.replace('___', chosen ?? '____')
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-medium leading-relaxed text-foreground">{challenge.prompt}</p>
+
+      <div className="rounded-xl border border-border bg-muted/40 p-4 text-center text-base font-semibold text-foreground">
+        {filled}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {challenge.options.map((opt) => {
+          const isChosen = chosen === opt
+          const isCorrect = opt === challenge.correct
+          let cls = 'border-border bg-card hover:border-primary/50'
+          if (isChosen && isCorrect) cls = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
+          else if (isChosen && !isCorrect) cls = 'border-red-400 bg-red-50 dark:bg-red-950/30'
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setChosen(opt)}
+              className={`min-h-[44px] rounded-xl border px-4 text-sm font-semibold transition-colors ${cls}`}
+            >
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+
+      {chosen !== null && (
+        <Feedback correct={correct}>
+          <p className="mb-1 font-bold">{correct ? 'Correct!' : 'Not quite — try another chip.'}</p>
+          {challenge.explanation}
+        </Feedback>
+      )}
+      {correct && <AdvanceButton onSolved={onSolved} last={last} />}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  // Guard against the (rare) case where the shuffle equals the original order.
+  if (a.length > 1 && a.every((v, i) => v === arr[i])) {
+    ;[a[0], a[1]] = [a[1], a[0]]
+  }
+  return a
 }
 
 // Reads the current text selection if it falls inside the passage element.
@@ -353,7 +465,6 @@ function captureSelection(
   if (!sel || sel.isCollapsed || !ref.current) return
   const text = sel.toString()
   if (!text.trim()) return
-  // Only accept selections that originate within the passage.
   if (ref.current.contains(sel.anchorNode) || ref.current.contains(sel.focusNode)) {
     setSelectedText(text)
     setChecked(false)

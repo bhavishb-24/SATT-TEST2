@@ -101,6 +101,14 @@ export function TopicCard({
 
         <p className="text-sm leading-relaxed text-muted-foreground">{topic.why_it_matters}</p>
 
+        {/* Targets summary */}
+        {!locked && (
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <span className="ti ti-target-arrow text-primary" aria-hidden="true" />
+            {lesson.targets.length} interactive learning targets
+          </p>
+        )}
+
         {/* Locked state */}
         {locked && (
           <div className="flex items-center gap-2 rounded-xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
