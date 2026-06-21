@@ -11,7 +11,6 @@ export const SITE = {
 /** Primary navigation shown in the marketing header. */
 export const NAV_LINKS = [
   { label: 'How it works', href: '/#how-it-works' },
-  { label: 'Features', href: '/#features' },
   { label: 'FAQ', href: '/#faq' },
   { label: 'About', href: '/about' },
 ] as const
@@ -22,7 +21,6 @@ export const FOOTER_GROUPS = [
     title: 'Product',
     links: [
       { label: 'How it works', href: '/#how-it-works' },
-      { label: 'Features', href: '/#features' },
       { label: 'FAQ', href: '/#faq' },
       { label: 'Open the app', href: '/app' },
     ],
