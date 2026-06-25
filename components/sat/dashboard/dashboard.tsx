@@ -182,18 +182,30 @@ export function Dashboard({
               <PracticeView
                 triage={triage}
                 theme={theme}
-                onAnswer={statsApi.recordPractice}
+                onAnswer={(section, correct) => {
+                  statsApi.recordPractice(section, correct)
+                  gamificationApi.recordPracticeAnswer()
+                }}
               />
             )}
 
             {view === 'mocktest' && (
-              <MockTestView theme={theme} onAnswer={statsApi.recordPractice} />
+              <MockTestView
+                theme={theme}
+                onAnswer={(section, correct) => {
+                  statsApi.recordPractice(section, correct)
+                  gamificationApi.recordPracticeAnswer()
+                }}
+              />
             )}
 
             {view === 'flashcards' && (
               <FlashcardsView
                 theme={theme}
-                onReview={statsApi.recordFlashcard}
+                onReview={(known) => {
+                  statsApi.recordFlashcard(known)
+                  gamificationApi.recordFlashcardReview(known)
+                }}
                 weakAreas={triage.weakAreas}
               />
             )}

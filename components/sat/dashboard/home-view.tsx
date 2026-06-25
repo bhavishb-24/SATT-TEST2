@@ -194,8 +194,8 @@ export function HomeView({
             />
             <HeroStat
               label="Confidence"
-              value={`${confidenceScore}%`}
-              sub="composite"
+              value={confidenceScore > 0 ? `${confidenceScore}%` : '—'}
+              sub={confidenceScore > 0 ? 'based on your answers' : 'answer questions to see'}
               icon="ti-brain"
               iconColor="bg-purple-50 text-purple-600"
             />
@@ -232,8 +232,7 @@ export function HomeView({
       </section>
 
       {/* ── Active quests ───────────────────────────────────────────────── */}
-      {activeQuests.length > 0 && (
-        <section>
+      <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Active Quests
@@ -246,34 +245,39 @@ export function HomeView({
               View all
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {activeQuests.map((quest) => (
-              <div
-                key={quest.id}
-                className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <i className={cn('ti', quest.icon, 'text-lg')} aria-hidden="true" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">{quest.title}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{quest.description}</p>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <FillBar pct={quest.progress} height="h-1.5" className="flex-1" />
-                    <span className="shrink-0 text-[10px] font-bold text-primary">
-                      {quest.current}/{quest.target}
-                    </span>
+          {activeQuests.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {activeQuests.map((quest) => (
+                <div
+                  key={quest.id}
+                  className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <i className={cn('ti', quest.icon, 'text-lg')} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{quest.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{quest.description}</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <FillBar pct={quest.progress} height="h-1.5" className="flex-1" />
+                      <span className="shrink-0 text-[10px] font-bold text-primary">
+                        {quest.current}/{quest.target}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xs font-bold text-amber-500">+{quest.xpReward}</p>
+                    <p className="text-[10px] text-muted-foreground">XP</p>
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-xs font-bold text-amber-500">+{quest.xpReward}</p>
-                  <p className="text-[10px] text-muted-foreground">XP</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-sm text-muted-foreground text-center">
+              All quests complete for today — keep practicing to earn XP.
+            </p>
+          )}
         </section>
-      )}
 
       {/* ── Quick links ─────────────────────────────────────────────────── */}
       <section>

@@ -144,13 +144,18 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
         {[
           { label: 'Streak', value: `${streak}d`, sub: `Best: ${longestStreak}d`, icon: 'ti-flame', color: 'text-orange-500', bg: 'bg-orange-50' },
           { label: 'Study Today', value: `${studyMinutesToday}m`, sub: `${dailyGoalPct}% of goal`, icon: 'ti-clock-hour-4', color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Confidence', value: confidenceScore > 0 ? `${confidenceScore}%` : '—', sub: confidenceScore > 0 ? 'composite' : 'start practicing', icon: 'ti-brain', color: 'text-purple-600', bg: 'bg-purple-50' },
+          {
+            label: 'Confidence',
+            value: confidenceScore > 0 ? `${confidenceScore}%` : '—',
+            sub: confidenceScore > 0 ? 'based on your answers' : 'answer questions to see this',
+            icon: 'ti-brain', color: 'text-purple-600', bg: 'bg-purple-50',
+          },
           {
             label: 'Est. SAT',
             value: estimatedSAT > 0 ? estimatedSAT.toLocaleString() : '—',
             sub: estimatedSAT > 0
               ? (satDaysRemaining > 0 ? `${satDaysRemaining}d until test` : 'projected')
-              : 'answer questions first',
+              : 'answer questions to see this',
             icon: 'ti-chart-line',
             color: 'text-primary',
             bg: 'bg-emerald-50',

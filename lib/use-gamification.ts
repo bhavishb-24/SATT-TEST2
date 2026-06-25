@@ -101,6 +101,10 @@ export interface GamificationApi {
   addXp: (amount: number) => void
   recordStudyTime: (minutes: number) => void
   recordAccuracy: (correct: number, total: number) => void
+  /** Increment the session practice counter by 1 (call on every answer). */
+  recordPracticeAnswer: () => void
+  /** Increment session flashcard counter when a card is marked known. */
+  recordFlashcardReview: (known: boolean) => void
   recordStreakDay: () => void
   useRecovery: () => void
   dismissNewlyUnlocked: () => void
@@ -367,78 +371,62 @@ function buildAchievements(
   ]
 }
 
+/**
+ * Quests track per-session deltas, not cumulative lifetime stats.
+ * - dailyPractice / dailyFlashcards / dailyFocus count only what happened
+ *   since this session (or since last claimed), supplied as separate counters.
+ * - weeklyTopics / weeklyPractice use the same session-delta approach.
+ * - claimedIds: set of quest IDs already claimed in this session so a
+ *   completed quest stays "claimed" until the next reset cycle.
+ */
 function buildQuests(
-  practiceAnswered: number,
-  flashcardsKnown: number,
-  topicsCompleted: number,
-  studyMinutes: number,
+  sessionPractice: number,
+  sessionFlashcards: number,
+  sessionMinutes: number,
+  sessionTopics: number,
+  claimedIds: Set<string>,
 ): Quest[] {
+  function make(
+    id: string,
+    title: string,
+    description: string,
+    icon: string,
+    xpReward: number,
+    current: number,
+    target: number,
+    unit: string,
+    refreshes: Quest['refreshes'],
+  ): Quest {
+    const clamped = Math.min(current, target)
+    const claimed = claimedIds.has(id)
+    const done = clamped >= target
+    return {
+      id,
+      title,
+      description,
+      icon,
+      xpReward,
+      current: clamped,
+      target,
+      unit,
+      progress: Math.min(100, Math.round((clamped / target) * 100)),
+      // "complete" means ready to claim; once claimed it stays "claimed" (active=false)
+      status: done && !claimed ? 'complete' : 'active',
+      refreshes,
+    }
+  }
+
   return [
-    {
-      id: 'daily-practice',
-      title: 'Daily Drill',
-      description: 'Answer 10 practice questions today',
-      icon: 'ti-target-arrow',
-      xpReward: 80,
-      current: Math.min(practiceAnswered, 10),
-      target: 10,
-      unit: 'questions',
-      progress: Math.min(100, Math.round((practiceAnswered / 10) * 100)),
-      status: practiceAnswered >= 10 ? 'complete' : 'active',
-      refreshes: 'daily',
-    },
-    {
-      id: 'daily-flashcards',
-      title: 'Card Sprint',
-      description: 'Master 5 new flashcards',
-      icon: 'ti-cards',
-      xpReward: 40,
-      current: Math.min(flashcardsKnown, 5),
-      target: 5,
-      unit: 'cards',
-      progress: Math.min(100, Math.round((flashcardsKnown / 5) * 100)),
-      status: flashcardsKnown >= 5 ? 'complete' : 'active',
-      refreshes: 'daily',
-    },
-    {
-      id: 'daily-focus',
-      title: 'Focus Block',
-      description: 'Study for 30 focused minutes',
-      icon: 'ti-clock-hour-4',
-      xpReward: 60,
-      current: Math.min(studyMinutes, 30),
-      target: 30,
-      unit: 'min',
-      progress: Math.min(100, Math.round((studyMinutes / 30) * 100)),
-      status: studyMinutes >= 30 ? 'complete' : 'active',
-      refreshes: 'daily',
-    },
-    {
-      id: 'weekly-topics',
-      title: 'Topic Conqueror',
-      description: 'Complete 3 study topics this week',
-      icon: 'ti-books',
-      xpReward: 200,
-      current: Math.min(topicsCompleted, 3),
-      target: 3,
-      unit: 'topics',
-      progress: Math.min(100, Math.round((topicsCompleted / 3) * 100)),
-      status: topicsCompleted >= 3 ? 'complete' : 'active',
-      refreshes: 'weekly',
-    },
-    {
-      id: 'weekly-accuracy',
-      title: 'Precision Week',
-      description: 'Answer 50 practice questions this week',
-      icon: 'ti-award',
-      xpReward: 300,
-      current: Math.min(practiceAnswered, 50),
-      target: 50,
-      unit: 'questions',
-      progress: Math.min(100, Math.round((practiceAnswered / 50) * 100)),
-      status: practiceAnswered >= 50 ? 'complete' : 'active',
-      refreshes: 'weekly',
-    },
+    make('daily-practice', 'Daily Drill', 'Answer 10 practice questions today',
+      'ti-target-arrow', 80, sessionPractice, 10, 'questions', 'daily'),
+    make('daily-flashcards', 'Card Sprint', 'Master 5 new flashcards today',
+      'ti-cards', 40, sessionFlashcards, 5, 'cards', 'daily'),
+    make('daily-focus', 'Focus Block', 'Study for 30 focused minutes today',
+      'ti-clock-hour-4', 60, sessionMinutes, 30, 'min', 'daily'),
+    make('weekly-topics', 'Topic Conqueror', 'Complete 3 study topics this week',
+      'ti-books', 200, sessionTopics, 3, 'topics', 'weekly'),
+    make('weekly-practice', 'Precision Week', 'Answer 50 practice questions this week',
+      'ti-award', 300, sessionPractice, 50, 'questions', 'weekly'),
   ]
 }
 
@@ -580,13 +568,34 @@ export function useGamification(external: ExternalStats): GamificationApi {
   const [lastStudiedDay, setLastStudiedDay] = useState('')
   const [recoveryAvailable, setRecoveryAvailable] = useState(false)
   const [weeklyXp, setWeeklyXp] = useState(0)
-  const [studyMinutesToday, setStudyMinutesToday] = useState(0)
   // Whiteboard sessions are tracked by the whiteboard itself; default 0 until wired.
   const [whiteboardSessions] = useState(0)
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([])
   const prevAchievementsRef = useRef<Set<string>>(new Set())
 
-  const studyMinutes = Math.round(external.focusSeconds / 60) + studyMinutesToday
+  // Track the baseline topic count at mount so we can derive the delta.
+  const baseTopicsRef = useRef(external.topicsCompleted)
+  useEffect(() => {
+    const delta = external.topicsCompleted - baseTopicsRef.current
+    if (delta > 0) {
+      setSessionTopics((prev) => prev + delta)
+      baseTopicsRef.current = external.topicsCompleted
+    }
+  }, [external.topicsCompleted])
+
+  // ── Session-delta counters for quests ────────────────────────────────────────
+  // These count only what happened THIS session so quests show real progress
+  // rather than comparing against lifetime totals (which would be immediately
+  // "done" for returning users).
+  const [sessionPractice, setSessionPractice] = useState(0)
+  const [sessionFlashcards, setSessionFlashcards] = useState(0)
+  const [sessionMinutes, setSessionMinutes] = useState(0)
+  const [sessionTopics, setSessionTopics] = useState(0)
+  // Set of quest IDs claimed this session — prevents re-trigger until reset.
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set())
+
+  // Daily goal is based purely on session minutes (what was done today).
+  const studyMinutes = sessionMinutes
 
   const estimatedSAT = useMemo(() => {
     if (external.practiceAnswered === 0 && external.topicsCompleted === 0) {
@@ -641,12 +650,13 @@ export function useGamification(external: ExternalStats): GamificationApi {
 
   const quests = useMemo(() =>
     buildQuests(
-      external.practiceAnswered,
-      external.flashcardsKnown,
-      external.topicsCompleted,
-      studyMinutes,
+      sessionPractice,
+      sessionFlashcards,
+      sessionMinutes,
+      sessionTopics,
+      claimedIds,
     ),
-    [external, studyMinutes],
+    [sessionPractice, sessionFlashcards, sessionMinutes, sessionTopics, claimedIds],
   )
 
   const journey = useMemo(() =>
@@ -687,7 +697,7 @@ export function useGamification(external: ExternalStats): GamificationApi {
   }, [])
 
   const recordStudyTime = useCallback((minutes: number) => {
-    setStudyMinutesToday((prev) => prev + minutes)
+    setSessionMinutes((prev) => prev + minutes)
     addXp(Math.ceil(minutes * 1.5))
   }, [addXp])
 
@@ -697,6 +707,16 @@ export function useGamification(external: ExternalStats): GamificationApi {
     const earnedXp = Math.round(correct * 10 * (accuracy > 0.8 ? 1.5 : 1))
     addXp(earnedXp)
   }, [addXp])
+
+  // Called by PracticeView / MockTestView when a question is answered.
+  const recordPracticeAnswer = useCallback(() => {
+    setSessionPractice((prev) => prev + 1)
+  }, [])
+
+  // Called by FlashcardsView when a card is reviewed (known or not).
+  const recordFlashcardReview = useCallback((known: boolean) => {
+    if (known) setSessionFlashcards((prev) => prev + 1)
+  }, [])
 
   const recordStreakDay = useCallback(() => {
     const today = todayStr()
@@ -722,8 +742,11 @@ export function useGamification(external: ExternalStats): GamificationApi {
   }, [])
 
   const completeQuest = useCallback((questId: string) => {
-    const quest = quests.find((q) => q.id === questId)
-    if (quest) addXp(quest.xpReward)
+    const quest = quests.find((q) => q.id === questId && q.status === 'complete')
+    if (!quest) return
+    // Mark as claimed so it no longer shows "Claim" until the next session.
+    setClaimedIds((prev) => new Set([...prev, questId]))
+    addXp(quest.xpReward)
   }, [quests, addXp])
 
   const state: GamificationState = {
@@ -757,6 +780,8 @@ export function useGamification(external: ExternalStats): GamificationApi {
     addXp,
     recordStudyTime,
     recordAccuracy,
+    recordPracticeAnswer,
+    recordFlashcardReview,
     recordStreakDay,
     useRecovery,
     dismissNewlyUnlocked,
