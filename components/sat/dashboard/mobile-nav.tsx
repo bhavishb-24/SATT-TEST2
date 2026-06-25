@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { DashboardView } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,17 @@ export function MobileNav({ active, onNavigate, theme }: MobileNavProps) {
             </li>
           )
         })}
+
+        {/* Whiteboard is a standalone route, linked separately. */}
+        <li className="shrink-0">
+          <Link
+            href="/whiteboard"
+            className="flex min-w-[64px] flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <i className="ti ti-chalkboard text-lg" aria-hidden="true" />
+            <span className="whitespace-nowrap">Whiteboard</span>
+          </Link>
+        </li>
       </ul>
     </nav>
   )

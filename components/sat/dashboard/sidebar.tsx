@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import type { DashboardView } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -92,6 +93,21 @@ export function Sidebar({
               </li>
             )
           })}
+
+          {/* Whiteboard lives on its own full-screen route, so it uses a real link. */}
+          <li>
+            <Link
+              href="/whiteboard"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <i className="ti ti-chalkboard text-lg" aria-hidden="true" />
+              Whiteboard AI
+              <i
+                className="ti ti-sparkles ml-auto text-sm text-primary"
+                aria-hidden="true"
+              />
+            </Link>
+          </li>
         </ul>
       </nav>
 

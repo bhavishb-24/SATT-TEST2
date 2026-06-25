@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { MemoryCards } from './memory-cards'
-import { SMART_ACTIONS, QUESTION, MEMORY_NUDGE, type SmartAction } from './lesson-data'
+import {
+  SMART_ACTIONS,
+  MEMORY_NUDGE,
+  type SmartAction,
+  type MemoryItem,
+  type PracticeProblem,
+  type PracticeFeedback,
+} from './lesson-data'
 
 export interface ChatMessage {
   role: 'student' | 'assistant'
@@ -13,10 +20,16 @@ export interface ChatMessage {
 interface TutorPanelProps {
   messages: ChatMessage[]
   thinking: boolean
+  /** The question currently being worked, or null while on the start screen. */
+  activeQuestion: { number?: number; section?: string; prompt: string } | null
   /** Label for the button that advances the hint ladder; null when finished. */
   advanceLabel: string | null
   onAdvance: () => void
   mastered: boolean
+  /** Dynamic memory entries recorded during this session. */
+  memoryEvents: MemoryItem[]
+  /** Clear the conversation history. */
+  onClearChat: () => void
   onSend: (text: string) => void
   onSmartAction: (action: SmartAction) => void
   onStartVoice: () => void
@@ -24,6 +37,19 @@ interface TutorPanelProps {
   onOpenSummary: () => void
   micActive: boolean
   onToggleMic: () => void
+  // Interactive "Why?" explanations
+  onWhy: (text: string) => void
+  // Escalating live hints
+  onHint: () => void
+  hintLoading: boolean
+  // Practice mode
+  practice: PracticeProblem | null
+  practiceLoading: boolean
+  checkingPractice: boolean
+  practiceFeedback: PracticeFeedback | null
+  onStartPractice: () => void
+  onCheckPractice: (answer: string) => void
+  onClosePractice: () => void
 }
 
 /** Renders **bold** segments without pulling in a full markdown parser. */
@@ -47,9 +73,12 @@ function RichText({ text }: { text: string }) {
 export function TutorPanel({
   messages,
   thinking,
+  activeQuestion,
   advanceLabel,
   onAdvance,
   mastered,
+  memoryEvents,
+  onClearChat,
   onSend,
   onSmartAction,
   onStartVoice,
@@ -57,14 +86,32 @@ export function TutorPanel({
   onOpenSummary,
   micActive,
   onToggleMic,
+  onWhy,
+  onHint,
+  hintLoading,
+  practice,
+  practiceLoading,
+  checkingPractice,
+  practiceFeedback,
+  onStartPractice,
+  onCheckPractice,
+  onClosePractice,
 }: TutorPanelProps) {
   const [tab, setTab] = useState<'chat' | 'memory'>('chat')
   const [input, setInput] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
 
+  // Index of the last assistant message — only that one gets a "Why?" button.
+  const lastAssistantIndex = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') return i
+    }
+    return -1
+  })()
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, thinking, tab])
+  }, [messages, thinking, tab, practice, practiceFeedback])
 
   const send = () => {
     if (!input.trim()) return
@@ -89,16 +136,27 @@ export function TutorPanel({
             </p>
           </div>
         </div>
-        {mastered && (
+        <div className="flex items-center gap-1.5">
+          {mastered && (
+            <button
+              type="button"
+              onClick={onOpenSummary}
+              className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+            >
+              <i className="ti ti-clipboard-check" aria-hidden="true" />
+              Summary
+            </button>
+          )}
           <button
             type="button"
-            onClick={onOpenSummary}
-            className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+            onClick={onClearChat}
+            title="Clear chat history"
+            aria-label="Clear chat history"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <i className="ti ti-clipboard-check" aria-hidden="true" />
-            Summary
+            <i className="ti ti-eraser text-base" aria-hidden="true" />
           </button>
-        )}
+        </div>
       </header>
 
       {/* Tabs */}
@@ -124,7 +182,7 @@ export function TutorPanel({
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {tab === 'memory' ? (
           <div className="flex flex-col gap-4">
-            <MemoryCards />
+            <MemoryCards sessionEvents={memoryEvents} />
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
               <p className="flex items-start gap-2 text-xs leading-snug text-amber-800">
                 <i className="ti ti-history mt-0.5 shrink-0 text-sm" aria-hidden="true" />
@@ -134,34 +192,53 @@ export function TutorPanel({
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {/* Question context chip */}
-            <div className="rounded-xl border border-border bg-background px-3 py-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Question {QUESTION.number} · {QUESTION.section}
-              </p>
-              <p className="mt-1 text-xs leading-snug text-foreground">{QUESTION.prompt}</p>
-            </div>
+            {/* Question context chip — only once a question is being worked */}
+            {activeQuestion && (
+              <div className="rounded-xl border border-border bg-background px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {activeQuestion.number ? `Question ${activeQuestion.number} · ` : ''}
+                  {activeQuestion.section ?? 'Your question'}
+                </p>
+                <p className="mt-1 text-xs leading-snug text-foreground">{activeQuestion.prompt}</p>
+              </div>
+            )}
 
             {messages.map((m, i) => (
-              <div
-                key={i}
-                className={cn('flex rise-in', m.role === 'student' ? 'justify-end' : 'justify-start')}
-              >
-                {m.role === 'assistant' && (
-                  <span className="mr-2 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] text-primary-foreground">
-                    <i className="ti ti-sparkles" aria-hidden="true" />
-                  </span>
-                )}
+              <div key={i} className="flex flex-col gap-1">
                 <div
-                  className={cn(
-                    'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
-                    m.role === 'student'
-                      ? 'rounded-tr-sm bg-foreground text-background'
-                      : 'rounded-tl-sm bg-background text-foreground shadow-sm',
-                  )}
+                  className={cn('flex rise-in', m.role === 'student' ? 'justify-end' : 'justify-start')}
                 >
-                  <RichText text={m.content} />
+                  {m.role === 'assistant' && (
+                    <span className="mr-2 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] text-primary-foreground">
+                      <i className="ti ti-sparkles" aria-hidden="true" />
+                    </span>
+                  )}
+                  <div
+                    className={cn(
+                      'max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+                      m.role === 'student'
+                        ? 'rounded-tr-sm bg-foreground text-background'
+                        : 'rounded-tl-sm bg-background text-foreground shadow-sm',
+                    )}
+                  >
+                    <RichText text={m.content} />
+                  </div>
                 </div>
+
+                {/* Why? affordance on the latest tutor message */}
+                {m.role === 'assistant' &&
+                  i === lastAssistantIndex &&
+                  !thinking &&
+                  m.content.length > 40 && (
+                    <button
+                      type="button"
+                      onClick={() => onWhy(m.content)}
+                      className="ml-8 flex w-fit items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                    >
+                      <i className="ti ti-help-circle text-xs" aria-hidden="true" />
+                      Why does this work?
+                    </button>
+                  )}
               </div>
             ))}
 
@@ -194,6 +271,19 @@ export function TutorPanel({
               </button>
             )}
 
+            {/* Practice ("Your Turn") panel */}
+            {(practice || practiceLoading) && (
+              <PracticePanel
+                practice={practice}
+                practiceLoading={practiceLoading}
+                checkingPractice={checkingPractice}
+                practiceFeedback={practiceFeedback}
+                onCheck={onCheckPractice}
+                onClose={onClosePractice}
+                onNext={onStartPractice}
+              />
+            )}
+
             <div ref={endRef} />
           </div>
         )}
@@ -202,7 +292,28 @@ export function TutorPanel({
       {/* Smart actions */}
       <div className="shrink-0 border-t border-border px-3 py-2.5">
         <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-          {SMART_ACTIONS.map((a) => (
+          <button
+            type="button"
+            onClick={onHint}
+            disabled={hintLoading}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+          >
+            <i className={cn('ti ti-bulb text-sm', hintLoading && 'animate-pulse')} aria-hidden="true" />
+            {hintLoading ? 'Thinking…' : 'Give me a hint'}
+          </button>
+          <button
+            type="button"
+            onClick={onStartPractice}
+            disabled={practiceLoading}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+          >
+            <i
+              className={cn('ti ti-pencil-plus text-sm', practiceLoading && 'animate-pulse')}
+              aria-hidden="true"
+            />
+            Your Turn
+          </button>
+          {SMART_ACTIONS.filter((a) => a.label !== 'Give me a hint').map((a) => (
             <button
               key={a.label}
               type="button"
@@ -267,6 +378,143 @@ export function TutorPanel({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function PracticePanel({
+  practice,
+  practiceLoading,
+  checkingPractice,
+  practiceFeedback,
+  onCheck,
+  onClose,
+  onNext,
+}: {
+  practice: PracticeProblem | null
+  practiceLoading: boolean
+  checkingPractice: boolean
+  practiceFeedback: PracticeFeedback | null
+  onCheck: (answer: string) => void
+  onClose: () => void
+  onNext: () => void
+}) {
+  const [answer, setAnswer] = useState('')
+  const [revealed, setRevealed] = useState(false)
+
+  // Reset local state whenever a new problem arrives.
+  const promptKey = practice?.prompt ?? ''
+  useEffect(() => {
+    setAnswer('')
+    setRevealed(false)
+  }, [promptKey])
+
+  return (
+    <div className="rise-in rounded-2xl border border-primary/30 bg-primary/5 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary">
+          <i className="ti ti-pencil-plus" aria-hidden="true" />
+          Your Turn
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close practice"
+          className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <i className="ti ti-x text-sm" aria-hidden="true" />
+        </button>
+      </div>
+
+      {practiceLoading || !practice ? (
+        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+          <i className="ti ti-loader-2 animate-spin" aria-hidden="true" />
+          Creating a fresh practice problem…
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {practice.section}
+          </p>
+          <p className="text-sm leading-relaxed text-foreground">{practice.prompt}</p>
+
+          <div className="flex items-end gap-2">
+            <input
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && answer.trim() && !checkingPractice) onCheck(answer.trim())
+              }}
+              placeholder="Your answer…"
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <button
+              type="button"
+              onClick={() => answer.trim() && onCheck(answer.trim())}
+              disabled={!answer.trim() || checkingPractice}
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {checkingPractice ? (
+                <i className="ti ti-loader-2 animate-spin" aria-hidden="true" />
+              ) : (
+                <i className="ti ti-check" aria-hidden="true" />
+              )}
+              Check
+            </button>
+          </div>
+
+          {practiceFeedback && (
+            <div
+              className={cn(
+                'rise-in flex items-start gap-2 rounded-xl border p-2.5 text-sm leading-relaxed',
+                practiceFeedback.correct
+                  ? 'border-primary/30 bg-primary/10 text-foreground'
+                  : 'border-amber-200 bg-amber-50 text-amber-900',
+              )}
+            >
+              <i
+                className={cn(
+                  'ti mt-0.5 shrink-0',
+                  practiceFeedback.correct ? 'ti-circle-check text-primary' : 'ti-info-circle',
+                )}
+                aria-hidden="true"
+              />
+              <span>
+                <RichText text={practiceFeedback.feedback} />
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRevealed((r) => !r)}
+              className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <i className={cn('ti', revealed ? 'ti-eye-off' : 'ti-eye')} aria-hidden="true" />
+              {revealed ? 'Hide answer' : 'Show answer'}
+            </button>
+            <button
+              type="button"
+              onClick={onNext}
+              className="ml-auto flex items-center gap-1 text-[11px] font-semibold text-primary transition-colors hover:opacity-80"
+            >
+              <i className="ti ti-refresh" aria-hidden="true" />
+              New problem
+            </button>
+          </div>
+
+          {revealed && (
+            <div className="rounded-xl border border-border bg-background p-2.5 text-xs leading-relaxed text-foreground">
+              <span className="font-semibold">Answer: </span>
+              {practice.answer}
+              <p className="mt-1 text-muted-foreground">
+                <RichText text={practice.explanation} />
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

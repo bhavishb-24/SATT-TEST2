@@ -69,8 +69,161 @@ export const TEACH_STAGES: TeachStage[] = [
 ]
 
 export const OPENING_MESSAGES = [
-  { role: 'student' as const, content: "I don't understand question 14." },
+  {
+    role: 'assistant' as const,
+    content:
+      "Hi! I'm your Whiteboard AI tutor. Paste or type any SAT question you're stuck on, and I'll work through it step by step on the board — out loud, one line at a time.",
+  },
 ]
+
+// Teacher personality modes. The `key` is sent to the AI routes and folded
+// into the system prompt; the rest drives the UI selector.
+export type PersonaKey = 'encouraging' | 'socratic' | 'direct'
+
+export interface Persona {
+  key: PersonaKey
+  label: string
+  icon: string
+  tagline: string
+  /** Appended to the AI system prompt to shape tone. */
+  instruction: string
+}
+
+export const PERSONAS: Persona[] = [
+  {
+    key: 'encouraging',
+    label: 'Encouraging',
+    icon: 'ti-mood-heart',
+    tagline: 'Warm & motivating',
+    instruction:
+      'Adopt a warm, upbeat, highly encouraging tone. Open with quick praise, normalize mistakes, and cheer the student on. Use friendly, supportive language throughout while still teaching rigorously.',
+  },
+  {
+    key: 'socratic',
+    label: 'Socratic',
+    icon: 'ti-help-octagon',
+    tagline: 'Guides with questions',
+    instruction:
+      'Teach almost entirely through guiding questions. Rarely state facts directly — instead ask one pointed question at a time that leads the student to discover the next step themselves. Wait for their reasoning before advancing.',
+  },
+  {
+    key: 'direct',
+    label: 'Direct',
+    icon: 'ti-bolt',
+    tagline: 'Clear & to the point',
+    instruction:
+      'Be concise and efficient. Give clear, direct explanations and the key steps without much small talk. Still avoid handing over the final numeric answer until the student has worked the steps, but get to the point quickly.',
+  },
+]
+
+export const DEFAULT_PERSONA: PersonaKey = 'encouraging'
+
+// A live, AI-generated worked solution for a student's own question.
+export interface SolveStep {
+  /** Concise text written on the whiteboard for this step. */
+  board: string
+  /** One spoken narration sentence for this step. */
+  say: string
+}
+
+// A single primitive in an AI-generated geometry diagram. Coordinates are in a
+// normalized 0..100 space (0,0 = top-left). Unused fields are null.
+export interface DiagramElement {
+  kind: 'polygon' | 'line' | 'circle' | 'point' | 'label' | 'rightangle'
+  points: { x: number; y: number }[]
+  cx: number | null
+  cy: number | null
+  r: number | null
+  x: number | null
+  y: number | null
+  text: string | null
+  /** 0-based step index at which this element appears. */
+  revealAt: number
+}
+
+// One plotted object on a coordinate-plane graph. Coordinates are MATH values
+// (not screen pixels); the renderer maps them into the visible window.
+export interface GraphItem {
+  kind: 'line' | 'curve' | 'point' | 'segment'
+  label: string | null
+  /** line: slope + y-intercept */
+  m: number | null
+  b: number | null
+  /** curve: JS-evaluable expression in x, e.g. "x*x - 2*x - 3" */
+  expr: string | null
+  /** point */
+  px: number | null
+  py: number | null
+  /** segment endpoints */
+  x1: number | null
+  y1: number | null
+  x2: number | null
+  y2: number | null
+  revealAt: number
+}
+
+export interface GraphSpec {
+  xMin: number
+  xMax: number
+  yMin: number
+  yMax: number
+  items: GraphItem[]
+}
+
+// A visual markup over a sentence/passage for English questions.
+export interface AnnotationMark {
+  /** Exact substring of the text to mark. */
+  phrase: string
+  type: 'underline' | 'circle' | 'highlight' | 'strike' | 'box'
+  note: string | null
+  revealAt: number
+}
+
+export interface AnnotationSpec {
+  text: string
+  marks: AnnotationMark[]
+}
+
+export type VisualKind = 'geometry' | 'graph' | 'annotation' | 'none'
+
+export interface SolveResult {
+  title: string
+  subject: string
+  /** Which single visual representation this lesson uses. */
+  visual: VisualKind
+  steps: SolveStep[]
+  /** Geometry elements to draw (when visual = "geometry"). */
+  diagram: DiagramElement[]
+  /** Coordinate-plane graph (when visual = "graph"). */
+  graph: GraphSpec | null
+  /** Sentence annotation (when visual = "annotation"). */
+  annotation: AnnotationSpec | null
+  answer: string
+}
+
+// An AI-generated, lesson-specific summary shown in the recap modal.
+export interface LessonSummary {
+  title: string
+  subject: string
+  confidence: number
+  conceptsLearned: string[]
+  mistakesCorrected: string[]
+  nextTopic: string
+  homework: string[]
+  flashcards: number
+}
+
+export interface PracticeProblem {
+  prompt: string
+  section: string
+  answer: string
+  explanation: string
+}
+
+export interface PracticeFeedback {
+  correct: boolean
+  feedback: string
+}
 
 export interface MemoryItem {
   icon: string

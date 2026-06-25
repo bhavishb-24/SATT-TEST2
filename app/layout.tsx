@@ -73,6 +73,7 @@ export default function RootLayout({
       lang="en"
       className={`light ${inter.variable} ${instrumentSerif.variable} bg-background`}
       style={{ colorScheme: 'light' }}
+      suppressHydrationWarning
     >
       <head>
         <link
@@ -86,7 +87,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

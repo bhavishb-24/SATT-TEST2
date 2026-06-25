@@ -1,13 +1,28 @@
 'use client'
 
-import { SESSION_SUMMARY } from './lesson-data'
+import { SESSION_SUMMARY, type LessonSummary } from './lesson-data'
 
 interface SessionSummaryProps {
   onClose: () => void
+  /** Live AI-generated summary; falls back to the demo constant when absent. */
+  summary?: LessonSummary | null
+  /** True while the AI summary is still being generated. */
+  loading?: boolean
 }
 
-export function SessionSummary({ onClose }: SessionSummaryProps) {
-  const s = SESSION_SUMMARY
+export function SessionSummary({ onClose, summary, loading }: SessionSummaryProps) {
+  const s: LessonSummary = summary ?? { ...SESSION_SUMMARY, title: 'Pythagorean theorem', subject: 'Question 14' }
+
+  if (loading && !summary) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm">
+        <div className="rise-in flex w-full max-w-lg flex-col items-center gap-4 rounded-3xl border border-border bg-card px-6 py-12 shadow-2xl">
+          <i className="ti ti-loader-2 animate-spin text-3xl text-primary" aria-hidden="true" />
+          <p className="text-sm font-medium text-muted-foreground">Putting together your lesson summary…</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm">
@@ -18,7 +33,10 @@ export function SessionSummary({ onClose }: SessionSummaryProps) {
             <i className="ti ti-clipboard-check text-2xl" aria-hidden="true" />
             <div>
               <h2 className="font-serif text-xl leading-tight">Lesson Summary</h2>
-              <p className="text-xs opacity-80">Pythagorean theorem · Question 14</p>
+              <p className="text-xs opacity-80">
+                {s.title}
+                {s.subject ? ` · ${s.subject}` : ''}
+              </p>
             </div>
           </div>
           <button

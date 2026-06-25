@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { AiDrawing } from './ai-drawing'
+import { AiSolution } from './ai-solution'
+import type { SolveResult } from './lesson-data'
 
 type Tool = 'pen' | 'highlighter' | 'eraser' | 'laser' | 'text' | 'shape'
 
@@ -27,12 +29,35 @@ const TOOLS: ToolDef[] = [
 interface BoardCanvasProps {
   aiStep: number
   isPlaying: boolean
-  onReplay: () => void
+  totalSteps: number
+  /** When set, render this live AI solution instead of the demo triangle. */
+  solution: SolveResult | null
+  /** Whether any lesson has started (controls the playback bar visibility). */
+  hasLesson: boolean
   /** "Geometry" tool asks the AI to (re)draw the diagram. */
   onAskAiDraw: () => void
+  /** Playback: toggle play/pause of the explanation animation. */
+  onTogglePlay: () => void
+  /** Playback: jump the board to a specific step index. */
+  onStepTo: (step: number) => void
+  /** Send the student's drawing (as an image) to the AI for feedback. Null = blank board. */
+  onReviewDrawing?: (imageDataUrl: string | null) => void
+  /** True while the AI is reviewing the student's drawing. */
+  reviewing?: boolean
 }
 
-export function BoardCanvas({ aiStep, isPlaying, onReplay, onAskAiDraw }: BoardCanvasProps) {
+export function BoardCanvas({
+  aiStep,
+  isPlaying,
+  totalSteps,
+  solution,
+  hasLesson,
+  onAskAiDraw,
+  onTogglePlay,
+  onStepTo,
+  onReviewDrawing,
+  reviewing,
+}: BoardCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -243,6 +268,35 @@ export function BoardCanvas({ aiStep, isPlaying, onReplay, onAskAiDraw }: BoardC
     snapshot()
   }
 
+  // Flatten the student's drawing onto a white background and export it as an
+  // image the vision model can read. Returns null if the board has no ink.
+  const captureDrawing = (): string | null => {
+    const canvas = canvasRef.current
+    const ctx = ctxRef.current
+    if (!canvas || !ctx) return null
+
+    // Quick scan for any drawn pixels (sampled for speed).
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    let hasInk = false
+    for (let i = 3; i < data.length; i += 32) {
+      if (data[i] !== 0) {
+        hasInk = true
+        break
+      }
+    }
+    if (!hasInk) return null
+
+    const out = document.createElement('canvas')
+    out.width = canvas.width
+    out.height = canvas.height
+    const octx = out.getContext('2d')
+    if (!octx) return null
+    octx.fillStyle = '#ffffff'
+    octx.fillRect(0, 0, out.width, out.height)
+    octx.drawImage(canvas, 0, 0)
+    return out.toDataURL('image/jpeg', 0.82)
+  }
+
   const handleToolClick = (def: ToolDef) => {
     if (def.action === 'graph') return setShowGrid((g) => !g)
     if (def.action === 'geometry') return onAskAiDraw()
@@ -329,8 +383,21 @@ export function BoardCanvas({ aiStep, isPlaying, onReplay, onAskAiDraw }: BoardC
           {/* Grid layer */}
           <div className={cn('absolute inset-0', showGrid && 'board-grid')} aria-hidden="true" />
 
-          {/* AI drawing layer (non-interactive) */}
-          <AiDrawing step={aiStep} />
+          {/* AI drawing layer (non-interactive) — live solution or demo triangle */}
+          {solution ? (
+            <AiSolution
+              title={solution.title}
+              steps={solution.steps}
+              visual={solution.visual}
+              diagram={solution.diagram}
+              graph={solution.graph}
+              annotation={solution.annotation}
+              step={aiStep}
+              answer={solution.answer}
+            />
+          ) : (
+            <AiDrawing step={aiStep} />
+          )}
 
           {/* Student drawing layer (captures pointer) */}
           <canvas
@@ -436,16 +503,82 @@ export function BoardCanvas({ aiStep, isPlaying, onReplay, onAskAiDraw }: BoardC
           </div>
         </div>
 
-        {/* Replay explanation — bottom right */}
-        <button
-          type="button"
-          onClick={onReplay}
-          disabled={isPlaying}
-          className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+        {/* Step-by-step playback controls — bottom right (only once a lesson exists) */}
+        <div
+          className={cn(
+            'absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1 shadow-lg backdrop-blur transition-opacity',
+            hasLesson ? 'opacity-100' : 'pointer-events-none opacity-0',
+          )}
         >
-          <i className={cn('ti ti-player-play', isPlaying && 'animate-pulse')} aria-hidden="true" />
-          Replay Explanation
-        </button>
+          <button
+            type="button"
+            aria-label="Restart explanation"
+            title="Restart"
+            onClick={() => onStepTo(0)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <i className="ti ti-player-skip-back" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="Previous step"
+            title="Previous step"
+            onClick={() => onStepTo(aiStep - 1)}
+            disabled={aiStep <= 0}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+          >
+            <i className="ti ti-player-track-prev" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label={isPlaying ? 'Pause explanation' : 'Play explanation'}
+            title={isPlaying ? 'Pause' : 'Play'}
+            onClick={onTogglePlay}
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <i
+              className={cn('ti text-lg', isPlaying ? 'ti-player-pause' : 'ti-player-play')}
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            type="button"
+            aria-label="Next step"
+            title="Next step"
+            onClick={() => onStepTo(aiStep + 1)}
+            disabled={aiStep >= totalSteps}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+          >
+            <i className="ti ti-player-track-next" aria-hidden="true" />
+          </button>
+          <span className="mx-1 min-w-[2.75rem] text-center text-xs font-semibold tabular-nums text-muted-foreground">
+            {aiStep}/{totalSteps}
+          </span>
+        </div>
+
+        {/* Check my work — bottom center. Sends the student's drawing to the AI. */}
+        {onReviewDrawing && hasLesson && (
+          <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+            <button
+              type="button"
+              onClick={() => onReviewDrawing(captureDrawing())}
+              disabled={reviewing}
+              className="flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {reviewing ? (
+                <>
+                  <i className="ti ti-loader-2 animate-spin text-base" aria-hidden="true" />
+                  Reading your work…
+                </>
+              ) : (
+                <>
+                  <i className="ti ti-eye-check text-base" aria-hidden="true" />
+                  Check my work
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
