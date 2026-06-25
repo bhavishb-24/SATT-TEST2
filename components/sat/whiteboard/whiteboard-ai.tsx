@@ -10,6 +10,7 @@ import { VoiceOverlay } from './voice-overlay'
 import { SessionSummary } from './session-summary'
 import {
   OPENING_MESSAGES,
+  QUESTION,
   STEP_NARRATION,
   TEACH_STAGES,
   type SmartAction,
@@ -41,8 +42,77 @@ export function WhiteboardAi() {
   const playToken = useRef(0)
   aiStepRef.current = aiStep
 
+  const messagesRef = useRef<ChatMessage[]>(messages)
+  messagesRef.current = messages
+
   const addMessage = useCallback((msg: ChatMessage) => {
     setMessages((prev) => [...prev, msg])
+  }, [])
+
+  // Stream a live tutor reply from OpenAI, appending tokens to the last assistant bubble.
+  const streamTutorReply = useCallback(async (history: ChatMessage[]) => {
+    setThinking(true)
+    try {
+      const res = await fetch('/api/whiteboard-tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: history.map((m) => ({ role: m.role, content: m.content })),
+          question: QUESTION,
+        }),
+      })
+
+      if (!res.ok || !res.body) {
+        throw new Error(`Tutor request failed: ${res.status}`)
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let started = false
+      let full = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        if (!chunk) continue
+        full += chunk
+
+        if (!started) {
+          started = true
+          setThinking(false)
+          setMessages((prev) => [...prev, { role: 'assistant', content: full }])
+        } else {
+          setMessages((prev) => {
+            const next = [...prev]
+            next[next.length - 1] = { role: 'assistant', content: full }
+            return next
+          })
+        }
+      }
+
+      if (!started) {
+        setThinking(false)
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: "I\u2019m here — could you rephrase that? Let\u2019s keep working through it together.",
+          },
+        ])
+      }
+    } catch (err) {
+      console.log('[v0] tutor stream error:', err)
+      setThinking(false)
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content:
+            "I had trouble reaching my brain just now. Give it another try in a moment, and we\u2019ll keep going.",
+        },
+      ])
+    }
   }, [])
 
   // Animate the board from its current step up to `target`, narrating each step.
@@ -121,18 +191,12 @@ export function WhiteboardAi() {
 
   const handleSend = useCallback(
     (text: string) => {
-      addMessage({ role: 'student', content: text })
-      setThinking(true)
-      setTimeout(() => {
-        setThinking(false)
-        addMessage({
-          role: 'assistant',
-          content:
-            'Good question. Keep going with the hint below — once you spot the right triangle, the Pythagorean theorem does the rest. I\u2019m drawing it out for you on the board.',
-        })
-      }, 900)
+      const studentMsg: ChatMessage = { role: 'student', content: text }
+      const history = [...messagesRef.current, studentMsg]
+      setMessages(history)
+      void streamTutorReply(history)
     },
-    [addMessage],
+    [streamTutorReply],
   )
 
   const handleSmartAction = useCallback(
