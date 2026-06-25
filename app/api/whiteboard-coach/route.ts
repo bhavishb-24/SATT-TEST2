@@ -6,7 +6,15 @@ import { PERSONAS, type PersonaKey } from '@/components/sat/whiteboard/lesson-da
 // Never use the edge runtime with the AI SDK.
 export const maxDuration = 30
 
-type Mode = 'hint' | 'why' | 'practice' | 'check' | 'narrate' | 'solve' | 'summarize'
+type Mode =
+  | 'hint'
+  | 'why'
+  | 'practice'
+  | 'check'
+  | 'narrate'
+  | 'solve'
+  | 'summarize'
+  | 'review'
 
 interface CoachRequest {
   mode: Mode
@@ -29,6 +37,8 @@ interface CoachRequest {
   title?: string
   answer?: string
   workedSteps?: string[]
+  // review (vision)
+  imageDataUrl?: string
 }
 
 const ROLE = `You are Whiteboard AI, an SAT tutor inside a visual whiteboard app called SAT Sage. Write in plain language a high-schooler understands. Use **bold** (double asterisks) for key terms or formulas — the UI renders it.`
@@ -137,30 +147,49 @@ For each step provide:
 - "board": the short thing to WRITE on the whiteboard for this step — a key equation, substitution, or label. Keep it very concise (a formula or a few words / numbers), like real handwritten board work. Use plain characters and ^ for exponents (e.g. "6^2 + 8^2 = c^2"). NO markdown asterisks here.
 - "say": ONE sentence the tutor speaks aloud as that line appears. Write for the ear (spoken via TTS) — spell math naturally (e.g. "six squared plus eight squared"). NO markdown.
 
-DIAGRAM (CRITICAL — do not skip):
-Decide if the question involves ANY geometric figure or shape — triangle, square, rectangle, pentagon, hexagon, circle, semicircle, rhombus, parallelogram, trapezoid, polygon, coordinate graph/line, or angles. If it does, you MUST return a non-empty "diagram" that visually draws the figure. This is REQUIRED even for simple questions like perimeter or area — e.g. an area-of-a-circle question MUST include a circle element (and ideally a labeled radius line); a pentagon perimeter question MUST include a 5-sided polygon. A geometry question with an empty diagram is a FAILURE. ALWAYS label the shape's key vertices/points and the given measurements.
-The diagram is a list of elements positioned in a 0..100 coordinate space (0,0 = top-left, 100,100 = bottom-right). Keep the figure centered, roughly within x:15..85 and y:15..85, and proportional. For regular polygons, place the vertices evenly around a center so the shape looks correct.
-Element kinds:
-- "polygon": a closed shape — set "points" to its vertices in order (e.g. a pentagon has 5 points). Use for triangles, squares, pentagons, rhombuses, any straight-edged shape.
-- "line": a single segment — set "points" to exactly 2 points. Use for radii, diagonals, heights, axes.
-- "circle": set "cx","cy","r". Use for circles.
-- "point": a labeled vertex/dot — set "x","y" and "text" (e.g. "A").
-- "label": floating text like a side length or angle — set "x","y","text" (e.g. "6", "8", "x°").
-- "rightangle": a small right-angle square marker — set "x","y" at the corner.
-Set "revealAt" to the step index (0-based) at which that element should appear, so the figure builds up alongside the steps. For non-geometry questions, return an EMPTY diagram array.
+CHOOSE EXACTLY ONE VISUAL via "visual" and fill ONLY that visual's field. The whiteboard DRAWS it next to your steps, so pick the most helpful representation:
+
+1) "visual":"geometry" — for shapes: triangle, square, rectangle, pentagon, hexagon, circle, semicircle, rhombus, parallelogram, trapezoid, polygons, angles. Fill "diagram". REQUIRED even for simple area/perimeter questions (e.g. area of a circle MUST draw a circle + labeled radius). Coordinates are a 0..100 space (0,0 = top-left). Center the figure within x:15..85, y:15..85, proportional. For regular polygons place vertices evenly around a center. Label key vertices and given measurements.
+   diagram element kinds:
+   - "polygon": closed shape — "points" = vertices in order.
+   - "line": one segment — "points" = exactly 2 endpoints.
+   - "circle": set "cx","cy","r".
+   - "point": labeled vertex/dot — "x","y","text" (e.g. "A").
+   - "label": floating text (side length / angle) — "x","y","text" (e.g. "6", "x°").
+   - "rightangle": small right-angle marker — "x","y" at the corner.
+
+2) "visual":"graph" — for anything on the COORDINATE PLANE: graphing lines (y = mx + b), parabolas/quadratics, plotting points, slope, intercepts, systems of equations, transformations. Fill "graph". This draws real x/y axes with a grid, so give MATH coordinates (not screen coords).
+   graph fields:
+   - "xMin","xMax","yMin","yMax": the visible window (e.g. -10..10). Choose a window that frames the key features (intercepts, vertex, points).
+   - "items": array of things to plot. Each item: "kind" one of "line" | "curve" | "point" | "segment"; "label" (e.g. "y = 2x + 1"); "revealAt" (0-based step index).
+     • "line": an infinite straight line — give "m" (slope) and "b" (y-intercept). 
+     • "curve": a function plotted across the window — give "expr" as a JS-evaluable expression in x using Math (e.g. "x*x - 2*x - 3", "Math.sin(x)"). 
+     • "point": a single point — give "px","py" and usually a "label" like "(2, 5)".
+     • "segment": a finite segment — give "x1","y1","x2","y2".
+
+3) "visual":"annotation" — for READING & WRITING / grammar / English questions where the key skill is ANALYZING a sentence or short passage. Fill "annotation". The board shows the actual text and visually marks it up as you teach.
+   annotation fields:
+   - "text": the exact sentence(s) / short passage to display on the board (keep under ~240 chars; you may quote the relevant part of the student's question).
+   - "marks": array of annotations over that text. Each mark: "phrase" (the EXACT substring from "text" to mark — must appear verbatim), "type" one of "underline" | "circle" | "highlight" | "strike" | "box", "note" (a short margin note explaining it, e.g. "subject"), "revealAt" (0-based step index).
+
+4) "visual":"none" — only if no visual helps (rare). Leave all visual fields empty.
 
 Rules:
 - Produce between 4 and 8 steps, in logical order, building to the answer.
-- The FIRST step should restate/set up the problem; the LAST step should present the final answer.
-- "title" is a short topic label (e.g. "Pythagorean Theorem", "Area of a Pentagon").
-- "subject" is the SAT section (e.g. "Math — Geometry", "Reading & Writing").
-- "answer" is the final answer, concise.
-- If the question is not a real/solvable SAT-style question, still respond with a short, helpful set of steps explaining what's needed, and an empty diagram.`,
+- The FIRST step sets up the problem; the LAST step presents the final answer.
+- Fill ONLY the field matching "visual"; leave the others empty ([] or null).
+- "title": short topic label (e.g. "Graphing a Line", "Subject–Verb Agreement").
+- "subject": SAT section (e.g. "Math — Algebra", "Reading & Writing").
+- "answer": the final answer, concise.
+- If the question is not a real/solvable SAT-style question, still give helpful steps and set "visual":"none".`,
       prompt: `Work through this SAT question step by step for the whiteboard:\n\n"${studentPrompt}"`,
       experimental_output: Output.object({
         schema: z.object({
           title: z.string().describe('Short topic label for the lesson.'),
           subject: z.string().describe('SAT section, e.g. "Math — Algebra".'),
+          visual: z
+            .enum(['geometry', 'graph', 'annotation', 'none'])
+            .describe('Which single visual best fits this question.'),
           steps: z
             .array(
               z.object({
@@ -185,12 +214,80 @@ Rules:
                 revealAt: z.number().describe('0-based step index when this element appears.'),
               }),
             )
-            .describe('Geometry elements to draw, or an empty array for non-geometry questions.'),
+            .describe('GEOMETRY elements (only when visual="geometry"), else [].'),
+          graph: z
+            .object({
+              xMin: z.number(),
+              xMax: z.number(),
+              yMin: z.number(),
+              yMax: z.number(),
+              items: z.array(
+                z.object({
+                  kind: z.enum(['line', 'curve', 'point', 'segment']),
+                  label: z.string().nullable(),
+                  m: z.number().nullable(),
+                  b: z.number().nullable(),
+                  expr: z.string().nullable(),
+                  px: z.number().nullable(),
+                  py: z.number().nullable(),
+                  x1: z.number().nullable(),
+                  y1: z.number().nullable(),
+                  x2: z.number().nullable(),
+                  y2: z.number().nullable(),
+                  revealAt: z.number(),
+                }),
+              ),
+            })
+            .nullable()
+            .describe('COORDINATE-PLANE graph (only when visual="graph"), else null.'),
+          annotation: z
+            .object({
+              text: z.string().describe('The sentence/passage shown on the board.'),
+              marks: z.array(
+                z.object({
+                  phrase: z.string().describe('Exact substring of text to mark.'),
+                  type: z.enum(['underline', 'circle', 'highlight', 'strike', 'box']),
+                  note: z.string().nullable(),
+                  revealAt: z.number(),
+                }),
+              ),
+            })
+            .nullable()
+            .describe('ENGLISH annotation (only when visual="annotation"), else null.'),
           answer: z.string().describe('The final answer, concise.'),
         }),
       }),
     })
     return Response.json(output)
+  }
+
+  if (mode === 'review') {
+    const img = body.imageDataUrl
+    if (!img) return new Response('Missing image', { status: 400 })
+    const result = streamText({
+      model: openai('gpt-4o'),
+      system: `${ROLE}${tone(persona)}
+
+${qctx(question)}
+
+The student has drawn/written their own work on the whiteboard and tapped "Check my work". You are shown an IMAGE of their whiteboard. Look carefully at what they actually drew or wrote — shapes, numbers, equations, labels, graphs, arrows, handwriting.
+
+Then talk through it like a tutor leaning over their shoulder:
+1) Briefly say what you SEE they did (be specific to the drawing — reference their actual marks/numbers).
+2) Point out what's correct and give credit.
+3) Gently flag any mistake or missing step, and nudge them toward the fix WITHOUT just handing over the full answer unless they're basically done.
+Keep it warm and concise: 2-4 sentences. If the board looks essentially blank, say you don't see any work yet and invite them to draw their attempt. Use **bold** for key terms.`,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Here is my whiteboard. Can you check my work?' },
+            { type: 'image', image: img },
+          ],
+        },
+      ],
+    })
+    return result.toTextStreamResponse()
   }
 
   if (mode === 'summarize') {

@@ -90,6 +90,9 @@ export function WhiteboardAi() {
   const [hintLevel, setHintLevel] = useState(0)
   const [hintLoading, setHintLoading] = useState(false)
 
+  // "Check my work": AI vision review of the student's own drawing.
+  const [reviewing, setReviewing] = useState(false)
+
   // Practice mode ("Your Turn")
   const [practice, setPractice] = useState<PracticeProblem | null>(null)
   const [practiceLoading, setPracticeLoading] = useState(false)
@@ -468,6 +471,39 @@ export function WhiteboardAi() {
     [addMessage, streamAssistant],
   )
 
+  // "Check my work" — send the student's own drawing to the vision model.
+  const handleReviewDrawing = useCallback(
+    async (imageDataUrl: string | null) => {
+      if (reviewing) return
+      if (!imageDataUrl) {
+        addMessage({
+          role: 'assistant',
+          content:
+            "I don\u2019t see any work on the board yet. Sketch your attempt \u2014 a diagram, some steps, an equation \u2014 then tap **Check my work** and I\u2019ll talk through it with you.",
+        })
+        return
+      }
+      addMessage({ role: 'student', content: 'Can you check my work on the board?' })
+      setReviewing(true)
+      try {
+        await streamAssistant('/api/whiteboard-coach', {
+          mode: 'review',
+          persona: personaRef.current,
+          question: activeQuestionRef.current,
+          imageDataUrl,
+        })
+        recordMemory({
+          icon: 'ti-eye-check',
+          text: 'Asked the tutor to review their own drawing.',
+          tone: 'good',
+        })
+      } finally {
+        setReviewing(false)
+      }
+    },
+    [reviewing, addMessage, streamAssistant, recordMemory],
+  )
+
   // Practice mode.
   const handleStartPractice = useCallback(async () => {
     setPracticeLoading(true)
@@ -688,6 +724,8 @@ export function WhiteboardAi() {
             onAskAiDraw={handleAskAiDraw}
             onTogglePlay={handleTogglePlay}
             onStepTo={handleStepTo}
+            onReviewDrawing={handleReviewDrawing}
+            reviewing={reviewing}
           />
           {phase === 'input' && (
             <QuestionEntry

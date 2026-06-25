@@ -1,41 +1,67 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { DiagramElement, SolveStep } from './lesson-data'
+import type {
+  AnnotationSpec,
+  DiagramElement,
+  GraphSpec,
+  SolveStep,
+  VisualKind,
+} from './lesson-data'
 
 interface AiSolutionProps {
   title: string
   steps: SolveStep[]
-  /** Geometry elements to draw, or empty for non-geometry questions. */
+  /** Which visual representation to render. */
+  visual?: VisualKind
+  /** Geometry elements to draw (visual = "geometry"). */
   diagram?: DiagramElement[]
+  /** Coordinate-plane graph (visual = "graph"). */
+  graph?: GraphSpec | null
+  /** Sentence annotation (visual = "annotation"). */
+  annotation?: AnnotationSpec | null
   /** Number of steps revealed so far (0 = nothing, steps.length = complete). */
   step: number
   answer: string
 }
 
 /**
- * Renders a live AI-generated worked solution. When the AI returns a geometry
- * diagram, it is drawn as handwritten-style SVG that builds up step by step
- * alongside the written work. Otherwise the steps are shown on their own.
+ * Renders a live AI-generated worked solution. Depending on the question, the
+ * AI supplies one visual — a geometry diagram, a coordinate graph, or an
+ * annotated sentence — which builds up step by step beside the written work.
  */
-export function AiSolution({ title, steps, diagram, step, answer }: AiSolutionProps) {
-  const hasDiagram = Array.isArray(diagram) && diagram.length > 0
+export function AiSolution({
+  title,
+  steps,
+  visual,
+  diagram,
+  graph,
+  annotation,
+  step,
+  answer,
+}: AiSolutionProps) {
+  const hasDiagram = visual === 'geometry' && Array.isArray(diagram) && diagram.length > 0
+  const hasGraph = visual === 'graph' && !!graph && graph.items.length > 0
+  const hasAnnotation = visual === 'annotation' && !!annotation && annotation.text.length > 0
+  const hasVisual = hasDiagram || hasGraph || hasAnnotation
 
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 sm:p-6">
       <div
         className={cn(
           'flex w-full max-w-4xl gap-6',
-          hasDiagram ? 'flex-col items-center lg:flex-row lg:items-center' : 'max-w-2xl flex-col',
+          hasVisual ? 'flex-col items-center lg:flex-row lg:items-center' : 'max-w-2xl flex-col',
         )}
       >
-        {hasDiagram && (
+        {hasVisual && (
           <div className="w-full shrink-0 lg:w-1/2">
-            <BoardDiagram elements={diagram!} step={step} />
+            {hasDiagram && <BoardDiagram elements={diagram!} step={step} />}
+            {hasGraph && <GraphBoard spec={graph!} step={step} />}
+            {hasAnnotation && <AnnotationBoard spec={annotation!} step={step} />}
           </div>
         )}
 
-        <div className={cn('w-full', hasDiagram && 'lg:w-1/2')}>
+        <div className={cn('w-full', hasVisual && 'lg:w-1/2')}>
           {/* Topic heading */}
           <p
             className={cn(
@@ -220,8 +246,7 @@ function BoardDiagram({ elements, step }: { elements: DiagramElement[]; step: nu
               fontWeight={700}
               fill="var(--primary)"
               textAnchor="middle"
-              className="font-serif"
-              {...common}
+              className={cn('font-serif', common.className)}
             >
               {el.text}
             </text>
@@ -246,5 +271,289 @@ function BoardDiagram({ elements, step }: { elements: DiagramElement[]; step: nu
         return null
       })}
     </svg>
+  )
+}
+
+/**
+ * Draws a coordinate-plane graph (axes, grid, lines, curves, points) from an
+ * AI-supplied spec in MATH coordinates, revealing each plotted item by step.
+ */
+function GraphBoard({ spec, step }: { spec: GraphSpec; step: number }) {
+  // SVG canvas is 100x100; map math (x,y) into it, flipping y so up is positive.
+  const { xMin, xMax, yMin, yMax } = spec
+  const W = 100
+  const H = 100
+  const sx = (x: number) => ((x - xMin) / (xMax - xMin)) * W
+  const sy = (y: number) => H - ((y - yMin) / (yMax - yMin)) * H
+  const clamp = (v: number) => Math.max(-20, Math.min(W + 20, v))
+
+  // Integer gridlines within the window (cap the count so it stays readable).
+  const xTicks: number[] = []
+  const yTicks: number[] = []
+  const xStep = Math.max(1, Math.ceil((xMax - xMin) / 12))
+  const yStep = Math.max(1, Math.ceil((yMax - yMin) / 12))
+  for (let x = Math.ceil(xMin); x <= xMax; x += xStep) xTicks.push(x)
+  for (let y = Math.ceil(yMin); y <= yMax; y += yStep) yTicks.push(y)
+
+  const x0 = sx(0)
+  const y0 = sy(0)
+  const axisX = Math.max(0, Math.min(W, x0))
+  const axisY = Math.max(0, Math.min(H, y0))
+
+  // Sample a function expression safely across the window.
+  const sampleCurve = (expr: string): string => {
+    let d = ''
+    let started = false
+    const fn = (() => {
+      try {
+        // eslint-disable-next-line no-new-func
+        return new Function('x', `with (Math) { return (${expr}); }`) as (x: number) => number
+      } catch {
+        return null
+      }
+    })()
+    if (!fn) return ''
+    const N = 120
+    for (let i = 0; i <= N; i++) {
+      const x = xMin + ((xMax - xMin) * i) / N
+      let y: number
+      try {
+        y = fn(x)
+      } catch {
+        started = false
+        continue
+      }
+      if (!Number.isFinite(y) || y < yMin - (yMax - yMin) || y > yMax + (yMax - yMin)) {
+        started = false
+        continue
+      }
+      const px = sx(x)
+      const py = sy(y)
+      d += `${started ? 'L' : 'M'} ${px.toFixed(2)} ${py.toFixed(2)} `
+      started = true
+    }
+    return d
+  }
+
+  return (
+    <svg
+      viewBox="-12 -12 124 124"
+      className="h-auto w-full max-w-md"
+      role="img"
+      aria-label="Coordinate graph of the problem"
+    >
+      {/* Grid */}
+      {xTicks.map((x, i) => (
+        <line
+          key={`gx${i}`}
+          x1={sx(x)}
+          y1={0}
+          x2={sx(x)}
+          y2={H}
+          stroke="var(--border)"
+          strokeWidth={0.4}
+        />
+      ))}
+      {yTicks.map((y, i) => (
+        <line
+          key={`gy${i}`}
+          x1={0}
+          y1={sy(y)}
+          x2={W}
+          y2={sy(y)}
+          stroke="var(--border)"
+          strokeWidth={0.4}
+        />
+      ))}
+
+      {/* Axes */}
+      <line x1={0} y1={axisY} x2={W} y2={axisY} stroke="var(--foreground)" strokeWidth={0.8} />
+      <line x1={axisX} y1={0} x2={axisX} y2={H} stroke="var(--foreground)" strokeWidth={0.8} />
+
+      {/* Axis number labels */}
+      {xTicks.map((x, i) =>
+        x === 0 ? null : (
+          <text
+            key={`tx${i}`}
+            x={sx(x)}
+            y={Math.min(H - 1, axisY + 4)}
+            fontSize={3.2}
+            fill="var(--muted-foreground)"
+            textAnchor="middle"
+          >
+            {x}
+          </text>
+        ),
+      )}
+      {yTicks.map((y, i) =>
+        y === 0 ? null : (
+          <text
+            key={`ty${i}`}
+            x={Math.max(2, axisX - 1.5)}
+            y={sy(y) + 1}
+            fontSize={3.2}
+            fill="var(--muted-foreground)"
+            textAnchor="end"
+          >
+            {y}
+          </text>
+        ),
+      )}
+
+      {/* Plotted items, revealed by step */}
+      {spec.items.map((it, i) => {
+        const on = step >= it.revealAt + 1
+        const common = {
+          className: cn('transition-opacity duration-500', on ? 'opacity-100' : 'opacity-0'),
+        }
+
+        if (it.kind === 'line' && it.m != null && it.b != null) {
+          const yA = it.m * xMin + it.b
+          const yB = it.m * xMax + it.b
+          return (
+            <g key={i} {...common}>
+              <line
+                x1={clamp(sx(xMin))}
+                y1={clamp(sy(yA))}
+                x2={clamp(sx(xMax))}
+                y2={clamp(sy(yB))}
+                stroke="var(--primary)"
+                strokeWidth={1.1}
+                strokeLinecap="round"
+              />
+              {it.label && (
+                <text x={sx(xMax) - 1} y={sy(yB) - 1.5} fontSize={3.4} fill="var(--primary)" textAnchor="end" fontWeight={700}>
+                  {it.label}
+                </text>
+              )}
+            </g>
+          )
+        }
+
+        if (it.kind === 'curve' && it.expr) {
+          const d = sampleCurve(it.expr)
+          return (
+            <g key={i} {...common}>
+              <path d={d} fill="none" stroke="var(--primary)" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" />
+              {it.label && (
+                <text x={sx(xMax) - 1} y={4} fontSize={3.4} fill="var(--primary)" textAnchor="end" fontWeight={700}>
+                  {it.label}
+                </text>
+              )}
+            </g>
+          )
+        }
+
+        if (it.kind === 'segment' && it.x1 != null && it.y1 != null && it.x2 != null && it.y2 != null) {
+          return (
+            <line
+              key={i}
+              x1={sx(it.x1)}
+              y1={sy(it.y1)}
+              x2={sx(it.x2)}
+              y2={sy(it.y2)}
+              stroke="var(--primary)"
+              strokeWidth={1.1}
+              strokeLinecap="round"
+              {...common}
+            />
+          )
+        }
+
+        if (it.kind === 'point' && it.px != null && it.py != null) {
+          return (
+            <g key={i} {...common}>
+              <circle cx={sx(it.px)} cy={sy(it.py)} r={1.6} fill="var(--primary)" />
+              {it.label && (
+                <text x={sx(it.px) + 2.2} y={sy(it.py) - 2} fontSize={3.4} fill="var(--foreground)" fontWeight={700}>
+                  {it.label}
+                </text>
+              )}
+            </g>
+          )
+        }
+
+        return null
+      })}
+    </svg>
+  )
+}
+
+/**
+ * Renders a sentence/passage for English questions and visually marks it up —
+ * underlines, circles, highlights, strikethroughs, boxes — plus margin notes,
+ * revealing each annotation as the lesson steps advance.
+ */
+function AnnotationBoard({ spec, step }: { spec: AnnotationSpec; step: number }) {
+  // Split the text into segments, tagging any that match a revealed mark.
+  type Seg = { text: string; mark: AnnotationSpec['marks'][number] | null }
+  const marks = [...spec.marks].sort(
+    (a, b) => spec.text.indexOf(a.phrase) - spec.text.indexOf(b.phrase),
+  )
+
+  const segs: Seg[] = []
+  let cursor = 0
+  for (const m of marks) {
+    const idx = spec.text.indexOf(m.phrase, cursor)
+    if (idx < 0) continue
+    if (idx > cursor) segs.push({ text: spec.text.slice(cursor, idx), mark: null })
+    segs.push({ text: spec.text.slice(idx, idx + m.phrase.length), mark: m })
+    cursor = idx + m.phrase.length
+  }
+  if (cursor < spec.text.length) segs.push({ text: spec.text.slice(cursor), mark: null })
+
+  const markClass = (type: AnnotationSpec['marks'][number]['type']) => {
+    switch (type) {
+      case 'underline':
+        return 'underline decoration-primary decoration-2 underline-offset-4'
+      case 'circle':
+        return 'rounded-full ring-2 ring-primary px-1.5 py-0.5'
+      case 'box':
+        return 'rounded-md ring-2 ring-primary px-1.5 py-0.5'
+      case 'highlight':
+        return 'bg-primary/20 rounded px-0.5'
+      case 'strike':
+        return 'line-through decoration-destructive decoration-2'
+      default:
+        return ''
+    }
+  }
+
+  const activeNotes = marks.filter((m) => m.note && step >= m.revealAt + 1)
+
+  return (
+    <div className="rounded-2xl border border-border bg-background/80 p-5 shadow-sm">
+      <p className="font-serif text-xl leading-loose text-foreground sm:text-2xl">
+        {segs.map((seg, i) => {
+          const on = seg.mark && step >= seg.mark.revealAt + 1
+          return (
+            <span
+              key={i}
+              className={cn(
+                'transition-all duration-500',
+                on ? markClass(seg.mark!.type) : '',
+              )}
+            >
+              {seg.text}
+            </span>
+          )
+        })}
+      </p>
+
+      {activeNotes.length > 0 && (
+        <ul className="mt-4 flex flex-col gap-2 border-t border-border pt-3">
+          {activeNotes.map((m, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+              <i className="ti ti-arrow-right mt-0.5 text-primary" aria-hidden="true" />
+              <span>
+                <span className="font-semibold text-foreground">{m.phrase}</span>
+                {' — '}
+                {m.note}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

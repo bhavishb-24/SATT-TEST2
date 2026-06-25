@@ -40,6 +40,10 @@ interface BoardCanvasProps {
   onTogglePlay: () => void
   /** Playback: jump the board to a specific step index. */
   onStepTo: (step: number) => void
+  /** Send the student's drawing (as an image) to the AI for feedback. Null = blank board. */
+  onReviewDrawing?: (imageDataUrl: string | null) => void
+  /** True while the AI is reviewing the student's drawing. */
+  reviewing?: boolean
 }
 
 export function BoardCanvas({
@@ -51,6 +55,8 @@ export function BoardCanvas({
   onAskAiDraw,
   onTogglePlay,
   onStepTo,
+  onReviewDrawing,
+  reviewing,
 }: BoardCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
@@ -262,6 +268,35 @@ export function BoardCanvas({
     snapshot()
   }
 
+  // Flatten the student's drawing onto a white background and export it as an
+  // image the vision model can read. Returns null if the board has no ink.
+  const captureDrawing = (): string | null => {
+    const canvas = canvasRef.current
+    const ctx = ctxRef.current
+    if (!canvas || !ctx) return null
+
+    // Quick scan for any drawn pixels (sampled for speed).
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    let hasInk = false
+    for (let i = 3; i < data.length; i += 32) {
+      if (data[i] !== 0) {
+        hasInk = true
+        break
+      }
+    }
+    if (!hasInk) return null
+
+    const out = document.createElement('canvas')
+    out.width = canvas.width
+    out.height = canvas.height
+    const octx = out.getContext('2d')
+    if (!octx) return null
+    octx.fillStyle = '#ffffff'
+    octx.fillRect(0, 0, out.width, out.height)
+    octx.drawImage(canvas, 0, 0)
+    return out.toDataURL('image/jpeg', 0.82)
+  }
+
   const handleToolClick = (def: ToolDef) => {
     if (def.action === 'graph') return setShowGrid((g) => !g)
     if (def.action === 'geometry') return onAskAiDraw()
@@ -353,7 +388,10 @@ export function BoardCanvas({
             <AiSolution
               title={solution.title}
               steps={solution.steps}
+              visual={solution.visual}
               diagram={solution.diagram}
+              graph={solution.graph}
+              annotation={solution.annotation}
               step={aiStep}
               answer={solution.answer}
             />
@@ -517,6 +555,30 @@ export function BoardCanvas({
             {aiStep}/{totalSteps}
           </span>
         </div>
+
+        {/* Check my work — bottom center. Sends the student's drawing to the AI. */}
+        {onReviewDrawing && hasLesson && (
+          <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+            <button
+              type="button"
+              onClick={() => onReviewDrawing(captureDrawing())}
+              disabled={reviewing}
+              className="flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {reviewing ? (
+                <>
+                  <i className="ti ti-loader-2 animate-spin text-base" aria-hidden="true" />
+                  Reading your work…
+                </>
+              ) : (
+                <>
+                  <i className="ti ti-eye-check text-base" aria-hidden="true" />
+                  Check my work
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
