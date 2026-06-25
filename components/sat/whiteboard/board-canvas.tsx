@@ -1,12 +1,17 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import * as htmlToImage from 'html-to-image'
 import { cn } from '@/lib/utils'
 import { AiDrawing } from './ai-drawing'
 import { AiSolution } from './ai-solution'
 import type { SolveResult } from './lesson-data'
 
-type Tool = 'pen' | 'highlighter' | 'eraser' | 'laser' | 'text' | 'shape'
+type Tool = 'pen' | 'highlighter' | 'eraser' | 'laser' | 'text' | 'shape' | 'ellipse' | 'arrow'
+
+// Tools that draw a single primitive between drag-start and drag-end using the
+// "snapshot → live preview" pattern (vs. freehand pen/highlighter strokes).
+const SHAPE_TOOLS: Tool[] = ['shape', 'ellipse', 'arrow']
 
 interface ToolDef {
   tool: Tool | null
@@ -16,15 +21,37 @@ interface ToolDef {
 }
 
 const TOOLS: ToolDef[] = [
-  { tool: 'pen', label: 'Pen', icon: 'ti-pencil' },
+  { tool: 'pen', label: 'Pen / underline', icon: 'ti-pencil' },
   { tool: 'highlighter', label: 'Highlighter', icon: 'ti-highlight' },
-  { tool: 'shape', label: 'Shapes', icon: 'ti-shape' },
+  { tool: 'ellipse', label: 'Circle something', icon: 'ti-circle' },
+  { tool: 'arrow', label: 'Arrow', icon: 'ti-arrow-up-right' },
+  { tool: 'shape', label: 'Box / rectangle', icon: 'ti-square' },
   { tool: null, action: 'graph', label: 'Graph', icon: 'ti-chart-dots' },
   { tool: null, action: 'geometry', label: 'Geometry — ask AI to draw', icon: 'ti-triangle' },
   { tool: 'text', label: 'Text', icon: 'ti-typography' },
   { tool: 'laser', label: 'Laser pointer', icon: 'ti-pointer' },
   { tool: 'eraser', label: 'Eraser', icon: 'ti-eraser' },
 ]
+
+// Draw a straight line from (x1,y1) to (x2,y2) with an arrowhead at the end.
+function drawArrow(
+  ctx: CanvasRenderingContext2D,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) {
+  const angle = Math.atan2(y2 - y1, x2 - x1)
+  const head = 14
+  ctx.beginPath()
+  ctx.moveTo(x1, y1)
+  ctx.lineTo(x2, y2)
+  // Two short segments forming the arrowhead.
+  ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6))
+  ctx.moveTo(x2, y2)
+  ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6))
+  ctx.stroke()
+}
 
 interface BoardCanvasProps {
   aiStep: number
@@ -44,6 +71,16 @@ interface BoardCanvasProps {
   onReviewDrawing?: (imageDataUrl: string | null) => void
   /** True while the AI is reviewing the student's drawing. */
   reviewing?: boolean
+  /** Ask the AI to look at what the student marked and break it down. */
+  onAskAboutThis?: (imageDataUrl: string | null) => void
+  /** True while the AI is "looking at" the marked region. */
+  exploring?: boolean
+  /** A side-canvas breakdown of the marked region (null = none shown). */
+  breakdown?: SolveResult | null
+  /** Number of breakdown steps revealed so far. */
+  breakdownStep?: number
+  /** Dismiss the side breakdown and pan back to the main work. */
+  onDismissBreakdown?: () => void
 }
 
 export function BoardCanvas({
@@ -57,10 +94,17 @@ export function BoardCanvas({
   onStepTo,
   onReviewDrawing,
   reviewing,
+  onAskAboutThis,
+  exploring,
+  breakdown,
+  breakdownStep = 0,
+  onDismissBreakdown,
 }: BoardCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
+  // The visible, cropped board surface — captured as a composite screenshot.
+  const boardRef = useRef<HTMLDivElement>(null)
   const drawing = useRef(false)
   const lastPt = useRef<{ x: number; y: number } | null>(null)
   const shapeStart = useRef<{ x: number; y: number } | null>(null)
@@ -128,6 +172,18 @@ export function BoardCanvas({
     return () => ro.disconnect()
   }, [])
 
+  // When a side breakdown appears, slide the infinite canvas over to it (and
+  // reset zoom so the offset math is predictable). Pan back when it clears.
+  useEffect(() => {
+    if (breakdown) {
+      const width = boardRef.current?.getBoundingClientRect().width ?? 0
+      setZoom(1)
+      setPan({ x: -width, y: 0 })
+    } else {
+      setPan({ x: 0, y: 0 })
+    }
+  }, [breakdown])
+
   // Map a pointer event to canvas-local CSS pixels (zoom/pan handled by rect).
   const toLocal = (e: React.PointerEvent) => {
     const canvas = canvasRef.current!
@@ -171,7 +227,7 @@ export function BoardCanvas({
     const pt = toLocal(e)
     lastPt.current = pt
 
-    if (tool === 'shape') {
+    if (SHAPE_TOOLS.includes(tool)) {
       shapeStart.current = pt
       const canvas = canvasRef.current!
       snapshotBeforeShape.current = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -195,15 +251,32 @@ export function BoardCanvas({
     if (!ctx) return
     const pt = toLocal(e)
 
-    if (tool === 'shape') {
+    if (SHAPE_TOOLS.includes(tool)) {
       const start = shapeStart.current
       const snap = snapshotBeforeShape.current
       if (!start || !snap) return
       ctx.putImageData(snap, 0, 0)
       ctx.globalCompositeOperation = 'source-over'
-      ctx.strokeStyle = '#1a1a1a'
-      ctx.lineWidth = 2.5
-      ctx.strokeRect(start.x, start.y, pt.x - start.x, pt.y - start.y)
+      // Student marks pop in a distinct accent so the AI (and student) can tell
+      // them apart from the tutor's black work underneath.
+      ctx.strokeStyle = '#d94040'
+      ctx.lineWidth = 3
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+
+      if (tool === 'shape') {
+        ctx.strokeRect(start.x, start.y, pt.x - start.x, pt.y - start.y)
+      } else if (tool === 'ellipse') {
+        const cx = (start.x + pt.x) / 2
+        const cy = (start.y + pt.y) / 2
+        const rx = Math.abs(pt.x - start.x) / 2
+        const ry = Math.abs(pt.y - start.y) / 2
+        ctx.beginPath()
+        ctx.ellipse(cx, cy, Math.max(rx, 1), Math.max(ry, 1), 0, 0, Math.PI * 2)
+        ctx.stroke()
+      } else if (tool === 'arrow') {
+        drawArrow(ctx, start.x, start.y, pt.x, pt.y)
+      }
       return
     }
 
@@ -297,6 +370,31 @@ export function BoardCanvas({
     return out.toDataURL('image/jpeg', 0.82)
   }
 
+  // Flatten the WHOLE visible board — grid + the tutor's drawn work (SVG/HTML)
+  // + the student's ink — into a single image so the AI sees exactly what was
+  // marked relative to its own work. Falls back to the ink-only capture.
+  const captureBoard = useCallback(async (): Promise<string | null> => {
+    const node = boardRef.current
+    if (!node) return captureDrawing()
+    try {
+      const url = await htmlToImage.toJpeg(node, {
+        quality: 0.85,
+        backgroundColor: '#ffffff',
+        pixelRatio: Math.min(2, window.devicePixelRatio || 1),
+        // Skip font embedding — reading the cross-origin Tabler icon webfont
+        // stylesheet throws a SecurityError. The icon glyphs aren't needed in
+        // the screenshot; the SVG work, text, and student ink are what matter.
+        skipFonts: true,
+        // Don't try to rasterize the persistent laser dot / transient UI.
+        filter: (el) => !(el instanceof HTMLElement && el.dataset.noCapture === 'true'),
+      })
+      return url || captureDrawing()
+    } catch (err) {
+      console.log('[v0] composite capture failed, falling back to ink only:', err)
+      return captureDrawing()
+    }
+  }, [])
+
   const handleToolClick = (def: ToolDef) => {
     if (def.action === 'graph') return setShowGrid((g) => !g)
     if (def.action === 'geometry') return onAskAiDraw()
@@ -370,7 +468,10 @@ export function BoardCanvas({
       </div>
 
       {/* Board surface */}
-      <div className="relative flex-1 overflow-hidden rounded-3xl border border-border bg-card">
+      <div
+        ref={boardRef}
+        className="relative flex-1 overflow-hidden rounded-3xl border border-border bg-card"
+      >
         <div
           ref={wrapRef}
           className="absolute inset-0"
@@ -415,6 +516,7 @@ export function BoardCanvas({
           {/* Laser pointer dot */}
           {tool === 'laser' && laser && (
             <span
+              data-no-capture="true"
               className="pointer-events-none absolute z-20 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-destructive shadow-[0_0_12px_4px_rgba(217,64,64,0.6)]"
               style={{ left: laser.x, top: laser.y }}
               aria-hidden="true"
@@ -440,15 +542,56 @@ export function BoardCanvas({
               style={{ left: textBox.x, top: textBox.y }}
             />
           )}
+
+          {/* Side-canvas breakdown — one board-width to the right. The view
+              pans here when the AI breaks down a region the student marked. */}
+          {breakdown && (
+            <div
+              data-no-capture="true"
+              className="absolute left-full top-0 h-full w-full border-l border-dashed border-border"
+            >
+              {/* Subtle grid so the side area reads as the same infinite canvas */}
+              <div className={cn('absolute inset-0', showGrid && 'board-grid')} aria-hidden="true" />
+
+              {/* Header chip naming what was marked */}
+              <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex max-w-[90%] -translate-x-1/2 items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary backdrop-blur">
+                <i className="ti ti-zoom-scan text-sm" aria-hidden="true" />
+                <span className="truncate">
+                  Breakdown{breakdown.focus ? ` — ${breakdown.focus}` : ''}
+                </span>
+              </div>
+
+              <AiSolution
+                title={breakdown.title}
+                steps={breakdown.steps}
+                visual={breakdown.visual}
+                diagram={breakdown.diagram}
+                graph={breakdown.graph}
+                annotation={breakdown.annotation}
+                step={breakdownStep}
+                answer={breakdown.answer}
+                compact
+              />
+            </div>
+          )}
         </div>
 
         {/* Status pill — top left */}
         <div className="pointer-events-none absolute left-4 top-4 z-20 flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
           <span
-            className={cn('h-2 w-2 rounded-full bg-primary', isPlaying && 'status-dot')}
+            className={cn(
+              'h-2 w-2 rounded-full bg-primary',
+              (isPlaying || exploring) && 'status-dot',
+            )}
             aria-hidden="true"
           />
-          {isPlaying ? 'Tutor is drawing…' : 'Infinite whiteboard'}
+          {exploring
+            ? 'Tutor is looking at your marks…'
+            : breakdown
+              ? 'Breaking it down on the side'
+              : isPlaying
+                ? 'Tutor is drawing…'
+                : 'Infinite whiteboard'}
         </div>
 
         {/* Zoom / pan controls — bottom left */}
@@ -556,27 +699,66 @@ export function BoardCanvas({
           </span>
         </div>
 
-        {/* Check my work — bottom center. Sends the student's drawing to the AI. */}
-        {onReviewDrawing && hasLesson && (
-          <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-            <button
-              type="button"
-              onClick={() => onReviewDrawing(captureDrawing())}
-              disabled={reviewing}
-              className="flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60"
-            >
-              {reviewing ? (
-                <>
-                  <i className="ti ti-loader-2 animate-spin text-base" aria-hidden="true" />
-                  Reading your work…
-                </>
-              ) : (
-                <>
-                  <i className="ti ti-eye-check text-base" aria-hidden="true" />
-                  Check my work
-                </>
-              )}
-            </button>
+        {/* Bottom-center actions. While a breakdown is open, offer a way back;
+            otherwise show "Check my work" + "Ask about this". */}
+        {hasLesson && (
+          <div
+            data-no-capture="true"
+            className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2"
+          >
+            {breakdown ? (
+              <button
+                type="button"
+                onClick={() => onDismissBreakdown?.()}
+                className="flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
+              >
+                <i className="ti ti-arrow-back text-base" aria-hidden="true" />
+                Back to my work
+              </button>
+            ) : (
+              <>
+                {onReviewDrawing && (
+                  <button
+                    type="button"
+                    onClick={() => onReviewDrawing(captureDrawing())}
+                    disabled={reviewing || exploring}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground shadow-lg transition-opacity hover:bg-muted disabled:opacity-60"
+                  >
+                    {reviewing ? (
+                      <>
+                        <i className="ti ti-loader-2 animate-spin text-base" aria-hidden="true" />
+                        Reading your work…
+                      </>
+                    ) : (
+                      <>
+                        <i className="ti ti-eye-check text-base" aria-hidden="true" />
+                        Check my work
+                      </>
+                    )}
+                  </button>
+                )}
+                {onAskAboutThis && (
+                  <button
+                    type="button"
+                    onClick={async () => onAskAboutThis(await captureBoard())}
+                    disabled={exploring || reviewing}
+                    className="flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {exploring ? (
+                      <>
+                        <i className="ti ti-loader-2 animate-spin text-base" aria-hidden="true" />
+                        Looking at your board…
+                      </>
+                    ) : (
+                      <>
+                        <i className="ti ti-help-circle text-base" aria-hidden="true" />
+                        Ask about this
+                      </>
+                    )}
+                  </button>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
