@@ -6,7 +6,7 @@ import { PERSONAS, type PersonaKey } from '@/components/sat/whiteboard/lesson-da
 // Never use the edge runtime with the AI SDK.
 export const maxDuration = 30
 
-type Mode = 'hint' | 'why' | 'practice' | 'check' | 'narrate' | 'solve'
+type Mode = 'hint' | 'why' | 'practice' | 'check' | 'narrate' | 'solve' | 'summarize'
 
 interface CoachRequest {
   mode: Mode
@@ -25,6 +25,10 @@ interface CoachRequest {
   steps?: number
   // solve
   prompt?: string
+  // summarize
+  title?: string
+  answer?: string
+  workedSteps?: string[]
 }
 
 const ROLE = `You are Whiteboard AI, an SAT tutor inside a visual whiteboard app called SAT Sage. Write in plain language a high-schooler understands. Use **bold** (double asterisks) for key terms or formulas — the UI renders it.`
@@ -123,7 +127,8 @@ export async function POST(req: Request) {
       return new Response('Missing question prompt', { status: 400 })
     }
     const { output } = await generateText({
-      model,
+      // Stronger model: reliably follows the "always draw the figure" instruction.
+      model: openai('gpt-4o'),
       system: `${ROLE}${tone(persona)}
 
 A student typed an SAT question they want worked through on the whiteboard. Solve it correctly, then break the solution into clear teaching steps that will be WRITTEN OUT on a whiteboard one at a time while you narrate.
@@ -132,13 +137,25 @@ For each step provide:
 - "board": the short thing to WRITE on the whiteboard for this step — a key equation, substitution, or label. Keep it very concise (a formula or a few words / numbers), like real handwritten board work. Use plain characters and ^ for exponents (e.g. "6^2 + 8^2 = c^2"). NO markdown asterisks here.
 - "say": ONE sentence the tutor speaks aloud as that line appears. Write for the ear (spoken via TTS) — spell math naturally (e.g. "six squared plus eight squared"). NO markdown.
 
+DIAGRAM (CRITICAL — do not skip):
+Decide if the question involves ANY geometric figure or shape — triangle, square, rectangle, pentagon, hexagon, circle, semicircle, rhombus, parallelogram, trapezoid, polygon, coordinate graph/line, or angles. If it does, you MUST return a non-empty "diagram" that visually draws the figure. This is REQUIRED even for simple questions like perimeter or area — e.g. an area-of-a-circle question MUST include a circle element (and ideally a labeled radius line); a pentagon perimeter question MUST include a 5-sided polygon. A geometry question with an empty diagram is a FAILURE. ALWAYS label the shape's key vertices/points and the given measurements.
+The diagram is a list of elements positioned in a 0..100 coordinate space (0,0 = top-left, 100,100 = bottom-right). Keep the figure centered, roughly within x:15..85 and y:15..85, and proportional. For regular polygons, place the vertices evenly around a center so the shape looks correct.
+Element kinds:
+- "polygon": a closed shape — set "points" to its vertices in order (e.g. a pentagon has 5 points). Use for triangles, squares, pentagons, rhombuses, any straight-edged shape.
+- "line": a single segment — set "points" to exactly 2 points. Use for radii, diagonals, heights, axes.
+- "circle": set "cx","cy","r". Use for circles.
+- "point": a labeled vertex/dot — set "x","y" and "text" (e.g. "A").
+- "label": floating text like a side length or angle — set "x","y","text" (e.g. "6", "8", "x°").
+- "rightangle": a small right-angle square marker — set "x","y" at the corner.
+Set "revealAt" to the step index (0-based) at which that element should appear, so the figure builds up alongside the steps. For non-geometry questions, return an EMPTY diagram array.
+
 Rules:
 - Produce between 4 and 8 steps, in logical order, building to the answer.
 - The FIRST step should restate/set up the problem; the LAST step should present the final answer.
-- "title" is a short topic label (e.g. "Pythagorean Theorem").
+- "title" is a short topic label (e.g. "Pythagorean Theorem", "Area of a Pentagon").
 - "subject" is the SAT section (e.g. "Math — Geometry", "Reading & Writing").
 - "answer" is the final answer, concise.
-- If the question is not a real/solvable SAT-style question, still respond with a short, helpful set of steps explaining what's needed.`,
+- If the question is not a real/solvable SAT-style question, still respond with a short, helpful set of steps explaining what's needed, and an empty diagram.`,
       prompt: `Work through this SAT question step by step for the whiteboard:\n\n"${studentPrompt}"`,
       experimental_output: Output.object({
         schema: z.object({
@@ -152,7 +169,62 @@ Rules:
               }),
             )
             .describe('4 to 8 ordered solution steps.'),
+          diagram: z
+            .array(
+              z.object({
+                kind: z.enum(['polygon', 'line', 'circle', 'point', 'label', 'rightangle']),
+                points: z
+                  .array(z.object({ x: z.number(), y: z.number() }))
+                  .describe('Vertices for polygon, or 2 endpoints for a line. Empty otherwise.'),
+                cx: z.number().nullable(),
+                cy: z.number().nullable(),
+                r: z.number().nullable(),
+                x: z.number().nullable(),
+                y: z.number().nullable(),
+                text: z.string().nullable(),
+                revealAt: z.number().describe('0-based step index when this element appears.'),
+              }),
+            )
+            .describe('Geometry elements to draw, or an empty array for non-geometry questions.'),
           answer: z.string().describe('The final answer, concise.'),
+        }),
+      }),
+    })
+    return Response.json(output)
+  }
+
+  if (mode === 'summarize') {
+    const worked = (body.workedSteps ?? []).filter(Boolean)
+    const { output } = await generateText({
+      model,
+      system: `${ROLE}${tone(persona)}
+
+The student just finished a whiteboard lesson. Write a concise, ENCOURAGING lesson summary tailored to THIS specific question and the steps that were worked. Everything must be specific to the actual problem — never generic boilerplate.`,
+      prompt: `Lesson topic: "${body.title ?? question?.section ?? 'SAT problem'}"
+Question: "${question?.prompt ?? body.prompt ?? ''}"
+Final answer: "${body.answer ?? ''}"
+Steps worked on the board:
+${worked.map((s, i) => `${i + 1}. ${s}`).join('\n') || '(not provided)'}
+
+Produce a summary object specific to this lesson.`,
+      experimental_output: Output.object({
+        schema: z.object({
+          title: z.string().describe('Short topic label, e.g. "Area of a Pentagon".'),
+          subject: z.string().describe('SAT section, e.g. "Math — Geometry".'),
+          confidence: z
+            .number()
+            .describe('Estimated post-lesson confidence 0-100 (usually 80-95 after finishing).'),
+          conceptsLearned: z
+            .array(z.string())
+            .describe('2-4 concepts this specific lesson taught.'),
+          mistakesCorrected: z
+            .array(z.string())
+            .describe('1-3 common mistakes to avoid for THIS problem type.'),
+          nextTopic: z.string().describe('A sensible next topic to study.'),
+          homework: z
+            .array(z.string())
+            .describe('2-3 short practice questions similar to this one, with concrete numbers.'),
+          flashcards: z.number().describe('How many flashcards were created (1-3).'),
         }),
       }),
     })

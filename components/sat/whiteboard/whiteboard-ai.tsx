@@ -22,6 +22,7 @@ import {
   type PracticeFeedback,
   type SmartAction,
   type SolveResult,
+  type LessonSummary,
 } from './lesson-data'
 
 const DEMO_STEPS = STEP_NARRATION.length // 9
@@ -42,6 +43,10 @@ export function WhiteboardAi() {
   const [mastered, setMastered] = useState(false)
   const [confetti, setConfetti] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+
+  // Live AI-generated lesson summary for the recap modal.
+  const [summary, setSummary] = useState<LessonSummary | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
 
   // Flow: 'input' = waiting for the student's question; 'lesson' = working it.
   const [phase, setPhase] = useState<'input' | 'lesson'>('input')
@@ -228,11 +233,45 @@ export function WhiteboardAi() {
     narration.stop()
   }, [narration])
 
+  // Fetch a lesson-specific, AI-generated summary for the recap modal.
+  const fetchSummary = useCallback(
+    async (input: { title: string; answer: string; workedSteps: string[] }) => {
+      setSummary(null)
+      setSummaryLoading(true)
+      try {
+        const res = await fetch('/api/whiteboard-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'summarize',
+            persona: personaRef.current,
+            question: activeQuestionRef.current,
+            ...input,
+          }),
+        })
+        if (res.ok) setSummary((await res.json()) as LessonSummary)
+      } catch (err) {
+        console.log('[v0] summary error:', err)
+      } finally {
+        setSummaryLoading(false)
+      }
+    },
+    [],
+  )
+
   // Play a freshly-loaded lesson: reveal every ink step with synced voice.
   const playLesson = useCallback(
-    async (steps: number, intro: string, closing: string, memoryText: string) => {
+    async (
+      steps: number,
+      intro: string,
+      closing: string,
+      memoryText: string,
+      summaryInput: { title: string; answer: string; workedSteps: string[] },
+    ) => {
       addMessage({ role: 'assistant', content: intro })
       await narration.narrate(intro)
+      // Kick off the summary generation in parallel so it's ready by recap time.
+      void fetchSummary(summaryInput)
       await runReveal(steps, { voice: true, from: 0 })
       setMastered(true)
       setConfetti(true)
@@ -241,7 +280,7 @@ export function WhiteboardAi() {
       addMessage({ role: 'assistant', content: closing })
       setTimeout(() => setSummaryOpen(true), 1400)
     },
-    [addMessage, narration, runReveal, recordMemory],
+    [addMessage, narration, runReveal, recordMemory, fetchSummary],
   )
 
   // Student submits their own question — OpenAI solves it, then we play it.
@@ -285,6 +324,11 @@ export function WhiteboardAi() {
           `Great — let's work through this together. I'll write out **${data.title}** step by step on the board.`,
           `That's the full solution: the answer is **${data.answer}**. Want to try a similar one yourself? Tap **Your Turn**, or ask me anything about a step.`,
           `Worked through: ${data.title}`,
+          {
+            title: data.title,
+            answer: data.answer,
+            workedSteps: data.steps.map((s) => s.board),
+          },
         )
       } catch (err) {
         console.log('[v0] solve error:', err)
@@ -347,6 +391,17 @@ export function WhiteboardAi() {
       "Let's work through this geometry question together. I'll draw it out step by step — watch and listen along.",
       `So AC equals **10**. Want to try one yourself? Tap **Your Turn**, or type your own question to work through.`,
       `Worked through Q${QUESTION.number}: ${QUESTION.section}`,
+      {
+        title: 'Pythagorean Theorem',
+        answer: 'AC = 10',
+        workedSteps: [
+          'Right triangle ABC, right angle at B',
+          'AB = 6, BC = 8',
+          'a^2 + b^2 = c^2',
+          '6^2 + 8^2 = 36 + 64 = 100',
+          'AC = sqrt(100) = 10',
+        ],
+      },
     )
     setSolving(false)
   }, [solving, playLesson])
@@ -543,6 +598,7 @@ export function WhiteboardAi() {
     aiStepRef.current = 0
     setMastered(false)
     setSummaryOpen(false)
+    setSummary(null)
     setQuestionInput('')
     setMessages([...OPENING_MESSAGES])
   }, [cancelPlayback])
@@ -694,7 +750,13 @@ export function WhiteboardAi() {
         />
       )}
 
-      {summaryOpen && <SessionSummary onClose={() => setSummaryOpen(false)} />}
+      {summaryOpen && (
+        <SessionSummary
+          onClose={() => setSummaryOpen(false)}
+          summary={summary}
+          loading={summaryLoading}
+        />
+      )}
     </div>
   )
 }

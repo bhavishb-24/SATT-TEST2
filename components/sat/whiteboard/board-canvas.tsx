@@ -353,6 +353,7 @@ export function BoardCanvas({
             <AiSolution
               title={solution.title}
               steps={solution.steps}
+              diagram={solution.diagram}
               step={aiStep}
               answer={solution.answer}
             />

@@ -126,11 +126,40 @@ export interface SolveStep {
   say: string
 }
 
+// A single primitive in an AI-generated geometry diagram. Coordinates are in a
+// normalized 0..100 space (0,0 = top-left). Unused fields are null.
+export interface DiagramElement {
+  kind: 'polygon' | 'line' | 'circle' | 'point' | 'label' | 'rightangle'
+  points: { x: number; y: number }[]
+  cx: number | null
+  cy: number | null
+  r: number | null
+  x: number | null
+  y: number | null
+  text: string | null
+  /** 0-based step index at which this element appears. */
+  revealAt: number
+}
+
 export interface SolveResult {
   title: string
   subject: string
   steps: SolveStep[]
+  /** Geometry elements to draw (empty for non-geometry questions). */
+  diagram: DiagramElement[]
   answer: string
+}
+
+// An AI-generated, lesson-specific summary shown in the recap modal.
+export interface LessonSummary {
+  title: string
+  subject: string
+  confidence: number
+  conceptsLearned: string[]
+  mistakesCorrected: string[]
+  nextTopic: string
+  homework: string[]
+  flashcards: number
 }
 
 export interface PracticeProblem {
