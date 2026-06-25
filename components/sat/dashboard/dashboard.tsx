@@ -26,6 +26,8 @@ import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
 import { PostDiagnostic } from '../post-diagnostic'
 import { ScanQuestionModal } from './scan-question-modal'
+import { AchievementsView, AchievementToast } from './achievements-view'
+import { useGamification } from '@/lib/use-gamification'
 
 interface DashboardProps {
   triage: TriageData
@@ -55,6 +57,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   mocktest: { title: 'Mock Tests', sub: 'Full-length SAT-style practice tests' },
   flashcards: { title: 'Flashcards', sub: 'Quick recall review' },
   progress: { title: 'Progress', sub: 'Track what you have done' },
+  achievements: { title: 'Achievements', sub: 'XP, badges, quests, leagues & your journey' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
   asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
@@ -83,6 +86,16 @@ export function Dashboard({
   const [tourActive, setTourActive] = useState(true)
   const finishTour = useCallback(() => setTourActive(false), [])
   const theme = getPanicTheme(triage.panic)
+
+  // Gamification system
+  const gamificationApi = useGamification({
+    practiceCorrect: statsApi.stats.practiceCorrect,
+    practiceAnswered: statsApi.stats.practiceAnswered,
+    flashcardsKnown: statsApi.stats.flashcardsKnown,
+    flashcardsReviewed: statsApi.stats.flashcardsReviewed,
+    topicsCompleted: statsApi.stats.topicsCompleted,
+    focusSeconds: statsApi.stats.focusSeconds,
+  })
   const countdown = useCountdown(triage.testStartTime)
   const timeZone = useTimeZone()
   const times = deriveTimes(triage.testStartTime)
@@ -94,8 +107,7 @@ export function Dashboard({
   const meta = VIEW_TITLES[view]
   const centeredView =
     view === 'practice' ||
-    view === 'flashcards' ||
-    view === 'progress'
+    view === 'flashcards'
 
   return (
     <div className="flex min-h-dvh bg-background">
@@ -146,6 +158,7 @@ export function Dashboard({
                 wakeLabel={wakeLabel}
                 timeZoneLabel={timeZone?.label ?? null}
                 onNavigate={setView}
+                gamification={gamificationApi.state}
               />
             )}
 
@@ -189,6 +202,10 @@ export function Dashboard({
               <ProgressView stats={statsApi.stats} theme={theme} />
             )}
 
+            {view === 'achievements' && (
+              <AchievementsView api={gamificationApi} />
+            )}
+
             {view === 'checklist' && (
               <Checklist
                 triage={triage}
@@ -213,6 +230,19 @@ export function Dashboard({
       </div>
 
       <MobileNav active={view} onNavigate={setView} theme={theme} />
+
+      {/* Achievement unlock toasts */}
+      {gamificationApi.state.newlyUnlocked.length > 0 && (
+        <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2 lg:bottom-6 lg:right-6 pointer-events-none">
+          {gamificationApi.state.newlyUnlocked.map((achievement) => (
+            <AchievementToast
+              key={achievement.id}
+              achievement={achievement}
+              onDismiss={gamificationApi.dismissNewlyUnlocked}
+            />
+          ))}
+        </div>
+      )}
 
       {tourActive && <DashboardTour onNavigate={setView} onFinish={finishTour} />}
 

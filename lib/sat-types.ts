@@ -127,6 +127,7 @@ export type DashboardView =
   | 'mocktest'
   | 'flashcards'
   | 'progress'
+  | 'achievements'
   | 'checklist'
   | 'morning'
   | 'asktutor'
