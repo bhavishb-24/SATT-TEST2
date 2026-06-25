@@ -72,6 +72,60 @@ export const OPENING_MESSAGES = [
   { role: 'student' as const, content: "I don't understand question 14." },
 ]
 
+// Teacher personality modes. The `key` is sent to the AI routes and folded
+// into the system prompt; the rest drives the UI selector.
+export type PersonaKey = 'encouraging' | 'socratic' | 'direct'
+
+export interface Persona {
+  key: PersonaKey
+  label: string
+  icon: string
+  tagline: string
+  /** Appended to the AI system prompt to shape tone. */
+  instruction: string
+}
+
+export const PERSONAS: Persona[] = [
+  {
+    key: 'encouraging',
+    label: 'Encouraging',
+    icon: 'ti-mood-heart',
+    tagline: 'Warm & motivating',
+    instruction:
+      'Adopt a warm, upbeat, highly encouraging tone. Open with quick praise, normalize mistakes, and cheer the student on. Use friendly, supportive language throughout while still teaching rigorously.',
+  },
+  {
+    key: 'socratic',
+    label: 'Socratic',
+    icon: 'ti-help-octagon',
+    tagline: 'Guides with questions',
+    instruction:
+      'Teach almost entirely through guiding questions. Rarely state facts directly — instead ask one pointed question at a time that leads the student to discover the next step themselves. Wait for their reasoning before advancing.',
+  },
+  {
+    key: 'direct',
+    label: 'Direct',
+    icon: 'ti-bolt',
+    tagline: 'Clear & to the point',
+    instruction:
+      'Be concise and efficient. Give clear, direct explanations and the key steps without much small talk. Still avoid handing over the final numeric answer until the student has worked the steps, but get to the point quickly.',
+  },
+]
+
+export const DEFAULT_PERSONA: PersonaKey = 'encouraging'
+
+export interface PracticeProblem {
+  prompt: string
+  section: string
+  answer: string
+  explanation: string
+}
+
+export interface PracticeFeedback {
+  correct: boolean
+  feedback: string
+}
+
 export interface MemoryItem {
   icon: string
   text: string

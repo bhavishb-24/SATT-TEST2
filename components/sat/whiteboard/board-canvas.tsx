@@ -27,12 +27,23 @@ const TOOLS: ToolDef[] = [
 interface BoardCanvasProps {
   aiStep: number
   isPlaying: boolean
-  onReplay: () => void
+  totalSteps: number
   /** "Geometry" tool asks the AI to (re)draw the diagram. */
   onAskAiDraw: () => void
+  /** Playback: toggle play/pause of the explanation animation. */
+  onTogglePlay: () => void
+  /** Playback: jump the board to a specific step index. */
+  onStepTo: (step: number) => void
 }
 
-export function BoardCanvas({ aiStep, isPlaying, onReplay, onAskAiDraw }: BoardCanvasProps) {
+export function BoardCanvas({
+  aiStep,
+  isPlaying,
+  totalSteps,
+  onAskAiDraw,
+  onTogglePlay,
+  onStepTo,
+}: BoardCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -436,16 +447,53 @@ export function BoardCanvas({ aiStep, isPlaying, onReplay, onAskAiDraw }: BoardC
           </div>
         </div>
 
-        {/* Replay explanation — bottom right */}
-        <button
-          type="button"
-          onClick={onReplay}
-          disabled={isPlaying}
-          className="absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          <i className={cn('ti ti-player-play', isPlaying && 'animate-pulse')} aria-hidden="true" />
-          Replay Explanation
-        </button>
+        {/* Step-by-step playback controls — bottom right */}
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
+          <button
+            type="button"
+            aria-label="Restart explanation"
+            title="Restart"
+            onClick={() => onStepTo(0)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <i className="ti ti-player-skip-back" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="Previous step"
+            title="Previous step"
+            onClick={() => onStepTo(aiStep - 1)}
+            disabled={aiStep <= 0}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+          >
+            <i className="ti ti-player-track-prev" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label={isPlaying ? 'Pause explanation' : 'Play explanation'}
+            title={isPlaying ? 'Pause' : 'Play'}
+            onClick={onTogglePlay}
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <i
+              className={cn('ti text-lg', isPlaying ? 'ti-player-pause' : 'ti-player-play')}
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            type="button"
+            aria-label="Next step"
+            title="Next step"
+            onClick={() => onStepTo(aiStep + 1)}
+            disabled={aiStep >= totalSteps}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+          >
+            <i className="ti ti-player-track-next" aria-hidden="true" />
+          </button>
+          <span className="mx-1 min-w-[2.75rem] text-center text-xs font-semibold tabular-nums text-muted-foreground">
+            {aiStep}/{totalSteps}
+          </span>
+        </div>
       </div>
     </div>
   )
