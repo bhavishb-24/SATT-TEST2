@@ -6,7 +6,7 @@ import { PERSONAS, type PersonaKey } from '@/components/sat/whiteboard/lesson-da
 // Never use the edge runtime with the AI SDK.
 export const maxDuration = 30
 
-type Mode = 'hint' | 'why' | 'practice' | 'check'
+type Mode = 'hint' | 'why' | 'practice' | 'check' | 'narrate'
 
 interface CoachRequest {
   mode: Mode
@@ -21,6 +21,8 @@ interface CoachRequest {
   practicePrompt?: string
   expectedAnswer?: string
   studentAnswer?: string
+  // narrate
+  steps?: number
 }
 
 const ROLE = `You are Whiteboard AI, an SAT tutor inside a visual whiteboard app called SAT Sage. Write in plain language a high-schooler understands. Use **bold** (double asterisks) for key terms or formulas — the UI renders it.`
@@ -90,6 +92,23 @@ export async function POST(req: Request) {
           explanation: z
             .string()
             .describe('A short worked explanation of how to reach the answer.'),
+        }),
+      }),
+    })
+    return Response.json(output)
+  }
+
+  if (mode === 'narrate') {
+    const count = Math.max(3, Math.min(12, body.steps ?? 9))
+    const { output } = await generateText({
+      model,
+      system: `${ROLE}${tone(persona)}\n\n${qctx(question)}\n\nYou are narrating a visual whiteboard lesson that draws the solution one step at a time. Produce exactly ${count} short spoken narration lines, in order, that walk the student from understanding the problem to the final answer. Each line is ONE sentence a tutor would say aloud as that part of the diagram/work appears. The lines should build progressively and the LAST line should reveal the final answer. Write for the ear (these are spoken via text-to-speech) — no markdown, no bullet symbols, spell out math naturally (e.g. "six squared plus eight squared").`,
+      prompt: `Write the ${count} narration lines for this lesson.`,
+      experimental_output: Output.object({
+        schema: z.object({
+          lines: z
+            .array(z.string())
+            .describe(`Exactly ${count} spoken narration lines, in teaching order.`),
         }),
       }),
     })

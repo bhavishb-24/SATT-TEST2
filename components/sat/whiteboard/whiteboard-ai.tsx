@@ -17,6 +17,7 @@ import {
   QUESTION,
   STEP_NARRATION,
   TEACH_STAGES,
+  type MemoryItem,
   type PersonaKey,
   type PracticeProblem,
   type PracticeFeedback,
@@ -40,6 +41,25 @@ export function WhiteboardAi() {
   const [mastered, setMastered] = useState(false)
   const [confetti, setConfetti] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+
+  // Live AI-generated narration lines for the current question (one per ink
+  // step). Falls back to the scripted STEP_NARRATION until they load.
+  const [aiLines, setAiLines] = useState<string[]>(STEP_NARRATION)
+  const aiLinesRef = useRef<string[]>(STEP_NARRATION)
+  aiLinesRef.current = aiLines
+  const lineFor = useCallback(
+    (stepIndex: number) => aiLinesRef.current[stepIndex] ?? STEP_NARRATION[stepIndex] ?? '',
+    [],
+  )
+
+  // Dynamic memory: events recorded as the student works this session.
+  const [memoryEvents, setMemoryEvents] = useState<MemoryItem[]>([])
+  const recordMemory = useCallback((item: MemoryItem) => {
+    setMemoryEvents((prev) => {
+      if (prev.some((p) => p.text === item.text)) return prev
+      return [item, ...prev].slice(0, 8)
+    })
+  }, [])
 
   // Personality mode
   const [persona, setPersona] = useState<PersonaKey>(DEFAULT_PERSONA)
@@ -164,7 +184,7 @@ export function WhiteboardAi() {
         if (playToken.current !== token) return
         setAiStep(s)
         aiStepRef.current = s
-        const line = STEP_NARRATION[s - 1]
+        const line = lineFor(s - 1)
         if (opts?.voice) {
           setVoiceTranscript(line)
           setVoiceSpeaking(true)
@@ -214,10 +234,69 @@ export function WhiteboardAi() {
     [addMessage, runReveal, narration],
   )
 
-  // Kick off the first stage on mount.
+  // Fetch live AI narration for the current question, then auto-play the whole
+  // lesson — revealing each ink step while the voice talks through it.
+  const autoStarted = useRef(false)
+  const autoPlayLesson = useCallback(async () => {
+    setThinking(true)
+    let lines = STEP_NARRATION
+    try {
+      const res = await fetch('/api/whiteboard-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'narrate',
+          persona: personaRef.current,
+          question: QUESTION,
+          steps: TOTAL_STEPS,
+        }),
+      })
+      if (res.ok) {
+        const data = (await res.json()) as { lines?: string[] }
+        if (Array.isArray(data.lines) && data.lines.length >= 3) {
+          lines = data.lines
+          setAiLines(data.lines)
+          aiLinesRef.current = data.lines
+        }
+      }
+    } catch (err) {
+      console.log('[v0] narrate fetch error:', err)
+    }
+
+    setThinking(false)
+    const intro =
+      "Let's work through question 14 together. I'll draw it out step by step on the board — watch and listen along."
+    addMessage({ role: 'assistant', content: intro })
+    await narration.narrate(intro)
+
+    // Auto-play every step with synced voice narration.
+    await runReveal(TOTAL_STEPS, { voice: true, from: 0 })
+
+    // Wrap up: mastery celebration + record what was covered.
+    setMastered(true)
+    setConfetti(true)
+    setTimeout(() => setConfetti(false), 4500)
+    recordMemory({
+      icon: 'ti-circle-check',
+      text: `Worked through Q${QUESTION.number}: ${QUESTION.section}`,
+      tone: 'good',
+    })
+    const closing = lines[lines.length - 1] ?? 'Great work following along!'
+    addMessage({
+      role: 'assistant',
+      content: `That's the full solution. ${closing} Want to try one yourself? Tap **Your Turn**.`,
+    })
+    setTimeout(() => setSummaryOpen(true), 1400)
+  }, [addMessage, narration, runReveal, recordMemory])
+
+  // Kick off auto-play once on mount.
   useEffect(() => {
-    setStageIndex(0)
-    deliverStage(0)
+    if (autoStarted.current) return
+    autoStarted.current = true
+    // The lesson now auto-plays end-to-end, so the manual hint-ladder advance
+    // button stays hidden (autoplay covers every step).
+    setStageIndex(TEACH_STAGES.length - 1)
+    void autoPlayLesson()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -240,10 +319,24 @@ export function WhiteboardAi() {
       const studentMsg: ChatMessage = { role: 'student', content: text }
       const history = [...messagesRef.current, studentMsg]
       setMessages(history)
+      recordMemory({ icon: 'ti-message-2', text: `Asked: "${text.slice(0, 40)}${text.length > 40 ? '…' : ''}"`, tone: 'good' })
       void streamTutorReply(history)
     },
-    [streamTutorReply],
+    [streamTutorReply, recordMemory],
   )
+
+  // Clear the conversation so the student can start a fresh chat.
+  const handleClearChat = useCallback(() => {
+    cancelPlayback()
+    setThinking(false)
+    setMessages([
+      {
+        role: 'assistant',
+        content:
+          "Chat cleared. I'm still right here — ask me anything about this problem, or tap a step on the board to revisit it.",
+      },
+    ])
+  }, [cancelPlayback])
 
   // Escalating live hint.
   const handleHint = useCallback(async () => {
@@ -252,6 +345,9 @@ export function WhiteboardAi() {
     setHintLevel(level)
     setHintLoading(true)
     addMessage({ role: 'student', content: 'Give me a hint.' })
+    if (level >= 3) {
+      recordMemory({ icon: 'ti-bulb', text: 'Needed several hints on this concept', tone: 'watch' })
+    }
     await streamAssistant('/api/whiteboard-coach', {
       mode: 'hint',
       persona: personaRef.current,
@@ -260,7 +356,7 @@ export function WhiteboardAi() {
       totalHints: TOTAL_HINTS,
     })
     setHintLoading(false)
-  }, [hintLevel, hintLoading, addMessage, streamAssistant])
+  }, [hintLevel, hintLoading, addMessage, streamAssistant, recordMemory])
 
   // "Why?" — explain why a given assistant message / step works.
   const handleWhy = useCallback(
@@ -321,6 +417,11 @@ export function WhiteboardAi() {
         if (!res.ok) throw new Error(`check failed: ${res.status}`)
         const data = (await res.json()) as PracticeFeedback
         setPracticeFeedback(data)
+        recordMemory(
+          data.correct
+            ? { icon: 'ti-trophy', text: 'Solved a practice problem correctly', tone: 'good' }
+            : { icon: 'ti-alert-triangle', text: 'Missed a practice problem — review this', tone: 'watch' },
+        )
         void narration.narrate(data.feedback)
       } catch (err) {
         console.log('[v0] check error:', err)
@@ -332,7 +433,7 @@ export function WhiteboardAi() {
         setCheckingPractice(false)
       }
     },
-    [practice, narration],
+    [practice, narration, recordMemory],
   )
 
   const handleClosePractice = useCallback(() => {
@@ -377,9 +478,9 @@ export function WhiteboardAi() {
       const clamped = Math.max(0, Math.min(TOTAL_STEPS, n))
       setAiStep(clamped)
       aiStepRef.current = clamped
-      if (clamped > 0) void narration.narrate(STEP_NARRATION[clamped - 1])
+      if (clamped > 0) void narration.narrate(lineFor(clamped - 1))
     },
-    [cancelPlayback, narration],
+    [cancelPlayback, narration, lineFor],
   )
 
   const handleAskAiDraw = useCallback(() => {
@@ -418,7 +519,7 @@ export function WhiteboardAi() {
           </Link>
           <div className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <i className="ti ti-blackboard text-lg" aria-hidden="true" />
+              <i className="ti ti-chalkboard text-lg" aria-hidden="true" />
             </span>
             <div>
               <p className="text-sm font-bold leading-tight text-foreground">Whiteboard AI</p>
@@ -476,6 +577,8 @@ export function WhiteboardAi() {
             advanceLabel={advanceLabel}
             onAdvance={handleAdvance}
             mastered={mastered}
+            memoryEvents={memoryEvents}
+            onClearChat={handleClearChat}
             onSend={handleSend}
             onSmartAction={handleSmartAction}
             onStartVoice={() => {

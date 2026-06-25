@@ -48,7 +48,7 @@ export function MobileNav({ active, onNavigate, theme }: MobileNavProps) {
             href="/whiteboard"
             className="flex min-w-[64px] flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <i className="ti ti-whiteboard text-lg" aria-hidden="true" />
+            <i className="ti ti-chalkboard text-lg" aria-hidden="true" />
             <span className="whitespace-nowrap">Whiteboard</span>
           </Link>
         </li>

@@ -8,6 +8,7 @@ import {
   QUESTION,
   MEMORY_NUDGE,
   type SmartAction,
+  type MemoryItem,
   type PracticeProblem,
   type PracticeFeedback,
 } from './lesson-data'
@@ -24,6 +25,10 @@ interface TutorPanelProps {
   advanceLabel: string | null
   onAdvance: () => void
   mastered: boolean
+  /** Dynamic memory entries recorded during this session. */
+  memoryEvents: MemoryItem[]
+  /** Clear the conversation history. */
+  onClearChat: () => void
   onSend: (text: string) => void
   onSmartAction: (action: SmartAction) => void
   onStartVoice: () => void
@@ -70,6 +75,8 @@ export function TutorPanel({
   advanceLabel,
   onAdvance,
   mastered,
+  memoryEvents,
+  onClearChat,
   onSend,
   onSmartAction,
   onStartVoice,
@@ -127,16 +134,27 @@ export function TutorPanel({
             </p>
           </div>
         </div>
-        {mastered && (
+        <div className="flex items-center gap-1.5">
+          {mastered && (
+            <button
+              type="button"
+              onClick={onOpenSummary}
+              className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+            >
+              <i className="ti ti-clipboard-check" aria-hidden="true" />
+              Summary
+            </button>
+          )}
           <button
             type="button"
-            onClick={onOpenSummary}
-            className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+            onClick={onClearChat}
+            title="Clear chat history"
+            aria-label="Clear chat history"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <i className="ti ti-clipboard-check" aria-hidden="true" />
-            Summary
+            <i className="ti ti-eraser text-base" aria-hidden="true" />
           </button>
-        )}
+        </div>
       </header>
 
       {/* Tabs */}
@@ -162,7 +180,7 @@ export function TutorPanel({
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {tab === 'memory' ? (
           <div className="flex flex-col gap-4">
-            <MemoryCards />
+            <MemoryCards sessionEvents={memoryEvents} />
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
               <p className="flex items-start gap-2 text-xs leading-snug text-amber-800">
                 <i className="ti ti-history mt-0.5 shrink-0 text-sm" aria-hidden="true" />

@@ -100,7 +100,7 @@ export function Sidebar({
               href="/whiteboard"
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <i className="ti ti-whiteboard text-lg" aria-hidden="true" />
+              <i className="ti ti-chalkboard text-lg" aria-hidden="true" />
               Whiteboard AI
               <i
                 className="ti ti-sparkles ml-auto text-sm text-primary"
