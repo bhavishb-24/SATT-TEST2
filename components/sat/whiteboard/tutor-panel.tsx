@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 import { MemoryCards } from './memory-cards'
 import {
   SMART_ACTIONS,
-  QUESTION,
   MEMORY_NUDGE,
   type SmartAction,
   type MemoryItem,
@@ -21,6 +20,8 @@ export interface ChatMessage {
 interface TutorPanelProps {
   messages: ChatMessage[]
   thinking: boolean
+  /** The question currently being worked, or null while on the start screen. */
+  activeQuestion: { number?: number; section?: string; prompt: string } | null
   /** Label for the button that advances the hint ladder; null when finished. */
   advanceLabel: string | null
   onAdvance: () => void
@@ -72,6 +73,7 @@ function RichText({ text }: { text: string }) {
 export function TutorPanel({
   messages,
   thinking,
+  activeQuestion,
   advanceLabel,
   onAdvance,
   mastered,
@@ -190,13 +192,16 @@ export function TutorPanel({
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {/* Question context chip */}
-            <div className="rounded-xl border border-border bg-background px-3 py-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Question {QUESTION.number} · {QUESTION.section}
-              </p>
-              <p className="mt-1 text-xs leading-snug text-foreground">{QUESTION.prompt}</p>
-            </div>
+            {/* Question context chip — only once a question is being worked */}
+            {activeQuestion && (
+              <div className="rounded-xl border border-border bg-background px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {activeQuestion.number ? `Question ${activeQuestion.number} · ` : ''}
+                  {activeQuestion.section ?? 'Your question'}
+                </p>
+                <p className="mt-1 text-xs leading-snug text-foreground">{activeQuestion.prompt}</p>
+              </div>
+            )}
 
             {messages.map((m, i) => (
               <div key={i} className="flex flex-col gap-1">

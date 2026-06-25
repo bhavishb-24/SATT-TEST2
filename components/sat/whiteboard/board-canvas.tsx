@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { AiDrawing } from './ai-drawing'
+import { AiSolution } from './ai-solution'
+import type { SolveResult } from './lesson-data'
 
 type Tool = 'pen' | 'highlighter' | 'eraser' | 'laser' | 'text' | 'shape'
 
@@ -28,6 +30,10 @@ interface BoardCanvasProps {
   aiStep: number
   isPlaying: boolean
   totalSteps: number
+  /** When set, render this live AI solution instead of the demo triangle. */
+  solution: SolveResult | null
+  /** Whether any lesson has started (controls the playback bar visibility). */
+  hasLesson: boolean
   /** "Geometry" tool asks the AI to (re)draw the diagram. */
   onAskAiDraw: () => void
   /** Playback: toggle play/pause of the explanation animation. */
@@ -40,6 +46,8 @@ export function BoardCanvas({
   aiStep,
   isPlaying,
   totalSteps,
+  solution,
+  hasLesson,
   onAskAiDraw,
   onTogglePlay,
   onStepTo,
@@ -340,8 +348,17 @@ export function BoardCanvas({
           {/* Grid layer */}
           <div className={cn('absolute inset-0', showGrid && 'board-grid')} aria-hidden="true" />
 
-          {/* AI drawing layer (non-interactive) */}
-          <AiDrawing step={aiStep} />
+          {/* AI drawing layer (non-interactive) — live solution or demo triangle */}
+          {solution ? (
+            <AiSolution
+              title={solution.title}
+              steps={solution.steps}
+              step={aiStep}
+              answer={solution.answer}
+            />
+          ) : (
+            <AiDrawing step={aiStep} />
+          )}
 
           {/* Student drawing layer (captures pointer) */}
           <canvas
@@ -447,8 +464,13 @@ export function BoardCanvas({
           </div>
         </div>
 
-        {/* Step-by-step playback controls — bottom right */}
-        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
+        {/* Step-by-step playback controls — bottom right (only once a lesson exists) */}
+        <div
+          className={cn(
+            'absolute bottom-4 right-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-card/95 p-1 shadow-lg backdrop-blur transition-opacity',
+            hasLesson ? 'opacity-100' : 'pointer-events-none opacity-0',
+          )}
+        >
           <button
             type="button"
             aria-label="Restart explanation"

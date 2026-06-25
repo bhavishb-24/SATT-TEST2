@@ -69,7 +69,11 @@ export const TEACH_STAGES: TeachStage[] = [
 ]
 
 export const OPENING_MESSAGES = [
-  { role: 'student' as const, content: "I don't understand question 14." },
+  {
+    role: 'assistant' as const,
+    content:
+      "Hi! I'm your Whiteboard AI tutor. Paste or type any SAT question you're stuck on, and I'll work through it step by step on the board — out loud, one line at a time.",
+  },
 ]
 
 // Teacher personality modes. The `key` is sent to the AI routes and folded
@@ -113,6 +117,21 @@ export const PERSONAS: Persona[] = [
 ]
 
 export const DEFAULT_PERSONA: PersonaKey = 'encouraging'
+
+// A live, AI-generated worked solution for a student's own question.
+export interface SolveStep {
+  /** Concise text written on the whiteboard for this step. */
+  board: string
+  /** One spoken narration sentence for this step. */
+  say: string
+}
+
+export interface SolveResult {
+  title: string
+  subject: string
+  steps: SolveStep[]
+  answer: string
+}
 
 export interface PracticeProblem {
   prompt: string

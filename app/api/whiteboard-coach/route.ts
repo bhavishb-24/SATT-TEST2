@@ -6,7 +6,7 @@ import { PERSONAS, type PersonaKey } from '@/components/sat/whiteboard/lesson-da
 // Never use the edge runtime with the AI SDK.
 export const maxDuration = 30
 
-type Mode = 'hint' | 'why' | 'practice' | 'check' | 'narrate'
+type Mode = 'hint' | 'why' | 'practice' | 'check' | 'narrate' | 'solve'
 
 interface CoachRequest {
   mode: Mode
@@ -23,6 +23,8 @@ interface CoachRequest {
   studentAnswer?: string
   // narrate
   steps?: number
+  // solve
+  prompt?: string
 }
 
 const ROLE = `You are Whiteboard AI, an SAT tutor inside a visual whiteboard app called SAT Sage. Write in plain language a high-schooler understands. Use **bold** (double asterisks) for key terms or formulas — the UI renders it.`
@@ -109,6 +111,48 @@ export async function POST(req: Request) {
           lines: z
             .array(z.string())
             .describe(`Exactly ${count} spoken narration lines, in teaching order.`),
+        }),
+      }),
+    })
+    return Response.json(output)
+  }
+
+  if (mode === 'solve') {
+    const studentPrompt = (body.prompt ?? question?.prompt ?? '').trim()
+    if (!studentPrompt) {
+      return new Response('Missing question prompt', { status: 400 })
+    }
+    const { output } = await generateText({
+      model,
+      system: `${ROLE}${tone(persona)}
+
+A student typed an SAT question they want worked through on the whiteboard. Solve it correctly, then break the solution into clear teaching steps that will be WRITTEN OUT on a whiteboard one at a time while you narrate.
+
+For each step provide:
+- "board": the short thing to WRITE on the whiteboard for this step — a key equation, substitution, or label. Keep it very concise (a formula or a few words / numbers), like real handwritten board work. Use plain characters and ^ for exponents (e.g. "6^2 + 8^2 = c^2"). NO markdown asterisks here.
+- "say": ONE sentence the tutor speaks aloud as that line appears. Write for the ear (spoken via TTS) — spell math naturally (e.g. "six squared plus eight squared"). NO markdown.
+
+Rules:
+- Produce between 4 and 8 steps, in logical order, building to the answer.
+- The FIRST step should restate/set up the problem; the LAST step should present the final answer.
+- "title" is a short topic label (e.g. "Pythagorean Theorem").
+- "subject" is the SAT section (e.g. "Math — Geometry", "Reading & Writing").
+- "answer" is the final answer, concise.
+- If the question is not a real/solvable SAT-style question, still respond with a short, helpful set of steps explaining what's needed.`,
+      prompt: `Work through this SAT question step by step for the whiteboard:\n\n"${studentPrompt}"`,
+      experimental_output: Output.object({
+        schema: z.object({
+          title: z.string().describe('Short topic label for the lesson.'),
+          subject: z.string().describe('SAT section, e.g. "Math — Algebra".'),
+          steps: z
+            .array(
+              z.object({
+                board: z.string().describe('Concise text to write on the whiteboard.'),
+                say: z.string().describe('One spoken narration sentence for this step.'),
+              }),
+            )
+            .describe('4 to 8 ordered solution steps.'),
+          answer: z.string().describe('The final answer, concise.'),
         }),
       }),
     })

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useVoice } from '@/lib/use-voice'
 import { useNarration } from '@/lib/use-narration'
 import { cn } from '@/lib/utils'
@@ -16,16 +16,18 @@ import {
   PERSONAS,
   QUESTION,
   STEP_NARRATION,
-  TEACH_STAGES,
   type MemoryItem,
   type PersonaKey,
   type PracticeProblem,
   type PracticeFeedback,
   type SmartAction,
+  type SolveResult,
 } from './lesson-data'
 
-const TOTAL_STEPS = STEP_NARRATION.length // 9
+const DEMO_STEPS = STEP_NARRATION.length // 9
 const TOTAL_HINTS = 4
+
+type ActiveQuestion = { number?: number; section?: string; prompt: string }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -37,20 +39,33 @@ export function WhiteboardAi() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([...OPENING_MESSAGES])
   const [thinking, setThinking] = useState(false)
-  const [stageIndex, setStageIndex] = useState(-1) // -1 = not started
   const [mastered, setMastered] = useState(false)
   const [confetti, setConfetti] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
 
-  // Live AI-generated narration lines for the current question (one per ink
-  // step). Falls back to the scripted STEP_NARRATION until they load.
+  // Flow: 'input' = waiting for the student's question; 'lesson' = working it.
+  const [phase, setPhase] = useState<'input' | 'lesson'>('input')
+  const [questionInput, setQuestionInput] = useState('')
+  const [solving, setSolving] = useState(false)
+
+  // The question currently being taught (student's own, or the demo).
+  const [activeQuestion, setActiveQuestion] = useState<ActiveQuestion>(QUESTION)
+  const activeQuestionRef = useRef<ActiveQuestion>(QUESTION)
+  activeQuestionRef.current = activeQuestion
+
+  // Live AI worked-solution for a student question (null = use the demo triangle).
+  const [solution, setSolution] = useState<SolveResult | null>(null)
+
+  // How many ink steps the current lesson has.
+  const [totalSteps, setTotalSteps] = useState(DEMO_STEPS)
+  const totalStepsRef = useRef(DEMO_STEPS)
+  totalStepsRef.current = totalSteps
+
+  // Narration lines for the active lesson (one per ink step).
   const [aiLines, setAiLines] = useState<string[]>(STEP_NARRATION)
   const aiLinesRef = useRef<string[]>(STEP_NARRATION)
   aiLinesRef.current = aiLines
-  const lineFor = useCallback(
-    (stepIndex: number) => aiLinesRef.current[stepIndex] ?? STEP_NARRATION[stepIndex] ?? '',
-    [],
-  )
+  const lineFor = useCallback((stepIndex: number) => aiLinesRef.current[stepIndex] ?? '', [])
 
   // Dynamic memory: events recorded as the student works this session.
   const [memoryEvents, setMemoryEvents] = useState<MemoryItem[]>([])
@@ -163,7 +178,7 @@ export function WhiteboardAi() {
     (history: ChatMessage[]) =>
       streamAssistant('/api/whiteboard-tutor', {
         messages: history.map((m) => ({ role: m.role, content: m.content })),
-        question: QUESTION,
+        question: activeQuestionRef.current,
         persona: personaRef.current,
       }),
     [streamAssistant],
@@ -213,32 +228,87 @@ export function WhiteboardAi() {
     narration.stop()
   }, [narration])
 
-  // Deliver a teaching stage: AI message + reveal the matching ink steps.
-  const deliverStage = useCallback(
-    async (i: number) => {
-      const stage = TEACH_STAGES[i]
-      if (!stage) return
-      setThinking(true)
-      await wait(650)
-      setThinking(false)
-      addMessage({ role: 'assistant', content: stage.message })
-      void narration.narrate(stage.message)
-      await runReveal(stage.reveal)
-      if (stage.mastery) {
-        setMastered(true)
-        setConfetti(true)
-        setTimeout(() => setConfetti(false), 4500)
-        setTimeout(() => setSummaryOpen(true), 1200)
-      }
+  // Play a freshly-loaded lesson: reveal every ink step with synced voice.
+  const playLesson = useCallback(
+    async (steps: number, intro: string, closing: string, memoryText: string) => {
+      addMessage({ role: 'assistant', content: intro })
+      await narration.narrate(intro)
+      await runReveal(steps, { voice: true, from: 0 })
+      setMastered(true)
+      setConfetti(true)
+      setTimeout(() => setConfetti(false), 4500)
+      recordMemory({ icon: 'ti-circle-check', text: memoryText, tone: 'good' })
+      addMessage({ role: 'assistant', content: closing })
+      setTimeout(() => setSummaryOpen(true), 1400)
     },
-    [addMessage, runReveal, narration],
+    [addMessage, narration, runReveal, recordMemory],
   )
 
-  // Fetch live AI narration for the current question, then auto-play the whole
-  // lesson — revealing each ink step while the voice talks through it.
-  const autoStarted = useRef(false)
-  const autoPlayLesson = useCallback(async () => {
+  // Student submits their own question — OpenAI solves it, then we play it.
+  const handleSolveQuestion = useCallback(
+    async (raw: string) => {
+      const prompt = raw.trim()
+      if (!prompt || solving) return
+      setSolving(true)
+      setThinking(true)
+      addMessage({ role: 'student', content: prompt })
+      try {
+        const res = await fetch('/api/whiteboard-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'solve', persona: personaRef.current, prompt }),
+        })
+        if (!res.ok) throw new Error(`solve failed: ${res.status}`)
+        const data = (await res.json()) as SolveResult
+        if (!Array.isArray(data.steps) || data.steps.length === 0) {
+          throw new Error('no steps')
+        }
+
+        // Configure the lesson from the AI solution.
+        const q: ActiveQuestion = { section: data.subject, prompt }
+        setActiveQuestion(q)
+        activeQuestionRef.current = q
+        setSolution(data)
+        const lines = data.steps.map((s) => s.say)
+        setAiLines(lines)
+        aiLinesRef.current = lines
+        setTotalSteps(data.steps.length)
+        totalStepsRef.current = data.steps.length
+        setAiStep(0)
+        aiStepRef.current = 0
+        setMastered(false)
+        setPhase('lesson')
+        setThinking(false)
+
+        await playLesson(
+          data.steps.length,
+          `Great — let's work through this together. I'll write out **${data.title}** step by step on the board.`,
+          `That's the full solution: the answer is **${data.answer}**. Want to try a similar one yourself? Tap **Your Turn**, or ask me anything about a step.`,
+          `Worked through: ${data.title}`,
+        )
+      } catch (err) {
+        console.log('[v0] solve error:', err)
+        setThinking(false)
+        setSolving(false)
+        addMessage({
+          role: 'assistant',
+          content:
+            "I couldn't work that one out just now. Try rephrasing the question, or check it for typos and send it again.",
+        })
+        return
+      }
+      setSolving(false)
+    },
+    [solving, addMessage, playLesson],
+  )
+
+  // Run the built-in geometry demo (the polished hand-drawn triangle).
+  const handleStartDemo = useCallback(async () => {
+    if (solving) return
+    setSolving(true)
     setThinking(true)
+
+    // Fetch live AI narration for the demo question.
     let lines = STEP_NARRATION
     try {
       const res = await fetch('/api/whiteboard-coach', {
@@ -248,71 +318,42 @@ export function WhiteboardAi() {
           mode: 'narrate',
           persona: personaRef.current,
           question: QUESTION,
-          steps: TOTAL_STEPS,
+          steps: DEMO_STEPS,
         }),
       })
       if (res.ok) {
         const data = (await res.json()) as { lines?: string[] }
-        if (Array.isArray(data.lines) && data.lines.length >= 3) {
-          lines = data.lines
-          setAiLines(data.lines)
-          aiLinesRef.current = data.lines
-        }
+        if (Array.isArray(data.lines) && data.lines.length >= 3) lines = data.lines
       }
     } catch (err) {
-      console.log('[v0] narrate fetch error:', err)
+      console.log('[v0] demo narrate error:', err)
     }
 
+    setSolution(null)
+    setActiveQuestion(QUESTION)
+    activeQuestionRef.current = QUESTION
+    setAiLines(lines)
+    aiLinesRef.current = lines
+    setTotalSteps(DEMO_STEPS)
+    totalStepsRef.current = DEMO_STEPS
+    setAiStep(0)
+    aiStepRef.current = 0
+    setMastered(false)
+    setPhase('lesson')
     setThinking(false)
-    const intro =
-      "Let's work through question 14 together. I'll draw it out step by step on the board — watch and listen along."
-    addMessage({ role: 'assistant', content: intro })
-    await narration.narrate(intro)
 
-    // Auto-play every step with synced voice narration.
-    await runReveal(TOTAL_STEPS, { voice: true, from: 0 })
+    await playLesson(
+      DEMO_STEPS,
+      "Let's work through this geometry question together. I'll draw it out step by step — watch and listen along.",
+      `So AC equals **10**. Want to try one yourself? Tap **Your Turn**, or type your own question to work through.`,
+      `Worked through Q${QUESTION.number}: ${QUESTION.section}`,
+    )
+    setSolving(false)
+  }, [solving, playLesson])
 
-    // Wrap up: mastery celebration + record what was covered.
-    setMastered(true)
-    setConfetti(true)
-    setTimeout(() => setConfetti(false), 4500)
-    recordMemory({
-      icon: 'ti-circle-check',
-      text: `Worked through Q${QUESTION.number}: ${QUESTION.section}`,
-      tone: 'good',
-    })
-    const closing = lines[lines.length - 1] ?? 'Great work following along!'
-    addMessage({
-      role: 'assistant',
-      content: `That's the full solution. ${closing} Want to try one yourself? Tap **Your Turn**.`,
-    })
-    setTimeout(() => setSummaryOpen(true), 1400)
-  }, [addMessage, narration, runReveal, recordMemory])
-
-  // Kick off auto-play once on mount.
-  useEffect(() => {
-    if (autoStarted.current) return
-    autoStarted.current = true
-    // The lesson now auto-plays end-to-end, so the manual hint-ladder advance
-    // button stays hidden (autoplay covers every step).
-    setStageIndex(TEACH_STAGES.length - 1)
-    void autoPlayLesson()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const advanceLabel =
-    stageIndex >= 0 && stageIndex < TEACH_STAGES.length - 1
-      ? TEACH_STAGES[stageIndex].nextLabel
-      : null
-
-  const handleAdvance = useCallback(() => {
-    if (stageIndex < 0 || stageIndex >= TEACH_STAGES.length - 1) return
-    const studentLine = TEACH_STAGES[stageIndex].nextLabel.replace(/&apos;/g, '\u2019')
-    addMessage({ role: 'student', content: studentLine })
-    const next = stageIndex + 1
-    setStageIndex(next)
-    deliverStage(next)
-  }, [stageIndex, addMessage, deliverStage])
+  // The hint-ladder advance button is replaced by the question-driven flow.
+  const advanceLabel = null
+  const handleAdvance = useCallback(() => {}, [])
 
   const handleSend = useCallback(
     (text: string) => {
@@ -351,7 +392,7 @@ export function WhiteboardAi() {
     await streamAssistant('/api/whiteboard-coach', {
       mode: 'hint',
       persona: personaRef.current,
-      question: QUESTION,
+      question: activeQuestionRef.current,
       hintLevel: level,
       totalHints: TOTAL_HINTS,
     })
@@ -365,7 +406,7 @@ export function WhiteboardAi() {
       await streamAssistant('/api/whiteboard-coach', {
         mode: 'why',
         persona: personaRef.current,
-        question: QUESTION,
+        question: activeQuestionRef.current,
         step: text,
       })
     },
@@ -381,7 +422,7 @@ export function WhiteboardAi() {
       const res = await fetch('/api/whiteboard-coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'practice', persona: personaRef.current, question: QUESTION }),
+        body: JSON.stringify({ mode: 'practice', persona: personaRef.current, question: activeQuestionRef.current }),
       })
       if (!res.ok) throw new Error(`practice failed: ${res.status}`)
       const data = (await res.json()) as PracticeProblem
@@ -454,7 +495,7 @@ export function WhiteboardAi() {
         addMessage({ role: 'assistant', content: action.reply })
         void narration.narrate(action.reply)
         if (action.label === 'Explain visually') {
-          runReveal(TOTAL_STEPS, { from: 0 })
+          runReveal(totalStepsRef.current, { from: 0 })
         }
       }, 800)
     },
@@ -465,17 +506,17 @@ export function WhiteboardAi() {
   const handleTogglePlay = useCallback(() => {
     if (isPlaying) {
       cancelPlayback()
-    } else if (aiStepRef.current >= TOTAL_STEPS) {
-      runReveal(TOTAL_STEPS, { from: 0 })
+    } else if (aiStepRef.current >= totalStepsRef.current) {
+      runReveal(totalStepsRef.current, { from: 0 })
     } else {
-      runReveal(TOTAL_STEPS)
+      runReveal(totalStepsRef.current)
     }
   }, [isPlaying, cancelPlayback, runReveal])
 
   const handleStepTo = useCallback(
     (n: number) => {
       cancelPlayback()
-      const clamped = Math.max(0, Math.min(TOTAL_STEPS, n))
+      const clamped = Math.max(0, Math.min(totalStepsRef.current, n))
       setAiStep(clamped)
       aiStepRef.current = clamped
       if (clamped > 0) void narration.narrate(lineFor(clamped - 1))
@@ -484,14 +525,27 @@ export function WhiteboardAi() {
   )
 
   const handleAskAiDraw = useCallback(() => {
-    addMessage({ role: 'assistant', content: 'Sure — let me draw the diagram step by step.' })
-    runReveal(TOTAL_STEPS, { from: 0 })
+    addMessage({ role: 'assistant', content: 'Sure — let me replay the solution step by step.' })
+    runReveal(totalStepsRef.current, { from: 0 })
   }, [addMessage, runReveal])
 
   const handleStartVoiceLesson = useCallback(() => {
     setVoiceStarted(true)
-    runReveal(TOTAL_STEPS, { voice: true, from: 0 })
+    runReveal(totalStepsRef.current, { voice: true, from: 0 })
   }, [runReveal])
+
+  // Return to the question-entry screen to work a brand-new question.
+  const handleNewQuestion = useCallback(() => {
+    cancelPlayback()
+    setPhase('input')
+    setSolution(null)
+    setAiStep(0)
+    aiStepRef.current = 0
+    setMastered(false)
+    setSummaryOpen(false)
+    setQuestionInput('')
+    setMessages([...OPENING_MESSAGES])
+  }, [cancelPlayback])
 
   const handleUpload = useCallback(() => {
     addMessage({ role: 'student', content: '📎 Uploaded a new SAT question.' })
@@ -529,6 +583,17 @@ export function WhiteboardAi() {
         </div>
 
         <div className="flex items-center gap-2">
+          {phase === 'lesson' && (
+            <button
+              type="button"
+              onClick={handleNewQuestion}
+              className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-2.5 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+              title="Work a new question"
+            >
+              <i className="ti ti-plus text-sm text-primary" aria-hidden="true" />
+              <span className="hidden sm:inline">New question</span>
+            </button>
+          )}
           <PersonaPicker value={persona} onChange={setPersona} />
           <button
             type="button"
@@ -561,11 +626,22 @@ export function WhiteboardAi() {
           <BoardCanvas
             aiStep={aiStep}
             isPlaying={isPlaying}
-            totalSteps={TOTAL_STEPS}
+            totalSteps={totalSteps}
+            solution={solution}
+            hasLesson={phase === 'lesson'}
             onAskAiDraw={handleAskAiDraw}
             onTogglePlay={handleTogglePlay}
             onStepTo={handleStepTo}
           />
+          {phase === 'input' && (
+            <QuestionEntry
+              value={questionInput}
+              onChange={setQuestionInput}
+              onSubmit={handleSolveQuestion}
+              onDemo={handleStartDemo}
+              loading={solving}
+            />
+          )}
           {confetti && <Confetti count={80} />}
         </div>
 
@@ -574,6 +650,7 @@ export function WhiteboardAi() {
           <TutorPanel
             messages={messages}
             thinking={thinking}
+            activeQuestion={phase === 'lesson' ? activeQuestion : null}
             advanceLabel={advanceLabel}
             onAdvance={handleAdvance}
             mastered={mastered}
@@ -697,6 +774,89 @@ function PersonaPicker({
           </ul>
         </>
       )}
+    </div>
+  )
+}
+
+/** Start screen: the student types the SAT question they want worked through. */
+function QuestionEntry({
+  value,
+  onChange,
+  onSubmit,
+  onDemo,
+  loading,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onSubmit: (v: string) => void
+  onDemo: () => void
+  loading: boolean
+}) {
+  const canSubmit = value.trim().length > 4 && !loading
+
+  return (
+    <div className="absolute inset-3 z-20 flex items-center justify-center lg:inset-4">
+      <div className="w-full max-w-xl rounded-3xl border border-border bg-card/95 p-6 shadow-xl backdrop-blur sm:p-8">
+        <div className="mb-4 flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <i className="ti ti-chalkboard text-xl" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-foreground text-balance">
+              What question do you want to work through?
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Type or paste any SAT question — I&apos;ll solve it step by step on the board.
+            </p>
+          </div>
+        </div>
+
+        <label htmlFor="sat-question" className="sr-only">
+          Your SAT question
+        </label>
+        <textarea
+          id="sat-question"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canSubmit) onSubmit(value)
+          }}
+          disabled={loading}
+          rows={4}
+          placeholder="e.g. If 3x + 7 = 22, what is the value of x?"
+          className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors focus:border-primary disabled:opacity-60"
+        />
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={onDemo}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            <i className="ti ti-triangle text-base text-primary" aria-hidden="true" />
+            Try the geometry demo
+          </button>
+          <button
+            type="button"
+            onClick={() => canSubmit && onSubmit(value)}
+            disabled={!canSubmit}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <i className="ti ti-loader-2 animate-spin text-base" aria-hidden="true" />
+                Solving…
+              </>
+            ) : (
+              <>
+                <i className="ti ti-player-play text-base" aria-hidden="true" />
+                Solve on the whiteboard
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
