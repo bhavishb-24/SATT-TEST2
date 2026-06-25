@@ -58,7 +58,19 @@ export function useNarration() {
   const narrate = useCallback(async (text: string): Promise<boolean> => {
     const clean = plain(text)
     if (mutedRef.current || !clean) return false
-    const token = ++tokenRef.current
+
+    // Cancel any in-progress audio/speech before starting a new utterance.
+    const prevToken = ++tokenRef.current
+    const prevAudio = audioRef.current
+    if (prevAudio) {
+      try { prevAudio.pause() } catch { /* ignore */ }
+      audioRef.current = null
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+    }
+
+    const token = prevToken
     setSpeaking(true)
     try {
       const res = await fetch('/api/whiteboard-tts', {
@@ -74,13 +86,24 @@ export function useNarration() {
       const played = await new Promise<boolean>((resolve) => {
         const audio = new Audio(url)
         audioRef.current = audio
-        audio.onended = () => resolve(true)
-        audio.onerror = () => resolve(false)
-        audio.play().catch(() => resolve(false))
+        audio.onended = () => {
+          if (audioRef.current === audio) audioRef.current = null
+          resolve(true)
+        }
+        audio.onerror = () => {
+          if (audioRef.current === audio) audioRef.current = null
+          resolve(false)
+        }
+        audio.play().catch(() => {
+          if (audioRef.current === audio) audioRef.current = null
+          resolve(false)
+        })
       })
       URL.revokeObjectURL(url)
       if (token !== tokenRef.current) return false
       if (!played) {
+        // Only use browser TTS as fallback if the audio element truly failed
+        // (not if it was superseded by a newer narration token).
         const ok = await speakBrowser(clean)
         return token === tokenRef.current ? ok : false
       }

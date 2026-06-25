@@ -51,6 +51,12 @@ export function useVoice({ rate = 0.9, onCommand }: UseVoiceOptions = {}) {
       }
       pickVoice()
       window.speechSynthesis.onvoiceschanged = pickVoice
+      return () => {
+        // Clean up the handler so it doesn't persist after unmount.
+        if (window.speechSynthesis.onvoiceschanged === pickVoice) {
+          window.speechSynthesis.onvoiceschanged = null
+        }
+      }
     }
   }, [])
 
