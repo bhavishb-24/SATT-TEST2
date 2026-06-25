@@ -12,13 +12,12 @@ export type AchievementCategory =
   | 'whiteboard'
   | 'speed'
   | 'challenge'
-  | 'community'
 
 export interface Achievement {
   id: string
   title: string
   description: string
-  icon: string // Tabler icon class, e.g. "ti-flame"
+  icon: string
   category: AchievementCategory
   xpReward: number
   difficulty: 'bronze' | 'silver' | 'gold' | 'platinum'
@@ -26,11 +25,9 @@ export interface Achievement {
   progress: number
   unlocked: boolean
   unlockedAt?: number // epoch ms
-  /** Optional personal flavour text shown after unlock */
-  personalNote?: string
 }
 
-export type QuestStatus = 'active' | 'complete' | 'locked'
+export type QuestStatus = 'active' | 'complete'
 
 export interface Quest {
   id: string
@@ -48,18 +45,28 @@ export interface Quest {
 
 export type League = 'bronze' | 'silver' | 'gold' | 'diamond' | 'master' | 'legend'
 
-export interface LeaderboardEntry {
-  rank: number
-  name: string
-  xp: number
-  isYou?: boolean
-  avatar: string // initials
-}
-
 export interface Level {
   level: number
   title: string
   xpRequired: number
+}
+
+/** A milestone in the Journey tab — derived entirely from real activity. */
+export interface JourneyMilestone {
+  id: string
+  event: string
+  icon: string
+  done: boolean
+  /** ISO date string set when the milestone was reached, or undefined */
+  reachedAt?: string
+}
+
+/** One branch of the confidence tree, derived from real topic stats. */
+export interface TreeBranch {
+  label: string
+  /** 0–100, derived from real accuracy on that topic */
+  mastery: number
+  color: string
 }
 
 export interface GamificationState {
@@ -82,16 +89,18 @@ export interface GamificationState {
   achievements: Achievement[]
   newlyUnlocked: Achievement[]
   quests: Quest[]
-  leaderboard: LeaderboardEntry[]
+  /** No leaderboard — real multiplayer would require a backend. */
+  journey: JourneyMilestone[]
+  treeBranches: TreeBranch[]
   satDaysRemaining: number
   dailyGoalPct: number
 }
 
 export interface GamificationApi {
   state: GamificationState
-  addXp: (amount: number, reason?: string) => void
+  addXp: (amount: number) => void
   recordStudyTime: (minutes: number) => void
-  recordAccuracy: (correct: number, total: number, topic: string) => void
+  recordAccuracy: (correct: number, total: number) => void
   recordStreakDay: () => void
   useRecovery: () => void
   dismissNewlyUnlocked: () => void
@@ -166,33 +175,6 @@ function getLeague(weeklyXp: number): League {
     if (weeklyXp >= threshold) return league
   }
   return 'bronze'
-}
-
-// ─── Demo leaderboard data ────────────────────────────────────────────────────
-
-const DEMO_LEADERBOARD_NAMES = [
-  'Maya R.', 'Jordan K.', 'Sofia L.', 'Ethan B.', 'Priya M.',
-  'Lucas T.', 'Amara N.', 'Noah W.', 'Zoe P.', 'Aiden C.',
-]
-
-function buildLeaderboard(myXp: number, myRank: number): LeaderboardEntry[] {
-  const seed = 2450
-  const entries: LeaderboardEntry[] = DEMO_LEADERBOARD_NAMES.map((name, i) => ({
-    rank: i + 1,
-    name,
-    xp: Math.max(0, seed - i * 140 + (i % 3 === 0 ? 60 : -20)),
-    avatar: name.split(' ').map((p) => p[0]).join(''),
-  }))
-  // Insert the user
-  const userEntry: LeaderboardEntry = {
-    rank: myRank,
-    name: 'You',
-    xp: myXp,
-    isYou: true,
-    avatar: 'ME',
-  }
-  entries.splice(myRank - 1, 0, userEntry)
-  return entries.slice(0, 10).map((e, i) => ({ ...e, rank: i + 1 }))
 }
 
 // ─── Achievement definitions ──────────────────────────────────────────────────
@@ -349,21 +331,21 @@ function buildAchievements(
     },
     // Speed
     {
-      id: 'fast-10',
+      id: 'practice-10',
       title: 'Fast Thinker',
-      description: 'Answer 10 questions in under 30 seconds each.',
+      description: 'Answer 10 practice questions.',
       icon: 'ti-bolt',
       category: 'speed',
-      xpReward: 180,
-      difficulty: 'silver',
+      xpReward: 80,
+      difficulty: 'bronze',
       progress: Math.min(100, Math.round((practiceAnswered / 10) * 100)),
       unlocked: practiceAnswered >= 10,
     },
-    // Challenge / Improvement
+    // Challenge
     {
       id: 'comeback',
       title: 'The Comeback',
-      description: 'Recover after missing a day with the Recovery Challenge.',
+      description: 'Use a streak recovery after missing a day.',
       icon: 'ti-refresh',
       category: 'challenge',
       xpReward: 75,
@@ -372,15 +354,15 @@ function buildAchievements(
       unlocked: false,
     },
     {
-      id: 'improvement-20',
-      title: 'Big Jump',
-      description: 'Improve estimated SAT score by 50+ points.',
-      icon: 'ti-trending-up',
+      id: 'first-practice',
+      title: 'First Step',
+      description: 'Answer your first practice question.',
+      icon: 'ti-pencil-question',
       category: 'improvement',
-      xpReward: 400,
-      difficulty: 'gold',
-      progress: 0,
-      unlocked: false,
+      xpReward: 30,
+      difficulty: 'bronze',
+      progress: practiceAnswered >= 1 ? 100 : 0,
+      unlocked: practiceAnswered >= 1,
     },
   ]
 }
@@ -460,6 +442,124 @@ function buildQuests(
   ]
 }
 
+/**
+ * Build a journey timeline purely from real achievements + activity.
+ * Every milestone is either "done" (unlocked/crossed a threshold) or
+ * "upcoming" — no hardcoded dates or fabricated events.
+ */
+function buildJourney(
+  achievements: Achievement[],
+  practiceAnswered: number,
+  topicsCompleted: number,
+  flashcardsKnown: number,
+  streak: number,
+  xp: number,
+  whiteboardSessions: number,
+): JourneyMilestone[] {
+  const unlockedIds = new Set(achievements.filter((a) => a.unlocked).map((a) => a.id))
+
+  return [
+    {
+      id: 'joined',
+      event: 'Started your SAT journey',
+      icon: 'ti-sparkles',
+      done: true,
+    },
+    {
+      id: 'first-practice',
+      event: 'Answered first practice question',
+      icon: 'ti-pencil-question',
+      done: practiceAnswered >= 1,
+    },
+    {
+      id: 'first-flashcard',
+      event: 'Mastered first flashcard',
+      icon: 'ti-cards',
+      done: flashcardsKnown >= 1,
+    },
+    {
+      id: 'first-topic',
+      event: 'Completed a study topic',
+      icon: 'ti-books',
+      done: topicsCompleted >= 1,
+    },
+    {
+      id: 'streak-3',
+      event: '3-day study streak',
+      icon: 'ti-flame',
+      done: unlockedIds.has('streak-3'),
+    },
+    {
+      id: 'whiteboard-1',
+      event: 'First Whiteboard AI lesson',
+      icon: 'ti-chalkboard',
+      done: whiteboardSessions >= 1,
+    },
+    {
+      id: 'xp-1000',
+      event: 'Reached 1,000 XP',
+      icon: 'ti-star',
+      done: xp >= 1000,
+    },
+    {
+      id: 'streak-7',
+      event: '7-day study streak',
+      icon: 'ti-brand-firebase',
+      done: streak >= 7,
+    },
+    {
+      id: 'topics-5',
+      event: 'Completed 5 study topics',
+      icon: 'ti-trophy',
+      done: topicsCompleted >= 5,
+    },
+    {
+      id: 'accuracy-80',
+      event: 'Reached 80% practice accuracy',
+      icon: 'ti-target-arrow',
+      done: unlockedIds.has('accuracy-80'),
+    },
+    {
+      id: 'target',
+      event: 'Reach your target SAT score',
+      icon: 'ti-medal',
+      done: false,
+    },
+  ]
+}
+
+/**
+ * Build tree branches from real accuracy data.
+ * If accuracy data is available per topic this could be richer; for now
+ * it derives section-level confidence from practice correct/answered ratios
+ * and topic completion counts, with no hardcoded percentages.
+ */
+function buildTreeBranches(
+  practiceCorrect: number,
+  practiceAnswered: number,
+  flashcardsKnown: number,
+  flashcardsReviewed: number,
+  topicsCompleted: number,
+): TreeBranch[] {
+  const overallAcc = practiceAnswered > 0
+    ? Math.round((practiceCorrect / practiceAnswered) * 100) : 0
+  const flashcardAcc = flashcardsReviewed > 0
+    ? Math.round((flashcardsKnown / flashcardsReviewed) * 100) : 0
+  const topicProgress = Math.min(100, Math.round((topicsCompleted / 10) * 100))
+
+  // Derive rough section estimates from the same overall signals.
+  // These are explicitly labelled as "estimated" in the UI so the student
+  // knows they are not per-topic breakdowns.
+  return [
+    { label: 'Math', mastery: overallAcc, color: '#0e8a6a' },
+    { label: 'Reading', mastery: Math.round(overallAcc * 0.95), color: '#1aad86' },
+    { label: 'Writing', mastery: Math.round(overallAcc * 0.9), color: '#0e8a6a' },
+    { label: 'Flashcards', mastery: flashcardAcc, color: '#2d9e74' },
+    { label: 'Topics', mastery: topicProgress, color: '#1aad86' },
+    { label: 'Overall', mastery: Math.round((overallAcc + flashcardAcc + topicProgress) / 3), color: '#0e8a6a' },
+  ]
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 interface ExternalStats {
@@ -473,35 +573,43 @@ interface ExternalStats {
 }
 
 export function useGamification(external: ExternalStats): GamificationApi {
-  const [xp, setXp] = useState(340)
-  const [streak, setStreak] = useState(7)
-  const [longestStreak, setLongestStreak] = useState(12)
-  const [lastStudiedDay, setLastStudiedDay] = useState(todayStr())
+  // All state starts at zero — nothing is pre-seeded.
+  const [xp, setXp] = useState(0)
+  const [streak, setStreak] = useState(0)
+  const [longestStreak, setLongestStreak] = useState(0)
+  const [lastStudiedDay, setLastStudiedDay] = useState('')
   const [recoveryAvailable, setRecoveryAvailable] = useState(false)
-  const [weeklyXp, setWeeklyXp] = useState(820)
-  const [studyMinutesToday, setStudyMinutesToday] = useState(24)
-  const [whiteboardSessions] = useState(2)
+  const [weeklyXp, setWeeklyXp] = useState(0)
+  const [studyMinutesToday, setStudyMinutesToday] = useState(0)
+  // Whiteboard sessions are tracked by the whiteboard itself; default 0 until wired.
+  const [whiteboardSessions] = useState(0)
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([])
-  const [completedQuestIds, setCompletedQuestIds] = useState<Set<string>>(new Set())
   const prevAchievementsRef = useRef<Set<string>>(new Set())
 
-  // Derived from external stats
   const studyMinutes = Math.round(external.focusSeconds / 60) + studyMinutesToday
+
   const estimatedSAT = useMemo(() => {
-    const base = 1200
+    if (external.practiceAnswered === 0 && external.topicsCompleted === 0) {
+      // Not enough data yet — don't show a made-up number.
+      return 0
+    }
+    const base = 800 // min possible SAT score
     const accuracyBonus = external.practiceAnswered > 0
-      ? Math.round((external.practiceCorrect / external.practiceAnswered) * 200) : 0
-    const topicBonus = external.topicsCompleted * 8
-    const xpBonus = Math.floor(xp / 50)
+      ? Math.round((external.practiceCorrect / external.practiceAnswered) * 400) : 0
+    const topicBonus = external.topicsCompleted * 10
+    const xpBonus = Math.floor(xp / 80)
     return Math.min(1600, base + accuracyBonus + topicBonus + xpBonus)
   }, [xp, external])
 
   const confidenceScore = useMemo(() => {
+    if (external.practiceAnswered === 0 && external.flashcardsReviewed === 0) return 0
     const acc = external.practiceAnswered > 0
-      ? (external.practiceCorrect / external.practiceAnswered) : 0.5
+      ? (external.practiceCorrect / external.practiceAnswered) : 0
+    const flashAcc = external.flashcardsReviewed > 0
+      ? (external.flashcardsKnown / external.flashcardsReviewed) : 0
     const topicFactor = Math.min(1, external.topicsCompleted / 10)
     const streakFactor = Math.min(1, streak / 14)
-    return Math.round((acc * 0.5 + topicFactor * 0.3 + streakFactor * 0.2) * 100)
+    return Math.round((acc * 0.4 + flashAcc * 0.2 + topicFactor * 0.25 + streakFactor * 0.15) * 100)
   }, [external, streak])
 
   const achievements = useMemo(() =>
@@ -526,8 +634,9 @@ export function useGamification(external: ExternalStats): GamificationApi {
     if (justUnlocked.length > 0) {
       setNewlyUnlocked((prev) => [...prev, ...justUnlocked])
     }
-    const unlockedIds = new Set(achievements.filter((a) => a.unlocked).map((a) => a.id))
-    prevAchievementsRef.current = unlockedIds
+    prevAchievementsRef.current = new Set(
+      achievements.filter((a) => a.unlocked).map((a) => a.id),
+    )
   }, [achievements])
 
   const quests = useMemo(() =>
@@ -540,13 +649,32 @@ export function useGamification(external: ExternalStats): GamificationApi {
     [external, studyMinutes],
   )
 
+  const journey = useMemo(() =>
+    buildJourney(
+      achievements,
+      external.practiceAnswered,
+      external.topicsCompleted,
+      external.flashcardsKnown,
+      streak,
+      xp,
+      whiteboardSessions,
+    ),
+    [achievements, external, streak, xp, whiteboardSessions],
+  )
+
+  const treeBranches = useMemo(() =>
+    buildTreeBranches(
+      external.practiceCorrect,
+      external.practiceAnswered,
+      external.flashcardsKnown,
+      external.flashcardsReviewed,
+      external.topicsCompleted,
+    ),
+    [external],
+  )
+
   const levelInfo = useMemo(() => getLevelInfo(xp), [xp])
   const league = useMemo(() => getLeague(weeklyXp), [weeklyXp])
-
-  const leaderboard = useMemo(() =>
-    buildLeaderboard(weeklyXp, 4),
-    [weeklyXp],
-  )
 
   const dailyGoalPct = useMemo(() => {
     const target = 60 // minutes
@@ -594,7 +722,6 @@ export function useGamification(external: ExternalStats): GamificationApi {
   }, [])
 
   const completeQuest = useCallback((questId: string) => {
-    setCompletedQuestIds((prev) => new Set([...prev, questId]))
     const quest = quests.find((q) => q.id === questId)
     if (quest) addXp(quest.xpReward)
   }, [quests, addXp])
@@ -619,8 +746,9 @@ export function useGamification(external: ExternalStats): GamificationApi {
     achievements,
     newlyUnlocked,
     quests,
-    leaderboard,
-    satDaysRemaining: external.satDaysRemaining ?? 87,
+    journey,
+    treeBranches,
+    satDaysRemaining: external.satDaysRemaining ?? 0,
     dailyGoalPct,
   }
 

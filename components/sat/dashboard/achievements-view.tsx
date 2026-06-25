@@ -6,8 +6,10 @@ import type {
   AchievementCategory,
   GamificationApi,
   GamificationState,
+  JourneyMilestone,
   League,
   Quest,
+  TreeBranch,
 } from '@/lib/use-gamification'
 import { cn } from '@/lib/utils'
 
@@ -51,16 +53,26 @@ function XpPill({ xp }: { xp: number }) {
 
 // ─── Section tab bar ──────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'achievements' | 'quests' | 'leagues' | 'journey' | 'profile'
+type Tab = 'overview' | 'achievements' | 'quests' | 'journey' | 'profile'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'overview', label: 'Overview', icon: 'ti-layout-dashboard' },
   { id: 'achievements', label: 'Achievements', icon: 'ti-trophy' },
   { id: 'quests', label: 'Quests', icon: 'ti-map-pin' },
-  { id: 'leagues', label: 'Leagues', icon: 'ti-award' },
   { id: 'journey', label: 'Journey', icon: 'ti-route' },
   { id: 'profile', label: 'Profile', icon: 'ti-user-circle' },
 ]
+
+// ─── League metadata ──────────────────────────────────────────────────────────
+
+const LEAGUE_META: Record<League, { label: string; color: string; bg: string; icon: string; nextAt: number }> = {
+  bronze: { label: 'Bronze', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: 'ti-medal', nextAt: 500 },
+  silver: { label: 'Silver', color: 'text-slate-500', bg: 'bg-slate-50 border-slate-200', icon: 'ti-medal-2', nextAt: 1200 },
+  gold: { label: 'Gold', color: 'text-yellow-600', bg: 'bg-yellow-50 border-yellow-200', icon: 'ti-crown', nextAt: 2500 },
+  diamond: { label: 'Diamond', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', icon: 'ti-diamond', nextAt: 5000 },
+  master: { label: 'Master', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200', icon: 'ti-shield-star', nextAt: 10000 },
+  legend: { label: 'Legend', color: 'text-primary', bg: 'bg-emerald-50 border-emerald-200', icon: 'ti-star', nextAt: 10000 },
+}
 
 // ─── Overview tab ─────────────────────────────────────────────────────────────
 
@@ -94,8 +106,8 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
     <div className="flex flex-col gap-6">
       {/* Level card */}
       <div className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground shadow-lg">
-        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-        <div className="absolute -bottom-6 -left-4 h-32 w-32 rounded-full bg-white/5" />
+        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" aria-hidden="true" />
+        <div className="absolute -bottom-6 -left-4 h-32 w-32 rounded-full bg-white/5" aria-hidden="true" />
         <div className="relative flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium opacity-80">Current Level</p>
@@ -110,6 +122,7 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
               <div
                 className="h-full rounded-full bg-white transition-all duration-700"
                 style={{ width: `${levelProgress}%` }}
+                role="presentation"
               />
             </div>
           </div>
@@ -131,8 +144,17 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
         {[
           { label: 'Streak', value: `${streak}d`, sub: `Best: ${longestStreak}d`, icon: 'ti-flame', color: 'text-orange-500', bg: 'bg-orange-50' },
           { label: 'Study Today', value: `${studyMinutesToday}m`, sub: `${dailyGoalPct}% of goal`, icon: 'ti-clock-hour-4', color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Confidence', value: `${confidenceScore}%`, sub: 'composite', icon: 'ti-brain', color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'Est. SAT', value: estimatedSAT.toLocaleString(), sub: `${satDaysRemaining}d until test`, icon: 'ti-chart-line', color: 'text-primary', bg: 'bg-emerald-50' },
+          { label: 'Confidence', value: confidenceScore > 0 ? `${confidenceScore}%` : '—', sub: confidenceScore > 0 ? 'composite' : 'start practicing', icon: 'ti-brain', color: 'text-purple-600', bg: 'bg-purple-50' },
+          {
+            label: 'Est. SAT',
+            value: estimatedSAT > 0 ? estimatedSAT.toLocaleString() : '—',
+            sub: estimatedSAT > 0
+              ? (satDaysRemaining > 0 ? `${satDaysRemaining}d until test` : 'projected')
+              : 'answer questions first',
+            icon: 'ti-chart-line',
+            color: 'text-primary',
+            bg: 'bg-emerald-50',
+          },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -174,8 +196,8 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
               </div>
             ))}
             {unlockedCount === 0 && (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                Complete quests and study to earn achievements.
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Complete quests and study to earn your first achievement.
               </p>
             )}
           </div>
@@ -193,6 +215,11 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
             {activeQuests.slice(0, 4).map((q) => (
               <QuestRow key={q.id} quest={q} onClaim={() => api.completeQuest(q.id)} />
             ))}
+            {activeQuests.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                All quests complete for now — check back tomorrow.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -228,7 +255,6 @@ const CATEGORY_META: Record<AchievementCategory, { label: string; icon: string }
   whiteboard: { label: 'Whiteboard AI', icon: 'ti-chalkboard' },
   speed: { label: 'Speed', icon: 'ti-bolt' },
   challenge: { label: 'Challenge', icon: 'ti-shield' },
-  community: { label: 'Community', icon: 'ti-users' },
 }
 
 function AchievementCard({ achievement }: { achievement: Achievement }) {
@@ -240,7 +266,6 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
         ? 'border-border bg-card hover:-translate-y-0.5 hover:shadow-md'
         : 'border-border/50 bg-muted/30 opacity-60',
     )}>
-      {/* Icon */}
       <div className="flex items-start justify-between">
         <span className={cn(
           'flex h-12 w-12 items-center justify-center rounded-2xl text-xl transition-transform',
@@ -262,16 +287,12 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
         )}
       </div>
 
-      {/* Text */}
       <div>
         <p className="text-sm font-semibold text-foreground">{title}</p>
         <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
       </div>
 
-      {/* Progress / XP */}
-      {!unlocked && (
-        <FillBar pct={progress} height="h-1.5" />
-      )}
+      {!unlocked && <FillBar pct={progress} height="h-1.5" />}
       <div className="flex items-center justify-between">
         {unlocked
           ? <span className="flex items-center gap-1 text-[11px] text-primary font-semibold">
@@ -282,7 +303,6 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
         <XpPill xp={xpReward} />
       </div>
 
-      {/* Glow ring on hover for unlocked */}
       {unlocked && (
         <div className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-primary/0 transition-all group-hover:ring-primary/20" />
       )}
@@ -302,18 +322,20 @@ function AchievementsTab({ achievements }: { achievements: Achievement[] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Summary */}
       <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <i className="ti ti-trophy text-xl" aria-hidden="true" />
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">{unlockedCount} of {achievements.length} unlocked</p>
-          <FillBar pct={Math.round(unlockedCount / achievements.length * 100)} className="mt-1 max-w-48" height="h-1.5" />
+          <FillBar
+            pct={achievements.length > 0 ? Math.round(unlockedCount / achievements.length * 100) : 0}
+            className="mt-1 max-w-48"
+            height="h-1.5"
+          />
         </div>
       </div>
 
-      {/* Category filter */}
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         {categories.map((cat) => (
           <button
@@ -335,7 +357,6 @@ function AchievementsTab({ achievements }: { achievements: Achievement[] }) {
         ))}
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((a) => (
           <AchievementCard key={a.id} achievement={a} />
@@ -390,7 +411,6 @@ function QuestsTab({ quests, api }: { quests: Quest[]; api: GamificationApi }) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Daily */}
       <div>
         <div className="mb-3 flex items-center gap-2">
           <i className="ti ti-sun text-amber-500 text-base" aria-hidden="true" />
@@ -402,7 +422,6 @@ function QuestsTab({ quests, api }: { quests: Quest[]; api: GamificationApi }) {
         </div>
       </div>
 
-      {/* Weekly */}
       <div>
         <div className="mb-3 flex items-center gap-2">
           <i className="ti ti-calendar-week text-primary text-base" aria-hidden="true" />
@@ -419,15 +438,6 @@ function QuestsTab({ quests, api }: { quests: Quest[]; api: GamificationApi }) {
 
 // ─── League badge ─────────────────────────────────────────────────────────────
 
-const LEAGUE_META: Record<League, { label: string; color: string; bg: string; icon: string; nextAt: number }> = {
-  bronze: { label: 'Bronze', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: 'ti-medal', nextAt: 500 },
-  silver: { label: 'Silver', color: 'text-slate-500', bg: 'bg-slate-50 border-slate-200', icon: 'ti-medal-2', nextAt: 1200 },
-  gold: { label: 'Gold', color: 'text-yellow-600', bg: 'bg-yellow-50 border-yellow-200', icon: 'ti-crown', nextAt: 2500 },
-  diamond: { label: 'Diamond', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', icon: 'ti-diamond', nextAt: 5000 },
-  master: { label: 'Master', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200', icon: 'ti-shield-star', nextAt: 10000 },
-  legend: { label: 'Legend', color: 'text-primary', bg: 'bg-emerald-50 border-emerald-200', icon: 'ti-star', nextAt: 10000 },
-}
-
 function LeagueHeroBadge({ league, weeklyXp }: { league: League; weeklyXp: number }) {
   const meta = LEAGUE_META[league]
   const pct = Math.min(100, Math.round(weeklyXp / meta.nextAt * 100))
@@ -438,117 +448,58 @@ function LeagueHeroBadge({ league, weeklyXp }: { league: League; weeklyXp: numbe
       </span>
       <div className="flex-1">
         <p className={cn('text-xs font-bold uppercase tracking-widest', meta.color)}>{meta.label} League</p>
-        <p className="mt-0.5 text-lg font-bold text-foreground">{weeklyXp.toLocaleString()} XP this week</p>
+        <p className="mt-0.5 text-lg font-bold text-foreground">
+          {weeklyXp > 0 ? `${weeklyXp.toLocaleString()} XP this week` : 'No XP yet this week'}
+        </p>
         <FillBar pct={pct} className="mt-2 max-w-xs" height="h-1.5" color={league === 'legend' ? 'bg-primary' : 'bg-foreground/30'} />
         {league !== 'legend' && (
-          <p className="mt-1 text-[11px] text-muted-foreground">{meta.nextAt.toLocaleString()} XP for promotion</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {meta.nextAt.toLocaleString()} XP needed for next league
+          </p>
         )}
       </div>
     </div>
   )
 }
 
-// ─── Leagues tab ──────────────────────────────────────────────────────────────
+// ─── Journey tab ──────────────────────────────────────────────────────────────
+// Every milestone is derived from real stats — no hardcoded dates or events.
 
-function LeaguesTab({ state }: { state: GamificationState }) {
-  const { league, leaderboard } = state
-  const leagues = Object.keys(LEAGUE_META) as League[]
+function JourneyTab({ journey }: { journey: JourneyMilestone[] }) {
+  const doneMilestones = journey.filter((m) => m.done)
+  const upcomingMilestones = journey.filter((m) => !m.done)
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Current league */}
-      <LeagueHeroBadge league={league} weeklyXp={state.weeklyXp} />
-
-      {/* Ladder */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">League Ladder</h3>
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {leagues.map((l) => {
-            const m = LEAGUE_META[l]
-            const isActive = l === league
-            return (
-              <div
-                key={l}
-                className={cn(
-                  'flex shrink-0 flex-col items-center gap-1.5 rounded-xl border p-3 text-center w-20 transition-all',
-                  isActive ? cn('border-foreground/30', m.bg) : 'border-border bg-muted/30 opacity-60',
-                )}
-              >
-                <i className={cn('ti', m.icon, 'text-2xl', isActive ? m.color : 'text-muted-foreground')} aria-hidden="true" />
-                <p className={cn('text-[11px] font-bold', isActive ? m.color : 'text-muted-foreground')}>{m.label}</p>
-                {isActive && (
-                  <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground">YOU</span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Leaderboard */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">Weekly Leaderboard</h3>
-        <div className="flex flex-col gap-1.5">
-          {leaderboard.map((entry) => (
-            <div
-              key={entry.rank}
-              className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors',
-                entry.isYou ? 'bg-primary/8 border border-primary/20' : 'hover:bg-muted/50',
-              )}
-            >
-              <span className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                entry.rank === 1 ? 'bg-yellow-400 text-yellow-900' :
-                entry.rank === 2 ? 'bg-slate-300 text-slate-700' :
-                entry.rank === 3 ? 'bg-amber-400 text-amber-900' :
-                'bg-muted text-muted-foreground',
-              )}>
-                {entry.rank}
-              </span>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                {entry.avatar}
-              </span>
-              <span className={cn('flex-1 text-sm font-medium', entry.isYou ? 'text-primary font-bold' : 'text-foreground')}>
-                {entry.name}
-              </span>
-              <span className="text-sm font-bold text-foreground tabular-nums">{entry.xp.toLocaleString()}</span>
-              <span className="text-[10px] text-muted-foreground">XP</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Journey timeline tab ─────────────────────────────────────────────────────
-
-const JOURNEY_MILESTONES = [
-  { date: 'Day 1', event: 'Joined SAT Sage', icon: 'ti-sparkles', done: true },
-  { date: 'Day 2', event: 'Completed first diagnostic', icon: 'ti-clipboard-check', done: true },
-  { date: 'Day 5', event: 'Mastered Algebra basics', icon: 'ti-math-function', done: true },
-  { date: 'Day 7', event: 'Reached Level 5 — Scholar', icon: 'ti-star', done: true },
-  { date: 'Day 10', event: 'First Whiteboard AI lesson', icon: 'ti-chalkboard', done: false },
-  { date: 'Goal', event: 'Reach target score', icon: 'ti-trophy', done: false },
-]
-
-function JourneyTab() {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h3 className="mb-6 text-sm font-semibold text-foreground">Your Learning Journey</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-sm font-semibold text-foreground">Your Learning Journey</h3>
+          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+            {doneMilestones.length}/{journey.length} reached
+          </span>
+        </div>
+
+        {doneMilestones.length === 0 && (
+          <div className="py-8 text-center">
+            <i className="ti ti-map-2 text-3xl text-muted-foreground/40" aria-hidden="true" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Your journey starts the moment you begin studying.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Answer a practice question or review a flashcard to mark your first milestone.
+            </p>
+          </div>
+        )}
+
         <ol className="relative flex flex-col gap-0" aria-label="Learning milestones">
-          {JOURNEY_MILESTONES.map((m, i) => (
-            <li key={i} className="relative flex gap-4 pb-6 last:pb-0">
-              {/* Vertical connector */}
-              {i < JOURNEY_MILESTONES.length - 1 && (
+          {journey.map((m, i) => (
+            <li key={m.id} className="relative flex gap-4 pb-6 last:pb-0">
+              {i < journey.length - 1 && (
                 <div className={cn(
                   'absolute left-4 top-9 bottom-0 w-0.5 -translate-x-1/2',
                   m.done ? 'bg-primary/30' : 'bg-border',
                 )} aria-hidden="true" />
               )}
-              {/* Node */}
               <span className={cn(
                 'relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm',
                 m.done
@@ -560,72 +511,88 @@ function JourneyTab() {
                   : <i className="ti ti-lock text-xs" aria-hidden="true" />
                 }
               </span>
-              {/* Content */}
               <div className="flex-1 pt-0.5">
                 <p className={cn('text-sm font-semibold', m.done ? 'text-foreground' : 'text-muted-foreground')}>
                   {m.event}
                 </p>
-                <p className="text-[11px] text-muted-foreground">{m.date}</p>
+                {m.done && (
+                  <p className="text-[11px] text-primary font-medium mt-0.5">Completed</p>
+                )}
+                {!m.done && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Not yet reached</p>
+                )}
               </div>
             </li>
           ))}
         </ol>
+
+        {upcomingMilestones.length > 0 && doneMilestones.length > 0 && (
+          <p className="mt-4 text-xs text-muted-foreground text-center">
+            {upcomingMilestones.length} milestone{upcomingMilestones.length !== 1 ? 's' : ''} ahead — keep going.
+          </p>
+        )}
       </div>
     </div>
   )
 }
 
-// ─── Confidence Tree tab ──────────────────────────────────────────────────────
+// ─── Confidence Tree ──────────────────────────────────────────────────────────
+// Branches are derived from real practice/flashcard/topic stats — no hardcoded %.
 
-const TREE_BRANCHES: { label: string; mastery: number; color: string }[] = [
-  { label: 'Algebra', mastery: 72, color: '#0e8a6a' },
-  { label: 'Geometry', mastery: 45, color: '#1aad86' },
-  { label: 'Statistics', mastery: 38, color: '#0e8a6a' },
-  { label: 'Reading', mastery: 60, color: '#2d9e74' },
-  { label: 'Writing', mastery: 55, color: '#1aad86' },
-  { label: 'Grammar', mastery: 50, color: '#0e8a6a' },
-]
-
-// SVG-based growing confidence tree
-function ConfidenceTree({ branches }: { branches: typeof TREE_BRANCHES }) {
+function ConfidenceTree({ branches }: { branches: TreeBranch[] }) {
   const [animated, setAnimated] = useState(false)
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), 200)
     return () => clearTimeout(t)
   }, [])
 
-  const avgMastery = Math.round(branches.reduce((s, b) => s + b.mastery, 0) / branches.length)
+  const avgMastery = branches.length > 0
+    ? Math.round(branches.reduce((s, b) => s + b.mastery, 0) / branches.length)
+    : 0
 
-  // Trunk height scales with avg mastery
-  const trunkH = 80 + avgMastery * 0.8
+  // No data yet
+  if (avgMastery === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Confidence Tree</h3>
+        <div className="flex flex-col items-center gap-3 py-8">
+          <i className="ti ti-tree text-4xl text-muted-foreground/30" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground text-center">
+            Your tree grows as you study.
+          </p>
+          <p className="text-xs text-muted-foreground text-center max-w-xs">
+            Answer practice questions and review flashcards to grow each branch.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const trunkH = 60 + avgMastery * 0.8
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Confidence Tree</h3>
         <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-          {avgMastery}% avg mastery
+          {avgMastery}% avg
         </span>
       </div>
 
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:gap-8">
-        {/* Tree SVG */}
         <svg
           viewBox="0 0 260 320"
           className="w-64 shrink-0"
           aria-label="Confidence tree visualization"
           aria-hidden="true"
         >
-          {/* Ground */}
           <ellipse cx="130" cy="305" rx="55" ry="8" fill="var(--color-muted)" />
-          {/* Trunk */}
           <rect
             x="118" y={305 - trunkH} width="24" rx="6"
             height={animated ? trunkH : 0}
             fill="#8B6914"
             className="transition-all duration-700 ease-out"
           />
-          {/* Branches — 3 left, 3 right */}
           {branches.map((b, i) => {
             const side = i % 2 === 0 ? -1 : 1
             const row = Math.floor(i / 2)
@@ -635,7 +602,6 @@ function ConfidenceTree({ branches }: { branches: typeof TREE_BRANCHES }) {
             const r = 14 + b.mastery * 0.22
             return (
               <g key={b.label}>
-                {/* Branch line */}
                 <line
                   x1="130" y1={rootY}
                   x2={tipX} y2={tipY}
@@ -646,7 +612,6 @@ function ConfidenceTree({ branches }: { branches: typeof TREE_BRANCHES }) {
                   className="transition-all duration-500 ease-out"
                   style={{ transitionDelay: `${i * 80}ms` }}
                 />
-                {/* Leaf cluster */}
                 <circle
                   cx={tipX} cy={tipY}
                   r={animated ? r : 0}
@@ -655,7 +620,6 @@ function ConfidenceTree({ branches }: { branches: typeof TREE_BRANCHES }) {
                   className="transition-all duration-500 ease-out"
                   style={{ transitionDelay: `${i * 80 + 200}ms` }}
                 />
-                {/* Flower dot at high mastery */}
                 {b.mastery > 60 && (
                   <circle
                     cx={tipX} cy={tipY}
@@ -671,8 +635,10 @@ function ConfidenceTree({ branches }: { branches: typeof TREE_BRANCHES }) {
           })}
         </svg>
 
-        {/* Branch legend */}
         <div className="flex-1 flex flex-col gap-2.5">
+          <p className="text-[11px] text-muted-foreground mb-1">
+            Based on your practice and flashcard accuracy. Estimated per section.
+          </p>
           {branches.map((b) => (
             <div key={b.label} className="flex items-center gap-3">
               <span
@@ -705,11 +671,11 @@ function ProfileTab({ state }: { state: GamificationState }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Profile hero */}
+      {/* Profile hero — no fake name; shows level and stats only */}
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-border bg-card p-6 text-center shadow-sm sm:flex-row sm:text-left">
         <div className="relative shrink-0">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground shadow-lg">
-            A
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary shadow-lg">
+            <i className="ti ti-user text-3xl" aria-hidden="true" />
           </div>
           <span className={cn(
             'absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-card text-xs font-bold',
@@ -719,21 +685,25 @@ function ProfileTab({ state }: { state: GamificationState }) {
           </span>
         </div>
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-foreground">Alex</h2>
+          <h2 className="text-xl font-bold text-foreground">Your Profile</h2>
           <p className="text-sm text-muted-foreground">Level {level} · {levelTitle}</p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             <span className={cn('flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold', leagueMeta.bg, leagueMeta.color)}>
               <i className={cn('ti', leagueMeta.icon)} aria-hidden="true" />
               {leagueMeta.label} League
             </span>
-            <span className="flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-600">
-              <i className="ti ti-flame" aria-hidden="true" />
-              {streak}d streak
-            </span>
-            <span className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600">
-              <i className="ti ti-star" aria-hidden="true" />
-              {xp.toLocaleString()} XP
-            </span>
+            {streak > 0 && (
+              <span className="flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-600">
+                <i className="ti ti-flame" aria-hidden="true" />
+                {streak}d streak
+              </span>
+            )}
+            {xp > 0 && (
+              <span className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600">
+                <i className="ti ti-star" aria-hidden="true" />
+                {xp.toLocaleString()} XP
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -741,12 +711,42 @@ function ProfileTab({ state }: { state: GamificationState }) {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
-          { label: 'Est. SAT', value: estimatedSAT.toLocaleString(), icon: 'ti-chart-line', color: 'text-primary bg-emerald-50' },
-          { label: 'Confidence', value: `${confidenceScore}%`, icon: 'ti-brain', color: 'text-purple-600 bg-purple-50' },
-          { label: 'Longest Streak', value: `${longestStreak}d`, icon: 'ti-flame', color: 'text-orange-500 bg-orange-50' },
-          { label: 'Weekly XP', value: weeklyXp.toLocaleString(), icon: 'ti-star', color: 'text-amber-600 bg-amber-50' },
-          { label: 'Study Today', value: `${studyMinutesToday}m`, icon: 'ti-clock-hour-4', color: 'text-blue-600 bg-blue-50' },
-          { label: 'Achievements', value: `${unlockedAchievements.length}`, icon: 'ti-trophy', color: 'text-primary bg-emerald-50' },
+          {
+            label: 'Est. SAT',
+            value: estimatedSAT > 0 ? estimatedSAT.toLocaleString() : '—',
+            icon: 'ti-chart-line',
+            color: 'text-primary bg-emerald-50',
+          },
+          {
+            label: 'Confidence',
+            value: confidenceScore > 0 ? `${confidenceScore}%` : '—',
+            icon: 'ti-brain',
+            color: 'text-purple-600 bg-purple-50',
+          },
+          {
+            label: 'Longest Streak',
+            value: longestStreak > 0 ? `${longestStreak}d` : '—',
+            icon: 'ti-flame',
+            color: 'text-orange-500 bg-orange-50',
+          },
+          {
+            label: 'Weekly XP',
+            value: weeklyXp > 0 ? weeklyXp.toLocaleString() : '0',
+            icon: 'ti-star',
+            color: 'text-amber-600 bg-amber-50',
+          },
+          {
+            label: 'Study Today',
+            value: studyMinutesToday > 0 ? `${studyMinutesToday}m` : '0m',
+            icon: 'ti-clock-hour-4',
+            color: 'text-blue-600 bg-blue-50',
+          },
+          {
+            label: 'Achievements',
+            value: `${unlockedAchievements.length}`,
+            icon: 'ti-trophy',
+            color: 'text-primary bg-emerald-50',
+          },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <span className={cn('flex h-8 w-8 items-center justify-center rounded-xl text-sm mb-2', s.color)}>
@@ -759,7 +759,7 @@ function ProfileTab({ state }: { state: GamificationState }) {
       </div>
 
       {/* Badge shelf */}
-      {unlockedAchievements.length > 0 && (
+      {unlockedAchievements.length > 0 ? (
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <h3 className="mb-4 text-sm font-semibold text-foreground">Badges Earned</h3>
           <div className="flex flex-wrap gap-3">
@@ -778,25 +778,15 @@ function ProfileTab({ state }: { state: GamificationState }) {
             ))}
           </div>
         </div>
-      )}
-
-      {/* Share card */}
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
-        <div className="flex items-center gap-3 mb-3">
-          <i className="ti ti-share text-primary text-base" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-foreground">Share your progress</h3>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
+          <i className="ti ti-shield text-2xl text-muted-foreground/40" aria-hidden="true" />
+          <p className="mt-2 text-sm text-muted-foreground">No badges yet.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Study consistently to earn your first one.
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          Generate a beautiful card showing your level, streak, and estimated score.
-        </p>
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-xl border border-primary bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
-        >
-          <i className="ti ti-share text-base" aria-hidden="true" />
-          Share my journey
-        </button>
-      </div>
+      )}
     </div>
   )
 }
@@ -880,15 +870,13 @@ export function AchievementsView({ api }: AchievementsViewProps) {
         ))}
       </div>
 
-      {/* Tab content */}
       {tab === 'overview' && <OverviewTab state={state} api={api} />}
       {tab === 'achievements' && <AchievementsTab achievements={state.achievements} />}
       {tab === 'quests' && <QuestsTab quests={state.quests} api={api} />}
-      {tab === 'leagues' && <LeaguesTab state={state} />}
       {tab === 'journey' && (
         <div className="flex flex-col gap-5">
-          <JourneyTab />
-          <ConfidenceTree branches={TREE_BRANCHES} />
+          <JourneyTab journey={state.journey} />
+          <ConfidenceTree branches={state.treeBranches} />
         </div>
       )}
       {tab === 'profile' && <ProfileTab state={state} />}

@@ -145,10 +145,13 @@ export function HomeView({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           {/* Left copy */}
           <div className="flex-1">
-            <p className="text-sm font-medium text-muted-foreground">Good morning, Alex.</p>
+            <p className="text-sm font-medium text-muted-foreground">Ready to study?</p>
             <h1 className="mt-1 font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
-              SAT in{' '}
-              <span className="text-primary">{satDaysRemaining} days.</span>
+              {satDaysRemaining > 0 ? (
+                <>SAT in <span className="text-primary">{satDaysRemaining} days.</span></>
+              ) : (
+                <>{"Let's get started."}</>
+              )}
             </h1>
 
             {/* Daily goal progress */}
@@ -198,8 +201,8 @@ export function HomeView({
             />
             <HeroStat
               label="Est. SAT"
-              value={estimatedSAT.toLocaleString()}
-              sub="projected"
+              value={estimatedSAT > 0 ? estimatedSAT.toLocaleString() : '—'}
+              sub={estimatedSAT > 0 ? 'projected' : 'start practicing'}
               icon="ti-chart-line"
               iconColor="bg-emerald-50 text-primary"
             />
