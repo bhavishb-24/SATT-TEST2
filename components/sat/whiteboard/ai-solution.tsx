@@ -101,9 +101,33 @@ export function AiSolution({ title, steps, diagram, step, answer }: AiSolutionPr
 function BoardDiagram({ elements, step }: { elements: DiagramElement[]; step: number }) {
   const shown = (el: DiagramElement) => step >= el.revealAt + 1
 
+  // Figure center — used to push vertex labels OUTWARD so they never sit on top
+  // of the shape's edges, regardless of which side the vertex is on.
+  const coords: { x: number; y: number }[] = []
+  for (const el of elements) {
+    if (el.points?.length) coords.push(...el.points)
+    if (el.cx != null && el.cy != null) coords.push({ x: el.cx, y: el.cy })
+    if (el.x != null && el.y != null) coords.push({ x: el.x, y: el.y })
+  }
+  const center =
+    coords.length > 0
+      ? {
+          x: coords.reduce((sum, p) => sum + p.x, 0) / coords.length,
+          y: coords.reduce((sum, p) => sum + p.y, 0) / coords.length,
+        }
+      : { x: 50, y: 50 }
+
+  // Position a vertex label just outside the shape, away from the center.
+  const labelPos = (x: number, y: number, distance = 6) => {
+    const dx = x - center.x
+    const dy = y - center.y
+    const len = Math.hypot(dx, dy) || 1
+    return { x: x + (dx / len) * distance, y: y + (dy / len) * distance }
+  }
+
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="-10 -10 120 120"
       className="h-auto w-full max-w-md"
       role="img"
       aria-label="Diagram of the geometry problem"
@@ -164,16 +188,19 @@ function BoardDiagram({ elements, step }: { elements: DiagramElement[]; step: nu
         }
 
         if (el.kind === 'point' && el.x != null && el.y != null) {
+          const lp = labelPos(el.x, el.y)
           return (
             <g key={i} {...common}>
               <circle cx={el.x} cy={el.y} r={1.2} fill="var(--foreground)" />
               {el.text && (
                 <text
-                  x={el.x + 2}
-                  y={el.y - 2}
+                  x={lp.x}
+                  y={lp.y}
                   fontSize={5}
                   fontWeight={700}
                   fill="var(--foreground)"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
                   className="font-serif"
                 >
                   {el.text}
