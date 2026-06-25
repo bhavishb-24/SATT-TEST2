@@ -109,6 +109,20 @@ export function Sidebar({
               />
             </Link>
           </li>
+
+          {/* Study Rooms — standalone route */}
+          <li>
+            <Link
+              href="/rooms"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <i className="ti ti-users-group text-lg" aria-hidden="true" />
+              Study Rooms
+              <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground">
+                NEW
+              </span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
