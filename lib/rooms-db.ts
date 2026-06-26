@@ -32,6 +32,25 @@ export interface RoomMember {
   user_id:   string
   user_name: string
   joined_at: string
+  cursor_x:  number | null
+  cursor_y:  number | null
+}
+
+export interface StrokePoint { x: number; y: number }
+
+export interface RoomStroke {
+  seq:     number
+  user_id: string
+  tool:    string
+  color:   string
+  width:   number
+  points:  StrokePoint[]
+}
+
+export interface BoardState {
+  strokes:   RoomStroke[]
+  board_rev: number
+  reset:     boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -168,14 +187,117 @@ export async function joinRoom(params: {
 // ─── Get members ─────────────────────────────────────────────────────────────
 
 export async function getRoomMembers(room_id: string): Promise<RoomMember[]> {
-  // Only return members seen in the last 40 seconds — i.e. currently present.
+  // Only return members seen in the last 15 seconds — i.e. currently present.
   const { rows } = await pool.query<RoomMember>(
-    `SELECT * FROM room_members
-     WHERE room_id = $1 AND last_seen > now() - interval '40 seconds'
+    `SELECT id, room_id, user_id, user_name, joined_at, cursor_x, cursor_y
+     FROM room_members
+     WHERE room_id = $1 AND last_seen > now() - interval '15 seconds'
      ORDER BY joined_at ASC`,
     [room_id],
   )
   return rows
+}
+
+// ─── Realtime board: cursors ────────────────────────────────────────────────
+
+/**
+ * Heartbeat + cursor update in one upsert. Records presence (last_seen = now)
+ * and the caller's normalized pointer position (0..1) if provided.
+ */
+export async function pingPresence(params: {
+  room_id:   string
+  user_id:   string
+  user_name: string
+  cursor_x?: number | null
+  cursor_y?: number | null
+}): Promise<void> {
+  await pool.query(
+    `INSERT INTO room_members (room_id, user_id, user_name, last_seen, cursor_x, cursor_y)
+     VALUES ($1, $2, $3, now(), $4, $5)
+     ON CONFLICT (room_id, user_id)
+     DO UPDATE SET user_name = $3,
+                   last_seen = now(),
+                   cursor_x  = COALESCE($4, room_members.cursor_x),
+                   cursor_y  = COALESCE($5, room_members.cursor_y)`,
+    [params.room_id, params.user_id, params.user_name,
+     params.cursor_x ?? null, params.cursor_y ?? null],
+  )
+}
+
+// ─── Realtime board: strokes ────────────────────────────────────────────────
+
+/** Append one completed stroke (a path of normalized 0..1 points). */
+export async function addStroke(params: {
+  room_id: string
+  user_id: string
+  tool:    string
+  color:   string
+  width:   number
+  points:  StrokePoint[]
+}): Promise<number> {
+  const { rows } = await pool.query<{ seq: string }>(
+    `INSERT INTO room_strokes (room_id, user_id, tool, color, width, points)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING seq`,
+    [params.room_id, params.user_id, params.tool, params.color, params.width,
+     JSON.stringify(params.points)],
+  )
+  return Number(rows[0].seq)
+}
+
+/**
+ * Return the board state for a client.
+ * - If the client's known revision differs from the room's board_rev, return
+ *   the FULL stroke set with reset=true (used after a clear/undo).
+ * - Otherwise return only strokes newer than `after` (incremental).
+ */
+export async function getBoardState(
+  room_id: string,
+  after: number,
+  knownRev: number,
+): Promise<BoardState> {
+  const { rows: roomRows } = await pool.query<{ board_rev: number }>(
+    `SELECT board_rev FROM study_rooms WHERE id = $1`,
+    [room_id],
+  )
+  const board_rev = roomRows[0]?.board_rev ?? 0
+  const reset = knownRev !== board_rev
+
+  const { rows } = await pool.query<RoomStroke>(
+    reset
+      ? `SELECT seq, user_id, tool, color, width, points
+         FROM room_strokes WHERE room_id = $1 ORDER BY seq ASC`
+      : `SELECT seq, user_id, tool, color, width, points
+         FROM room_strokes WHERE room_id = $1 AND seq > $2 ORDER BY seq ASC`,
+    reset ? [room_id] : [room_id, after],
+  )
+  return { strokes: rows.map((r) => ({ ...r, seq: Number(r.seq) })), board_rev, reset }
+}
+
+/** Clear the whole board and bump board_rev so every client wipes. */
+export async function clearBoard(room_id: string): Promise<void> {
+  await pool.query(`DELETE FROM room_strokes WHERE room_id = $1`, [room_id])
+  await pool.query(
+    `UPDATE study_rooms SET board_rev = board_rev + 1 WHERE id = $1`,
+    [room_id],
+  )
+}
+
+/** Remove the caller's most recent stroke and bump board_rev (shared undo). */
+export async function undoLastStroke(room_id: string, user_id: string): Promise<void> {
+  await pool.query(
+    `DELETE FROM room_strokes
+     WHERE seq = (
+       SELECT seq FROM room_strokes
+       WHERE room_id = $1 AND user_id = $2
+       ORDER BY seq DESC LIMIT 1
+     )`,
+    [room_id, user_id],
+  )
+  await pool.query(
+    `UPDATE study_rooms SET board_rev = board_rev + 1 WHERE id = $1`,
+    [room_id],
+  )
 }
 
 // ─── Leave (remove member) ─────────────────────────────────────────────────

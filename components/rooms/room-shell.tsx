@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/use-auth'
 import { getRoomIdentity } from '@/lib/room-identity'
+import { useRoomLive, type BoardApi, type CursorInfo } from '@/lib/use-room-live'
 import { ParticipantsPanel } from '@/components/rooms/participants-panel'
 import { WorkspacePanel }    from '@/components/rooms/workspace-panel'
 import { ChatPanel }         from '@/components/rooms/chat-panel'
@@ -16,6 +17,13 @@ import type { StudyRoom as DBRoom, RoomMember } from '@/lib/rooms-db'
 const AVATAR_COLORS = [
   'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500',
   'bg-rose-500',  'bg-cyan-500',   'bg-pink-500',   'bg-orange-500',
+]
+
+// Literal text-* classes for live cursors (kept literal so Tailwind emits them).
+// Index-aligned with AVATAR_COLORS above.
+const CURSOR_TEXT_COLORS = [
+  'text-blue-500', 'text-emerald-500', 'text-violet-500', 'text-amber-500',
+  'text-rose-500',  'text-cyan-500',   'text-pink-500',   'text-orange-500',
 ]
 
 function memberToParticipant(m: RoomMember, index: number): RoomParticipant {
@@ -61,7 +69,6 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
 
   // ── DB room state ────────────────────────────────────────────────────────
   const [dbRoom,    setDbRoom]    = useState<DBRoom | null>(null)
-  const [members,   setMembers]   = useState<RoomMember[]>([])
   const [loadError, setLoadError] = useState('')
   const [loaded,    setLoaded]    = useState(false)
 
@@ -71,6 +78,9 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
     () => (ready ? getRoomIdentity(user) : null),
     [ready, user],
   )
+
+  // Realtime layer: presence/roster + cursors + shared whiteboard strokes.
+  const { members, subscribeBoard, sendCursor, sendStroke, boardAction } = useRoomLive(id, me)
 
   // Derived display values — prefer DB data, fall back to URL params
   const displayName  = dbRoom?.name  ?? nameFallback
@@ -97,40 +107,6 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
     loadRoom()
     return () => { cancelled = true }
   }, [id])
-
-  // ── Heartbeat + roster poll ────────────────────────────────────────────────
-  // A single POST both records presence (last_seen = now) AND returns the
-  // current active roster, so everyone sees everyone in near real-time.
-  const heartbeat = useCallback(async () => {
-    if (!me) return
-    try {
-      const res  = await fetch('/api/rooms/members', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room_id: id, user_id: me.id, user_name: me.name }),
-      })
-      const data = await res.json()
-      if (data.members) setMembers(data.members)
-    } catch { /* silently ignore — next tick retries */ }
-  }, [id, me])
-
-  useEffect(() => {
-    if (!me || loadError) return
-    heartbeat() // register immediately
-    const interval = setInterval(heartbeat, 4000)
-    // Leave the room promptly when the tab closes
-    const onUnload = () => {
-      navigator.sendBeacon?.(
-        '/api/rooms/leave',
-        new Blob([JSON.stringify({ room_id: id, user_id: me.id })], { type: 'application/json' }),
-      )
-    }
-    window.addEventListener('beforeunload', onUnload)
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('beforeunload', onUnload)
-    }
-  }, [me, loadError, heartbeat, id])
 
   // ── Build the participant list (AI always first, then real members) ────────
   const participants: RoomParticipant[] = [
@@ -170,6 +146,23 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
   const [videoVisible,  setVideoVisible]  = useState(false)
   const [mobilePanel,   setMobilePanel]   = useState<'participants' | 'workspace' | 'chat'>('workspace')
   const [copied,        setCopied]        = useState(false)
+
+  // Other members' live pointers, with a stable per-person colour.
+  const cursors: CursorInfo[] = members
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => m.user_id !== me?.id && m.cursor_x != null && m.cursor_y != null)
+    .map(({ m, i }) => ({
+      id:    m.user_id,
+      name:  m.user_name,
+      color: CURSOR_TEXT_COLORS[i % CURSOR_TEXT_COLORS.length],
+      x:     m.cursor_x as number,
+      y:     m.cursor_y as number,
+    }))
+
+  const board: BoardApi = useMemo(
+    () => ({ subscribeBoard, sendStroke, boardAction, sendCursor, cursors, meId: me?.id ?? '' }),
+    [subscribeBoard, sendStroke, boardAction, sendCursor, cursors, me?.id],
+  )
 
   // Copy a full shareable invite link (falls back to the bare code).
   const copyInvite = useCallback(() => {
@@ -347,6 +340,7 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
             roomName={displayName}
             exam={displayExam}
             topic={displayTopic}
+            board={board}
           />
         </div>
 
