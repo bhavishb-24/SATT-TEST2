@@ -135,11 +135,17 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
             answer-elimination tools just like the real thing.
           </p>
 
+          {/* Real SAT structure callout */}
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4">
+            <i className="ti ti-info-circle mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+            <div className="text-xs leading-relaxed text-muted-foreground">
+              <span className="font-semibold text-foreground">Full SAT format:</span>{' '}
+              98 questions total (54 Reading &amp; Writing + 44 Math) across 4 adaptive modules, ~2 hours 14 minutes. Questions are AI-generated to match the real digital SAT. If AI is unavailable, a curated static version loads instead.
+            </div>
+          </div>
+
           <ul className="mt-6 flex flex-col gap-3">
             {tests.map((test, i) => {
-              const mathCount = test.questions.filter((q) => q.section === 'Math').length
-              const rwCount = test.questions.length - mathCount
-              const minutes = Math.round((test.questions.length * SECONDS_PER_QUESTION) / 60)
               return (
                 <li key={test.id}>
                   <button
@@ -159,7 +165,7 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-foreground">{test.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {test.questions.length} questions · {mathCount} Math · {rwCount} Reading &amp; Writing · ~{minutes} min
+                        98 questions · 54 Reading &amp; Writing · 44 Math · ~134 min
                       </p>
                     </div>
                     <i

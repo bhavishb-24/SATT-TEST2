@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai'
 import { streamText, generateText, Output } from 'ai'
 import { z } from 'zod'
 import { PERSONAS, type PersonaKey } from '@/components/sat/whiteboard/lesson-data'
@@ -172,7 +171,7 @@ export async function POST(req: Request) {
   }
 
   const { mode, persona, question } = body
-  const model = openai('gpt-4o-mini')
+  const model = 'openai/gpt-4o-mini' as const
 
   // --- Streaming text modes -------------------------------------------------
   if (mode === 'hint') {
@@ -247,7 +246,7 @@ export async function POST(req: Request) {
     }
     const { output } = await generateText({
       // Stronger model: reliably follows the "always draw the figure" instruction.
-      model: openai('gpt-4o'),
+      model: 'openai/gpt-4o' as const,
       system: `${ROLE}${tone(persona)}
 
 A student typed an SAT question they want worked through on the whiteboard. Solve it correctly, then break the solution into clear teaching steps that will be WRITTEN OUT on a whiteboard one at a time while you narrate.
@@ -279,7 +278,7 @@ Rules:
     if (!img) return new Response('Missing image', { status: 400 })
     const current = (body.currentSolution ?? '').trim()
     const { output } = await generateText({
-      model: openai('gpt-4o'),
+      model: 'openai/gpt-4o' as const,
       system: `${ROLE}${tone(persona)}
 
 ${qctx(question)}
@@ -333,7 +332,7 @@ Rules:
     const img = body.imageDataUrl
     if (!img) return new Response('Missing image', { status: 400 })
     const result = streamText({
-      model: openai('gpt-4o'),
+      model: 'openai/gpt-4o' as const,
       system: `${ROLE}${tone(persona)}
 
 ${qctx(question)}

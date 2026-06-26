@@ -36,6 +36,8 @@ export interface AuthApi {
   ready:               boolean
   /** True when the user has a real Supabase session (not a local guest). */
   isAuthenticated:     boolean
+  /** True when the signed-in user has lifetime / paid premium access. */
+  isPremium:           boolean
   signInAsGuest:       (name?: string) => GuestUser
   signOut:             () => void
   diagnostic:          DiagnosticRecord | null
@@ -52,6 +54,17 @@ export function useAuth(): AuthApi {
   const [diagnostic,     setDiagnostic]     = useState<DiagnosticRecord | null>(null)
   const [postDiagnostic, setPostDiagnostic] = useState<DiagnosticRecord | null>(null)
   const [ready,          setReady]          = useState(false)
+  const [isPremium,      setIsPremium]      = useState(false)
+
+  // Check lifetime / premium entitlement by email
+  async function refreshPremium(email?: string | null) {
+    if (!email) { setIsPremium(false); return }
+    try {
+      const res  = await fetch(`/api/premium?email=${encodeURIComponent(email)}`, { cache: 'no-store' })
+      const data = await res.json()
+      setIsPremium(!!data.premium)
+    } catch { setIsPremium(false) }
+  }
 
   // ── Bootstrap: check Supabase session, then fall back to guest localStorage ─
   useEffect(() => {
@@ -65,6 +78,7 @@ export function useAuth(): AuthApi {
         setSupaUser(sbUser)
         setUser(supabaseUserToGuest(sbUser))
         await loadDiagnosticsFromDB(sbUser.id, supabase)
+        refreshPremium(sbUser.email)
       } else {
         // No session — load guest from localStorage
         try {
@@ -87,8 +101,10 @@ export function useAuth(): AuthApi {
         setSupaUser(session.user)
         setUser(supabaseUserToGuest(session.user))
         await loadDiagnosticsFromDB(session.user.id, supabase)
+        refreshPremium(session.user.email)
       } else {
         setSupaUser(null)
+        setIsPremium(false)
         // Reload guest state from localStorage
         try {
           const raw  = localStorage.getItem(LS_GUEST)
@@ -201,6 +217,7 @@ export function useAuth(): AuthApi {
     user,
     ready,
     isAuthenticated: !!supaUser,
+    isPremium,
     signInAsGuest,
     signOut,
     diagnostic,

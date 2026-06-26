@@ -1,6 +1,10 @@
 'use client'
 
 import { useRef, useEffect, useState, useCallback } from 'react'
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 import { cn } from '@/lib/utils'
 import type { LivePoll } from '@/lib/room-types'
 
@@ -10,40 +14,72 @@ interface Props {
   roomName?: string
   exam?:     string
   topic?:    string
-  /** Display name shown as @handle */
   username?: string
-}
-
-interface ChatMessage {
-  id:      string
-  role:    'user' | 'assistant'
-  content: string
 }
 
 const REACTIONS = ['👍', '💡', '❓', '🔥', '✅']
 
-/** Parse the streamed SSE data chunks from toUIMessageStreamResponse */
-async function* parseSSEStream(response: Response) {
-  if (!response.body) return
-  const reader  = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer    = ''
+const STARTER_PROMPTS = [
+  'Explain the quadratic formula',
+  'What is the SAT Reading strategy?',
+  'Solve: 2x² − 5x + 3 = 0',
+]
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
+/**
+ * Render AI output: supports LaTeX \\(...\\) inline and \\[...\\] display,
+ * **bold**, numbered steps, and plain newlines.
+ */
+function renderText(text: string): { __html: string } {
+  const DISPLAY_RE = /\\\[([\s\S]+?)\\\]/g
+  const INLINE_RE  = /\\\((.+?)\\\)/gs
 
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed.startsWith('data:')) continue
-      const data = trimmed.slice(5).trim()
-      if (data === '[DONE]') return
-      try { yield JSON.parse(data) } catch { /* skip malformed */ }
-    }
+  type Token = { type: 'text' | 'display' | 'inline'; content: string }
+  const tokens: Token[] = []
+
+  let lastIdx = 0
+  let m: RegExpExecArray | null
+  DISPLAY_RE.lastIndex = 0
+  while ((m = DISPLAY_RE.exec(text)) !== null) {
+    if (m.index > lastIdx) tokens.push({ type: 'text', content: text.slice(lastIdx, m.index) })
+    tokens.push({ type: 'display', content: m[1] })
+    lastIdx = m.index + m[0].length
   }
+  if (lastIdx < text.length) tokens.push({ type: 'text', content: text.slice(lastIdx) })
+
+  const tokens2: Token[] = []
+  for (const tok of tokens) {
+    if (tok.type !== 'text') { tokens2.push(tok); continue }
+    INLINE_RE.lastIndex = 0
+    let li = 0
+    let im: RegExpExecArray | null
+    while ((im = INLINE_RE.exec(tok.content)) !== null) {
+      if (im.index > li) tokens2.push({ type: 'text', content: tok.content.slice(li, im.index) })
+      tokens2.push({ type: 'inline', content: im[1] })
+      li = im.index + im[0].length
+    }
+    if (li < tok.content.length) tokens2.push({ type: 'text', content: tok.content.slice(li) })
+  }
+
+  const parts = tokens2.map((tok) => {
+    if (tok.type === 'display') {
+      try {
+        return `<div style="overflow-x:auto;padding:4px 0">${katex.renderToString(tok.content.trim(), { displayMode: true, throwOnError: false })}</div>`
+      } catch { return `<code>${tok.content}</code>` }
+    }
+    if (tok.type === 'inline') {
+      try {
+        return katex.renderToString(tok.content.trim(), { displayMode: false, throwOnError: false })
+      } catch { return `<code>${tok.content}</code>` }
+    }
+    return tok.content
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^(\d+)\.\s+(.+)$/gm,
+        '<div style="display:flex;gap:6px;margin-top:4px"><span style="font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
+      .replace(/\n/g, '<br />')
+  })
+
+  return { __html: parts.join('') }
 }
 
 export function ChatPanel({
@@ -54,95 +90,50 @@ export function ChatPanel({
   topic,
   username = 'you',
 }: Props) {
-  const bottomRef  = useRef<HTMLDivElement>(null)
-  const inputRef   = useRef<HTMLInputElement>(null)
-  const abortRef   = useRef<AbortController | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLInputElement>(null)
+  const [inputValue, setInputValue] = useState('')
 
-  const [input,      setInput]      = useState('')
-  const [messages,   setMessages]   = useState<ChatMessage[]>([])
-  const [streaming,  setStreaming]   = useState(false)
+  // useChat with DefaultChatTransport handles AI SDK v6 SSE stream decoding correctly.
+  // We pass extra room context via prepareSendMessagesRequest so the API knows
+  // which room/exam/topic to use.
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/rooms/chat',
+      prepareSendMessagesRequest: ({ messages }) => ({
+        body: {
+          // The API expects { messages, roomName, exam, topic }
+          // We pass the full message history plus room context.
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.parts
+              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join('') ?? '',
+          })),
+          roomName,
+          exam,
+          topic,
+        },
+      }),
+    }),
+  })
 
-  // Auto-scroll on new messages / streaming chunks
+  const isStreaming = status === 'streaming' || status === 'submitted'
+
+  // Auto-scroll to bottom whenever messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   const handle = username.replace(/\s+/g, '').toLowerCase()
 
-  const send = useCallback(async (text?: string) => {
-    const trimmed = (text ?? input).trim()
-    if (!trimmed || streaming) return
-    if (!text) setInput('')
-
-    // Append user message immediately
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: trimmed }
-    const aiId = crypto.randomUUID()
-
-    setMessages((prev) => [...prev, userMsg])
-    setStreaming(true)
-
-    // Build history in the ModelMessage format the API expects ({ role, content })
-    const history = [...messages, userMsg].map((m) => ({
-      role:    m.role,
-      content: m.content,
-    }))
-
-    // Placeholder for the streaming AI reply
-    setMessages((prev) => [...prev, { id: aiId, role: 'assistant', content: '' }])
-
-    abortRef.current = new AbortController()
-
-    try {
-      const res = await fetch('/api/rooms/chat', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal:  abortRef.current.signal,
-        body: JSON.stringify({
-          messages: history,
-          roomName,
-          exam,
-          topic,
-        }),
-      })
-
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-
-      let accumulated = ''
-      for await (const chunk of parseSSEStream(res)) {
-        // AI SDK UIMessageStream uses type:"text-delta" with delta field
-        if (chunk?.type === 'text-delta' && typeof chunk.delta === 'string') {
-          accumulated += chunk.delta
-          setMessages((prev) =>
-            prev.map((m) => m.id === aiId ? { ...m, content: accumulated } : m),
-          )
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') return
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === aiId
-            ? { ...m, content: 'Sorry, something went wrong. Please try again.' }
-            : m,
-        ),
-      )
-    } finally {
-      setStreaming(false)
-      abortRef.current = null
-      inputRef.current?.focus()
-    }
-  }, [input, messages, streaming, roomName, exam, topic])
-
-  /** Render **bold** markers as <strong> — safe, AI output only */
-  function renderText(text: string) {
-    return {
-      __html: text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
-    }
-  }
+  const send = useCallback((text?: string) => {
+    const trimmed = (text ?? inputValue).trim()
+    if (!trimmed || isStreaming) return
+    if (!text) setInputValue('')
+    sendMessage({ text: trimmed })
+  }, [inputValue, isStreaming, sendMessage])
 
   return (
     <aside className="flex h-full flex-col border-l border-border bg-card">
@@ -154,7 +145,7 @@ export function ChatPanel({
             S
           </div>
           <p className="text-sm font-bold text-foreground">Sage AI Chat</p>
-          {streaming && (
+          {isStreaming && (
             <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-primary">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -187,11 +178,7 @@ export function ChatPanel({
               </p>
             </div>
             <div className="flex w-full max-w-[220px] flex-col gap-2">
-              {[
-                'Explain the quadratic formula',
-                'What is the SAT Reading strategy?',
-                'Solve: 2x² − 5x + 3 = 0',
-              ].map((prompt) => (
+              {STARTER_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => send(prompt)}
@@ -205,9 +192,14 @@ export function ChatPanel({
         ) : (
           messages.map((msg) => {
             const isAI = msg.role === 'assistant'
+            // Extract text content from parts array (AI SDK v6 UIMessage format)
+            const textContent = msg.parts
+              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join('') ?? ''
 
-            // During streaming, the placeholder has empty content — show typing dots
-            if (isAI && !msg.content) {
+            // Streaming placeholder — show typing dots when content is empty
+            if (isAI && !textContent && isStreaming) {
               return (
                 <div key={msg.id} className="flex gap-2.5">
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary text-[11px] font-bold text-primary-foreground">
@@ -224,6 +216,8 @@ export function ChatPanel({
                 </div>
               )
             }
+
+            if (!textContent) return null
 
             return (
               <div key={msg.id} className="flex gap-2.5">
@@ -250,8 +244,14 @@ export function ChatPanel({
                         ? 'bg-secondary text-foreground'
                         : 'bg-primary text-primary-foreground',
                     )}
-                    dangerouslySetInnerHTML={renderText(msg.content)}
-                  />
+                    // User messages are plain text; only AI messages get HTML rendering
+                    {...(isAI
+                      ? { dangerouslySetInnerHTML: renderText(textContent) }
+                      : {}
+                    )}
+                  >
+                    {!isAI && textContent}
+                  </div>
                 </div>
               </div>
             )
@@ -292,17 +292,19 @@ export function ChatPanel({
         <div className="flex items-center gap-2 rounded-2xl border border-border bg-muted/50 py-1.5 pl-3 pr-1.5 transition-shadow focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
           <input
             ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+            }}
             placeholder="Ask @SageAI a question…"
-            disabled={streaming}
+            disabled={isStreaming}
             aria-label="Chat input"
             className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-60"
           />
           <button
             onClick={() => send()}
-            disabled={!input.trim() || streaming}
+            disabled={!inputValue.trim() || isStreaming}
             title="Send"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40 hover:opacity-90"
           >

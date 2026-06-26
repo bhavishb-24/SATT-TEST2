@@ -47,7 +47,7 @@ const STEPS: TourStep[] = [
     target: 'nav-mocktest',
     view: 'mocktest',
     title: 'Mock Tests',
-    body: 'Full-length, SAT-style practice tests for when you want to rehearse the real thing under pressure.',
+    body: 'Full-length, 98-question SAT-style practice tests. Same structure as the real digital SAT — two R&W modules and two Math modules.',
   },
   {
     target: 'nav-flashcards',
@@ -62,21 +62,16 @@ const STEPS: TourStep[] = [
     body: 'Everything to pack and prep the night before, so test morning is calm instead of chaotic.',
   },
   {
-    target: 'nav-morning',
-    view: 'morning',
-    title: 'Morning Mode',
-    body: 'Your test-day warm-up to wake your brain up and get in the zone before you walk in.',
-  },
-  {
     target: 'nav-asktutor',
     view: 'asktutor',
     title: 'Ask AI Tutor',
     body: "Stuck on a question? Snap a photo and I'll walk you through it Socratic-style — no spoilers, just guidance.",
   },
   {
-    target: 'panic',
-    title: 'Feeling overwhelmed?',
-    body: "Tap here any time you're spiraling. I'll walk you through a quick reset so you can refocus.",
+    target: 'nav-community',
+    view: 'community',
+    title: 'Question Bank',
+    body: 'Browse AI-recommended and teacher-verified SAT questions curated just for your weak areas.',
   },
   {
     target: null,

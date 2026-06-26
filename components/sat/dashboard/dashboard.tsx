@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   DashboardView,
   DiagnosticRecord,
@@ -25,7 +25,6 @@ import { StudyPlan } from '../study-plan'
 import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
 import { PostDiagnostic } from '../post-diagnostic'
-import { ScanQuestionModal } from './scan-question-modal'
 import { AchievementsView, AchievementToast } from './achievements-view'
 import { BrainView } from './brain-view'
 import { CommunityView } from './community-view'
@@ -34,7 +33,9 @@ import { SettingsView } from './settings-view'
 import { NotificationsView } from './notifications-view'
 import { PremiumView } from './premium-view'
 import { HelpView } from './help-view'
+import { InteractiveTutorView } from '../tutor/interactive-tutor-view'
 import { useGamification } from '@/lib/use-gamification'
+
 
 interface DashboardProps {
   triage: TriageData
@@ -74,7 +75,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   help: { title: 'Help Center', sub: 'FAQs, AI support, and feedback' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
-  asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
+  asktutor: { title: 'Interactive AI Tutor', sub: 'Your personal SAT tutor that adapts to how you think' },
 }
 
 export function Dashboard({
@@ -96,9 +97,31 @@ export function Dashboard({
   const [view, setView] = useState<DashboardView>('home')
   // Full-screen post-plan progress check overlay.
   const [postDiagnosticOpen, setPostDiagnosticOpen] = useState(false)
-  // The interactive product tour auto-starts the first time the dashboard loads.
-  const [tourActive, setTourActive] = useState(true)
-  const finishTour = useCallback(() => setTourActive(false), [])
+  // The interactive product tour auto-starts only the very first time.
+  // We persist the "seen" flag so returning from Whiteboard doesn't re-trigger it.
+  const [tourActive, setTourActive] = useState(() => {
+    try {
+      // 'sat:tour-seen' is set the moment the tour first starts AND when it finishes.
+      // This means navigating to Whiteboard and back won't re-trigger the tour.
+      return localStorage.getItem('sat:tour-seen') !== 'true'
+    } catch {
+      return true
+    }
+  })
+  // As soon as the tour component renders (first visit), mark it started so
+  // navigating away and back to /app never re-shows the tour.
+  const tourStartedRef = useRef(false)
+  useEffect(() => {
+    if (tourActive && !tourStartedRef.current) {
+      tourStartedRef.current = true
+      try { localStorage.setItem('sat:tour-seen', 'true') } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive])
+  const finishTour = useCallback(() => {
+    setTourActive(false)
+    try { localStorage.setItem('sat:tour-seen', 'true') } catch { /* ignore */ }
+  }, [])
   const theme = getPanicTheme(triage.panic)
 
   // Gamification system
@@ -123,6 +146,9 @@ export function Dashboard({
     view === 'practice' ||
     view === 'flashcards'
 
+  // The AI Tutor view manages its own three-column layout
+  const isTutorView = view === 'asktutor'
+
   return (
     <div className="flex min-h-dvh bg-background">
       <Sidebar
@@ -135,8 +161,8 @@ export function Dashboard({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border bg-card/80 pl-4 pr-20 backdrop-blur sm:pl-6 sm:pr-24">
-          <div className="min-w-0">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-2 border-b border-border bg-card/80 pl-4 pr-20 backdrop-blur sm:pl-6 sm:pr-6">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold text-foreground">{meta.title}</h1>
             <p className="truncate text-xs text-muted-foreground">{meta.sub}</p>
           </div>
@@ -151,9 +177,51 @@ export function Dashboard({
               {countdown}
             </span>
           </div>
+          {/* Notification + Settings icons in header (visible on all screen sizes) */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setView('notifications')}
+              aria-label="Notifications"
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                view === 'notifications'
+                  ? cn(theme.accentBg, 'text-white')
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <i className="ti ti-bell text-base" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('settings')}
+              aria-label="Settings"
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                view === 'settings'
+                  ? cn(theme.accentBg, 'text-white')
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <i className="ti ti-settings text-base" aria-hidden="true" />
+            </button>
+          </div>
         </header>
 
-        {/* Content */}
+        {/* Tutor view — full bleed, manages its own layout */}
+        {isTutorView && (
+          <main className="flex-1 overflow-hidden">
+            <InteractiveTutorView
+              triage={triage}
+              stats={statsApi.stats}
+              gamification={gamificationApi.state}
+              onNavigate={setView}
+            />
+          </main>
+        )}
+
+        {/* All other views */}
+        {!isTutorView && (
         <main className="flex-1 overflow-y-auto px-4 py-6 pb-24 sm:px-6 lg:pb-6">
           <div
             className={cn(
@@ -286,6 +354,7 @@ export function Dashboard({
                 onContinue={() => setView('morning')}
                 onStartPostDiagnostic={() => setPostDiagnosticOpen(true)}
                 hasPostDiagnostic={!!postDiagnostic}
+                practiceAnswered={statsApi.stats.practiceAnswered}
               />
             )}
 
@@ -293,12 +362,9 @@ export function Dashboard({
               <MorningMode plan={response.plan} triage={triage} />
             )}
 
-            {view === 'asktutor' && (
-              <ScanQuestionModal theme={theme} />
-            )}
-
           </div>
         </main>
+        )}
       </div>
 
       <MobileNav active={view} onNavigate={setView} theme={theme} />

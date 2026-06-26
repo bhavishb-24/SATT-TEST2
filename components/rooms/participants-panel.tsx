@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { RoomParticipant, AiStatus } from '@/lib/room-types'
 
@@ -71,6 +71,17 @@ export function ParticipantsPanel({
   const aiParticipant = participants.find((p) => p.id === 'ai')
   const students = participants.filter((p) => p.id !== 'ai')
   const relativeTime = useRelativeTime(sessionStartedAt)
+  const [codeCopied, setCodeCopied] = useState(false)
+
+  // Copy a full shareable invite link so friends land straight on the join flow.
+  const copyCode = useCallback(() => {
+    const link = typeof window !== 'undefined'
+      ? `${window.location.origin}/rooms?join=${roomCode}`
+      : roomCode
+    navigator.clipboard.writeText(link).catch(() => {})
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }, [roomCode])
 
   return (
     <aside className="flex h-full flex-col gap-4 overflow-y-auto p-4">
@@ -79,10 +90,12 @@ export function ParticipantsPanel({
       <div className="flex items-center justify-between rounded-2xl border border-border bg-muted/40 px-3 py-2 text-xs">
         <span className="font-medium text-muted-foreground">Started {relativeTime}</span>
         <button
-          onClick={() => navigator.clipboard.writeText(roomCode).catch(() => {})}
-          title="Copy room code"
-          className="rounded-full bg-secondary px-2 py-0.5 font-mono font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          type="button"
+          onClick={copyCode}
+          title={codeCopied ? 'Invite link copied!' : 'Copy invite link'}
+          className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-mono font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
         >
+          <i className={cn('ti text-[10px]', codeCopied ? 'ti-check' : 'ti-link')} aria-hidden="true" />
           {roomCode}
         </button>
       </div>
@@ -200,10 +213,11 @@ export function ParticipantsPanel({
       {/* Invite */}
       <button
         type="button"
+        onClick={copyCode}
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-secondary hover:text-primary"
       >
-        <i className="ti ti-user-plus text-base" aria-hidden="true" />
-        Invite a friend
+        <i className={cn('ti text-base', codeCopied ? 'ti-check' : 'ti-user-plus')} aria-hidden="true" />
+        {codeCopied ? 'Invite link copied!' : 'Invite a friend'}
       </button>
     </aside>
   )
