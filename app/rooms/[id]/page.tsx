@@ -6,7 +6,9 @@ import { cn } from '@/lib/utils'
 import { ParticipantsPanel } from '@/components/rooms/participants-panel'
 import { WorkspacePanel }    from '@/components/rooms/workspace-panel'
 import { ChatPanel }         from '@/components/rooms/chat-panel'
+import { VideoStrip }        from '@/components/rooms/video-strip'
 import type { WorkspaceTab, StudyRoom } from '@/lib/room-types'
+// ChatPanel now owns its own AI message state via useChat — no messages prop needed.
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Beginner:     'bg-emerald-50 text-emerald-700',
@@ -20,12 +22,12 @@ const DIFFICULTY_COLOR: Record<string, string> = {
  * initialises with only the AI tutor present and no messages, which is
  * the honest state before any real participants join.
  */
-function buildEmptyRoom(id: string): StudyRoom {
+function buildEmptyRoom(id: string, sp: Record<string, string> = {}): StudyRoom {
   return {
     id,
-    name: 'Study Room',
-    topic: '',
-    exam: 'SAT',
+    name: sp.name || 'Study Room',
+    topic: sp.topic || '',
+    exam: (sp.exam as StudyRoom['exam']) || 'SAT',
     difficulty: 'Intermediate',
     online: 1,
     maxParticipants: 10,
@@ -33,7 +35,8 @@ function buildEmptyRoom(id: string): StudyRoom {
     emoji: '📚',
     color: '#0e8a6a',
     visibility: 'public',
-    code: id.toUpperCase().slice(0, 8),
+    // Extract the last segment of the slug as the shareable code (e.g. "ABC123")
+    code: id.split('-').pop()?.toUpperCase().slice(0, 6) ?? id.toUpperCase().slice(0, 6),
     hostId: 'me',
     description: '',
     participants_list: [
@@ -61,12 +64,20 @@ function buildEmptyRoom(id: string): StudyRoom {
   }
 }
 
-export default function RoomPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
-  const [room]       = useState<StudyRoom>(() => buildEmptyRoom(id))
+export default function RoomPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string>>
+}) {
+  const { id }   = use(params)
+  const sp       = use(searchParams)
+  const [room]   = useState<StudyRoom>(() => buildEmptyRoom(id, sp))
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('whiteboard')
-  const [muted,  setMuted]  = useState(false)
-  const [camOff, setCamOff] = useState(true)
+  const [muted,        setMuted]        = useState(false)
+  const [camOff,       setCamOff]       = useState(true)
+  const [videoVisible, setVideoVisible] = useState(false)
   const [mobilePanel, setMobilePanel] = useState<'participants' | 'workspace' | 'chat'>('workspace')
 
   return (
@@ -106,8 +117,12 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
             <i className={cn('ti', muted ? 'ti-microphone-off' : 'ti-microphone')} aria-hidden="true" />
           </button>
           <button
-            onClick={() => setCamOff((c) => !c)}
-            title={camOff ? 'Camera on' : 'Camera off'}
+            onClick={() => {
+              const next = !camOff
+              setCamOff(!next)
+              setVideoVisible(next)
+            }}
+            title={camOff ? 'Turn camera on' : 'Turn camera off'}
             className={cn(
               'flex h-8 w-8 items-center justify-center rounded-xl text-sm transition-colors',
               camOff ? 'text-muted-foreground hover:bg-secondary hover:text-primary' : 'bg-secondary text-primary',
@@ -160,6 +175,15 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
         ))}
       </div>
 
+      {/* ── Video strip — shown when camera is on ──────────────────── */}
+      <VideoStrip
+        participants={room.participants_list}
+        muted={muted}
+        camOff={camOff}
+        visible={videoVisible}
+        onToggle={() => setVideoVisible((v) => !v)}
+      />
+
       {/* ── Three-column layout ─────────────────────────────────────── */}
       <main className="flex flex-1 min-h-0 overflow-hidden">
 
@@ -196,7 +220,13 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           'w-full shrink-0 overflow-hidden lg:block lg:w-72',
           mobilePanel === 'chat' ? 'block' : 'hidden',
         )}>
-          <ChatPanel messages={room.messages} poll={room.poll} roomCode={room.code} />
+          <ChatPanel
+            poll={room.poll}
+            roomCode={room.code}
+            roomName={room.name}
+            exam={room.exam}
+            topic={room.topic}
+          />
         </div>
       </main>
     </div>

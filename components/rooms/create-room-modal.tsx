@@ -20,8 +20,19 @@ export function CreateRoomModal({ onClose }: Props) {
   const [len, setLen]         = useState(60)
 
   function create() {
-    // In a real app: POST /api/rooms. For now, navigate to the seed room.
-    router.push('/rooms/sat-math-review')
+    // Generate a short random room code (6 uppercase alphanumeric chars).
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase()
+    // Encode the room config as URL search params so the room page can read them.
+    const slug = name.trim()
+      ? name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '-' + code
+      : code
+    const params = new URLSearchParams({
+      name: name.trim() || 'Study Room',
+      exam,
+      ...(goal.trim()   ? { topic: goal.trim() } : {}),
+      ...(target.trim() ? { target: target.trim() } : {}),
+    })
+    router.push(`/rooms/${slug}?${params.toString()}`)
     onClose()
   }
 

@@ -10,8 +10,10 @@ export function JoinRoomModal({ onClose }: Props) {
   const [code, setCode] = useState('')
 
   function join() {
-    if (!code.trim()) return
-    router.push('/rooms/sat-math-review')
+    const trimmed = code.trim().toUpperCase()
+    if (!trimmed) return
+    // Navigate directly using the code as the room slug.
+    router.push(`/rooms/${trimmed}`)
     onClose()
   }
 
