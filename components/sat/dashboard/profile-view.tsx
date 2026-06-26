@@ -97,15 +97,16 @@ export function ProfileView({ triage, stats, gamification, onNavigate }: Profile
     <div className="animate-fade-in flex flex-col gap-6">
 
       {/* ── Hero card ─────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-        {/* Background banner strip — fixed height so it doesn't overflow name */}
-        <div className="h-20 w-full bg-secondary" aria-hidden="true" />
+      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+        {/* Banner strip */}
+        <div className="relative h-24 w-full bg-secondary" aria-hidden="true" />
 
-        <div className="relative px-6 pb-6">
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end -mt-10">
-            {/* Avatar */}
-            <div className="relative">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-background bg-secondary text-3xl font-bold text-primary shadow-md">
+        {/* Content below banner — avatar overlaps via negative margin */}
+        <div className="px-6 pb-6">
+          {/* Avatar row: sits half-inside the banner */}
+          <div className="flex items-end gap-4 -mt-10">
+            <div className="relative shrink-0">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-card bg-secondary text-3xl font-bold text-primary shadow-md">
                 {displayName ? displayName.charAt(0).toUpperCase() : '?'}
               </div>
               {/* Level badge */}
@@ -114,52 +115,65 @@ export function ProfileView({ triage, stats, gamification, onNavigate }: Profile
               </div>
             </div>
 
-            {/* Name + title */}
-            <div className="flex flex-1 flex-col gap-1">
-              {editingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={nameRef}
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    onBlur={() => setEditingName(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
-                    className="rounded-lg border border-border bg-background px-2 py-1 text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Your name"
-                    aria-label="Display name"
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditingName(true)}
-                  className="group flex items-center gap-2 text-left"
-                  aria-label="Edit display name"
-                >
-                  <h1 className="text-2xl font-bold text-foreground">
-                    {displayName || 'Your Name'}
-                  </h1>
-                  <i className="ti ti-pencil text-sm text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
-                </button>
-              )}
-              <p className="text-sm font-medium text-primary">{gamification.levelTitle}</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <i className={cn('ti', leagueMeta.icon, leagueMeta.color)} aria-hidden="true" />
-                <span className={leagueMeta.color}>{leagueMeta.label} League</span>
-                <span>·</span>
-                <i className="ti ti-flame text-orange-500" aria-hidden="true" />
-                <span>{gamification.streak} day streak</span>
-              </div>
-            </div>
-
-            {/* XP + level bar */}
-            <div className="flex flex-col gap-1.5 sm:w-48">
+            {/* XP bar — right-aligned, also pulled up alongside avatar */}
+            <div className="ml-auto hidden flex-col gap-1.5 sm:flex sm:w-48">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-foreground">
                   {gamification.xp.toLocaleString()} XP
                 </span>
                 <span className="text-muted-foreground">
-                  Level {gamification.level + 1} at {gamification.xpForNextLevel.toLocaleString()}
+                  Next at {gamification.xpForNextLevel.toLocaleString()}
+                </span>
+              </div>
+              <FillBar pct={gamification.levelProgress} />
+            </div>
+          </div>
+
+          {/* Name + title — always below banner, no overlap */}
+          <div className="mt-3 flex flex-col gap-1">
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={nameRef}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  onBlur={() => setEditingName(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
+                  className="rounded-lg border border-border bg-background px-2 py-1 text-xl font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Your name"
+                  aria-label="Display name"
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditingName(true)}
+                className="group flex items-center gap-2 text-left"
+                aria-label="Edit display name"
+              >
+                <h1 className="text-2xl font-bold text-foreground">
+                  {displayName || 'Your Name'}
+                </h1>
+                <i className="ti ti-pencil text-sm text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+              </button>
+            )}
+            <p className="text-sm font-medium text-primary">{gamification.levelTitle}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <i className={cn('ti', leagueMeta.icon, leagueMeta.color)} aria-hidden="true" />
+              <span className={leagueMeta.color}>{leagueMeta.label} League</span>
+              <span>·</span>
+              <i className="ti ti-flame text-orange-500" aria-hidden="true" />
+              <span>{gamification.streak} day streak</span>
+            </div>
+
+            {/* XP bar on mobile */}
+            <div className="mt-2 flex flex-col gap-1.5 sm:hidden">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-foreground">
+                  {gamification.xp.toLocaleString()} XP
+                </span>
+                <span className="text-muted-foreground">
+                  Next at {gamification.xpForNextLevel.toLocaleString()}
                 </span>
               </div>
               <FillBar pct={gamification.levelProgress} />

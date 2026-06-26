@@ -27,6 +27,8 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'premium', label: 'Premium', icon: 'ti-crown' },
   { view: 'help', label: 'Help', icon: 'ti-help-circle' },
   { view: 'asktutor', label: 'Ask AI Tutor', icon: 'ti-camera-question' },
+  // Note: 'notifications' and 'settings' are rendered as icon buttons in the
+  // sidebar header, not as nav list items, to keep the list uncluttered.
 ]
 
 /** Returns true if the current local hour is between 5 AM and 11 AM (morning). */

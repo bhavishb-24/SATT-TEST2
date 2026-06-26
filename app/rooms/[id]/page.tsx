@@ -212,6 +212,8 @@ export default function RoomPage({
             onTabChange={setActiveTab}
             aiStatus={room.aiStatus}
             roomName={room.name}
+            exam={room.exam}
+            topic={room.topic}
           />
         </div>
 

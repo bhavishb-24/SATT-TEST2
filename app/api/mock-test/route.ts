@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 import { buildMockTests } from '@/lib/mock-test-bank'
 import type { PracticeQuestion } from '@/lib/sat-types'
@@ -57,7 +56,7 @@ Important rules:
 
   try {
     const { text } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: 'openai/gpt-4o-mini',
       prompt,
       temperature: 0.7,
     })

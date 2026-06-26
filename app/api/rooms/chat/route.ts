@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 
 export const maxDuration = 30
@@ -35,7 +34,7 @@ export async function POST(req: Request) {
   ].filter(Boolean).join(' | ')
 
   const result = streamText({
-    model: openai('gpt-4o-mini'),
+    model: 'openai/gpt-4o-mini',
     system: `You are Sage AI, a friendly expert ${exam ?? 'SAT'} tutor inside a live collaborative study room.${context ? ` Context — ${context}.` : ''}
 
 Your job:
@@ -54,7 +53,6 @@ Math formatting rules — FOLLOW THESE EXACTLY:
 - NEVER use dollar signs ($) for math.
 
 Reply in plain text otherwise. Do NOT use markdown headers or bullet points unless showing numbered solution steps.`,
-    // Use ModelMessage format directly — no conversion needed
     messages: messages.map((m) => ({
       role:    m.role as 'user' | 'assistant',
       content: m.content,

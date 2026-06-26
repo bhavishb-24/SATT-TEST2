@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   DashboardView,
   DiagnosticRecord,
@@ -101,11 +101,23 @@ export function Dashboard({
   // We persist the "seen" flag so returning from Whiteboard doesn't re-trigger it.
   const [tourActive, setTourActive] = useState(() => {
     try {
+      // 'sat:tour-seen' is set the moment the tour first starts AND when it finishes.
+      // This means navigating to Whiteboard and back won't re-trigger the tour.
       return localStorage.getItem('sat:tour-seen') !== 'true'
     } catch {
       return true
     }
   })
+  // As soon as the tour component renders (first visit), mark it started so
+  // navigating away and back to /app never re-shows the tour.
+  const tourStartedRef = useRef(false)
+  useEffect(() => {
+    if (tourActive && !tourStartedRef.current) {
+      tourStartedRef.current = true
+      try { localStorage.setItem('sat:tour-seen', 'true') } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive])
   const finishTour = useCallback(() => {
     setTourActive(false)
     try { localStorage.setItem('sat:tour-seen', 'true') } catch { /* ignore */ }
@@ -149,8 +161,8 @@ export function Dashboard({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border bg-card/80 pl-4 pr-20 backdrop-blur sm:pl-6 sm:pr-24">
-          <div className="min-w-0">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-2 border-b border-border bg-card/80 pl-4 pr-20 backdrop-blur sm:pl-6 sm:pr-6">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold text-foreground">{meta.title}</h1>
             <p className="truncate text-xs text-muted-foreground">{meta.sub}</p>
           </div>
@@ -164,6 +176,35 @@ export function Dashboard({
             <span className={cn('text-sm font-bold tabular-nums', theme.accentText)}>
               {countdown}
             </span>
+          </div>
+          {/* Notification + Settings icons in header (visible on all screen sizes) */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setView('notifications')}
+              aria-label="Notifications"
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                view === 'notifications'
+                  ? cn(theme.accentBg, 'text-white')
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <i className="ti ti-bell text-base" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('settings')}
+              aria-label="Settings"
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                view === 'settings'
+                  ? cn(theme.accentBg, 'text-white')
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <i className="ti ti-settings text-base" aria-hidden="true" />
+            </button>
           </div>
         </header>
 
