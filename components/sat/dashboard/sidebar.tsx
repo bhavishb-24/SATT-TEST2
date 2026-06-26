@@ -19,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'mocktest', label: 'Mock Tests', icon: 'ti-clipboard-check' },
   { view: 'flashcards', label: 'Flashcards', icon: 'ti-cards' },
   { view: 'achievements', label: 'Achievements', icon: 'ti-trophy' },
+  { view: 'brain', label: 'AI Brain\u2122', icon: 'ti-brain' },
   { view: 'checklist', label: 'Night Checklist', icon: 'ti-checklist' },
   { view: 'morning', label: 'Morning Mode', icon: 'ti-sunrise' },
   { view: 'asktutor', label: 'Ask AI Tutor', icon: 'ti-camera-question' },

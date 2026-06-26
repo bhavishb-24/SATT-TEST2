@@ -128,6 +128,7 @@ export type DashboardView =
   | 'flashcards'
   | 'progress'
   | 'achievements'
+  | 'brain'
   | 'checklist'
   | 'morning'
   | 'asktutor'

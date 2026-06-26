@@ -523,6 +523,18 @@ html {
               0 8px 24px -4px color-mix(in oklab, var(--primary) 12%, transparent);
 }
 
+/* ── AI Learning Brain™ ──────────────────────────────────────────────────── */
+
+@keyframes neuralPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+@keyframes brainFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
 /* AI explanation slide-in */
 @keyframes aiExplainIn {
   from { opacity: 0; transform: translateX(-8px); }
