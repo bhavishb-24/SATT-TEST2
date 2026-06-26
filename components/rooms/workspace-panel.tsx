@@ -24,75 +24,117 @@ const TABS: { id: WorkspaceTab; label: string; icon: string }[] = [
 // ── Whiteboard ───────────────────────────────────────────────────────────────
 
 function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [drawing, setDrawing] = useState(false)
-  const [tool, setTool] = useState<'pen' | 'highlight' | 'eraser' | 'text'>('pen')
-  const [color, setColor] = useState('#000000')
-  const lastPos = useRef<{ x: number; y: number } | null>(null)
-  const [history, setHistory] = useState<ImageData[]>([])
+  const canvasRef    = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const drawingRef   = useRef(false)
+  const lastPosRef   = useRef<{ x: number; y: number } | null>(null)
+  const historyRef   = useRef<ImageData[]>([])
+  const [histLen,    setHistLen]    = useState(0)
+  const [tool,       setTool]       = useState<'pen' | 'highlight' | 'eraser'>('pen')
+  const [color,      setColor]      = useState('#1e293b')
+
+  // Resize canvas to match its CSS container exactly, preserving content
+  useEffect(() => {
+    const container = containerRef.current
+    const canvas    = canvasRef.current
+    if (!container || !canvas) return
+
+    function resize() {
+      const w = container!.clientWidth
+      const h = container!.clientHeight
+      if (!w || !h) return
+      // Save current pixels
+      const ctx = canvas!.getContext('2d')!
+      const snapshot = ctx.getImageData(0, 0, canvas!.width, canvas!.height)
+      canvas!.width  = w
+      canvas!.height = h
+      // Restore pixels (best-effort — they scale down if container shrank)
+      ctx.putImageData(snapshot, 0, 0)
+    }
+
+    const ro = new ResizeObserver(resize)
+    ro.observe(container)
+    resize() // initial size
+    return () => ro.disconnect()
+  }, [])
 
   function getPos(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current!
-    const rect = canvas.getBoundingClientRect()
+    const rect   = canvas.getBoundingClientRect()
     if ('touches' in e) {
       const t = e.touches[0]
-      return { x: (t.clientX - rect.left) * (canvas.width / rect.width), y: (t.clientY - rect.top) * (canvas.height / rect.height) }
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top }
     }
-    return { x: (e.clientX - rect.left) * (canvas.width / rect.width), y: (e.clientY - rect.top) * (canvas.height / rect.height) }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
   }
 
   function startDraw(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
     e.preventDefault()
     const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
-    const pos = getPos(e)
-    setHistory((h) => [...h, ctx.getImageData(0, 0, canvas.width, canvas.height)])
-    setDrawing(true)
-    lastPos.current = pos
+    const ctx    = canvas.getContext('2d')!
+    // Push undo snapshot
+    historyRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height))
+    setHistLen(historyRef.current.length)
+    drawingRef.current  = true
+    lastPosRef.current  = getPos(e)
     ctx.beginPath()
-    ctx.moveTo(pos.x, pos.y)
+    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y)
   }
 
   function draw(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
     e.preventDefault()
-    if (!drawing) return
+    if (!drawingRef.current) return
     const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
-    const pos = getPos(e)
-    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : tool === 'highlight' ? color + '66' : color
-    ctx.lineWidth = tool === 'eraser' ? 24 : tool === 'highlight' ? 18 : 3
-    ctx.lineCap = 'round'
+    const ctx    = canvas.getContext('2d')!
+    const pos    = getPos(e)
+
+    if (tool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out'
+      ctx.lineWidth = 28
+    } else {
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.strokeStyle = tool === 'highlight' ? color + '55' : color
+      ctx.lineWidth   = tool === 'highlight' ? 18 : 3
+    }
+    ctx.lineCap  = 'round'
     ctx.lineJoin = 'round'
     ctx.lineTo(pos.x, pos.y)
     ctx.stroke()
-    lastPos.current = pos
+    ctx.beginPath()
+    ctx.moveTo(pos.x, pos.y)
+    lastPosRef.current = pos
   }
 
   function endDraw() {
-    setDrawing(false)
-    lastPos.current = null
+    drawingRef.current = false
+    lastPosRef.current = null
+    // Reset composite op after eraser
+    const ctx = canvasRef.current?.getContext('2d')
+    if (ctx) ctx.globalCompositeOperation = 'source-over'
   }
 
   function undo() {
+    if (!historyRef.current.length) return
     const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
-    if (history.length === 0) return
-    const last = history[history.length - 1]
+    const ctx    = canvas.getContext('2d')!
+    const last   = historyRef.current.pop()!
+    setHistLen(historyRef.current.length)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.putImageData(last, 0, 0)
-    setHistory((h) => h.slice(0, -1))
   }
 
   function clearBoard() {
     const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
+    const ctx    = canvas.getContext('2d')!
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    setHistory([])
+    historyRef.current = []
+    setHistLen(0)
   }
 
   const TOOLS = [
-    { id: 'pen'       as const, icon: 'ti-pencil',     title: 'Pen' },
-    { id: 'highlight' as const, icon: 'ti-highlight',  title: 'Highlight' },
-    { id: 'eraser'    as const, icon: 'ti-eraser',     title: 'Eraser' },
+    { id: 'pen'       as const, icon: 'ti-pencil',    title: 'Pen' },
+    { id: 'highlight' as const, icon: 'ti-highlight', title: 'Highlight' },
+    { id: 'eraser'    as const, icon: 'ti-eraser',    title: 'Eraser' },
   ]
   const COLORS = ['#1e293b', '#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6']
 
@@ -121,16 +163,28 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
               key={c}
               title={c}
               onClick={() => setColor(c)}
-              className={cn('h-5 w-5 rounded-full border-2 transition-transform hover:scale-110', color === c ? 'border-foreground scale-110' : 'border-transparent')}
+              className={cn(
+                'h-5 w-5 rounded-full border-2 transition-transform hover:scale-110',
+                color === c ? 'border-foreground scale-110' : 'border-transparent',
+              )}
               style={{ background: c }}
             />
           ))}
         </div>
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={undo} title="Undo" disabled={history.length === 0} className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-primary disabled:opacity-40">
+          <button
+            onClick={undo}
+            title="Undo"
+            disabled={histLen === 0}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-primary disabled:opacity-40"
+          >
             <i className="ti ti-arrow-back" aria-hidden="true" />
           </button>
-          <button onClick={clearBoard} title="Clear" className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive">
+          <button
+            onClick={clearBoard}
+            title="Clear board"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive"
+          >
             <i className="ti ti-trash" aria-hidden="true" />
           </button>
         </div>
@@ -140,13 +194,18 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
         </span>
       </div>
 
-      {/* Canvas */}
-      <div className="relative flex-1 overflow-hidden board-grid bg-background/60">
+      {/* Canvas container — fills remaining height */}
+      <div
+        ref={containerRef}
+        className="relative flex-1 overflow-hidden bg-white"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      >
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={800}
-          className="h-full w-full touch-none"
+          className="absolute inset-0 touch-none"
           style={{ cursor: tool === 'eraser' ? 'cell' : 'crosshair' }}
           onMouseDown={startDraw}
           onMouseMove={draw}
