@@ -25,7 +25,6 @@ import { StudyPlan } from '../study-plan'
 import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
 import { PostDiagnostic } from '../post-diagnostic'
-import { ScanQuestionModal } from './scan-question-modal'
 import { AchievementsView, AchievementToast } from './achievements-view'
 import { BrainView } from './brain-view'
 import { CommunityView } from './community-view'
@@ -34,7 +33,9 @@ import { SettingsView } from './settings-view'
 import { NotificationsView } from './notifications-view'
 import { PremiumView } from './premium-view'
 import { HelpView } from './help-view'
+import { InteractiveTutorView } from '../tutor/interactive-tutor-view'
 import { useGamification } from '@/lib/use-gamification'
+
 
 interface DashboardProps {
   triage: TriageData
@@ -74,7 +75,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   help: { title: 'Help Center', sub: 'FAQs, AI support, and feedback' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
-  asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
+  asktutor: { title: 'Interactive AI Tutor', sub: 'Your personal SAT tutor that adapts to how you think' },
 }
 
 export function Dashboard({
@@ -133,6 +134,9 @@ export function Dashboard({
     view === 'practice' ||
     view === 'flashcards'
 
+  // The AI Tutor view manages its own three-column layout
+  const isTutorView = view === 'asktutor'
+
   return (
     <div className="flex min-h-dvh bg-background">
       <Sidebar
@@ -163,7 +167,20 @@ export function Dashboard({
           </div>
         </header>
 
-        {/* Content */}
+        {/* Tutor view — full bleed, manages its own layout */}
+        {isTutorView && (
+          <main className="flex-1 overflow-hidden">
+            <InteractiveTutorView
+              triage={triage}
+              stats={statsApi.stats}
+              gamification={gamificationApi.state}
+              onNavigate={setView}
+            />
+          </main>
+        )}
+
+        {/* All other views */}
+        {!isTutorView && (
         <main className="flex-1 overflow-y-auto px-4 py-6 pb-24 sm:px-6 lg:pb-6">
           <div
             className={cn(
@@ -304,12 +321,9 @@ export function Dashboard({
               <MorningMode plan={response.plan} triage={triage} />
             )}
 
-            {view === 'asktutor' && (
-              <ScanQuestionModal theme={theme} />
-            )}
-
           </div>
         </main>
+        )}
       </div>
 
       <MobileNav active={view} onNavigate={setView} theme={theme} />
