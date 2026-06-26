@@ -7,18 +7,13 @@ import type { ChatMessage, LivePoll } from '@/lib/room-types'
 interface Props {
   messages: ChatMessage[]
   poll: LivePoll | null
+  roomCode: string
 }
 
 const REACTIONS = ['👍', '💡', '❓', '🔥', '✅']
 
-const AI_SUGGESTIONS = [
-  'Try substitution for this system.',
-  'Remember: vertex = −b / 2a',
-  'Draw the number line to visualise.',
-]
-
-export function ChatPanel({ messages: seedMessages, poll }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>(seedMessages)
+export function ChatPanel({ messages: initialMessages, poll, roomCode }: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState('')
   const [votedOption, setVotedOption] = useState<string | null>(null)
   const [pollOptions, setPollOptions] = useState(poll?.options ?? [])
@@ -63,73 +58,82 @@ export function ChatPanel({ messages: seedMessages, poll }: Props) {
       <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
         <p className="text-sm font-bold text-foreground">Live chat</p>
         <div className="flex items-center gap-1">
-          <button className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-primary">
+          <button
+            title="Pin message"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+          >
             <i className="ti ti-pin text-sm" aria-hidden="true" />
           </button>
-          <button className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-primary">
+          <button
+            title="Create poll"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+          >
             <i className="ti ti-chart-bar text-sm" aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* AI suggestions */}
-      <div className="shrink-0 border-b border-border px-3 py-2">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          AI suggestions
-        </p>
-        <div className="flex flex-col gap-1">
-          {AI_SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              className="flex items-start gap-1.5 rounded-xl px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
-            >
-              <i className="ti ti-sparkles mt-0.5 shrink-0 text-xs text-primary" aria-hidden="true" />
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Messages */}
+      {/* Messages — or empty state inviting people to join */}
       <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2.5">
-        {messages.map((msg) => (
-          <div key={msg.id} className={cn('rise-in flex gap-2', msg.isAi && 'flex-row')}>
-            <div
-              className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white',
-                msg.authorColor,
-              )}
-            >
-              {msg.authorInitial}
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 h-full text-center py-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary">
+              <i className="ti ti-message-circle-2 text-2xl text-primary" aria-hidden="true" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-1.5">
-                <span className={cn('text-xs font-semibold', msg.isAi ? 'text-primary' : 'text-foreground')}>
-                  {msg.authorName}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{msg.ts}</span>
-                {msg.pinned && (
-                  <i className="ti ti-pin-filled text-[10px] text-primary" title="Pinned" aria-hidden="true" />
-                )}
-              </div>
-              <p className={cn(
-                'mt-0.5 rounded-2xl px-3 py-2 text-sm leading-relaxed',
-                msg.isAi
-                  ? 'bg-secondary text-foreground'
-                  : msg.authorId === 'me'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground',
-              )}>
-                {msg.text}
+            <div>
+              <p className="text-sm font-semibold text-foreground">No messages yet</p>
+              <p className="mt-1 text-xs text-muted-foreground text-pretty">
+                Share the room code{' '}
+                <button
+                  onClick={() => navigator.clipboard.writeText(roomCode).catch(() => {})}
+                  className="font-mono font-bold text-primary hover:underline"
+                >
+                  {roomCode}
+                </button>{' '}
+                to invite friends, then start chatting.
               </p>
             </div>
           </div>
-        ))}
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className={cn('rise-in flex gap-2', msg.isAi && 'flex-row')}>
+              <div
+                className={cn(
+                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white',
+                  msg.authorColor,
+                )}
+              >
+                {msg.authorInitial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-1.5">
+                  <span className={cn('text-xs font-semibold', msg.isAi ? 'text-primary' : 'text-foreground')}>
+                    {msg.authorName}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{msg.ts}</span>
+                  {msg.pinned && (
+                    <i className="ti ti-pin-filled text-[10px] text-primary" title="Pinned" aria-hidden="true" />
+                  )}
+                </div>
+                <p className={cn(
+                  'mt-0.5 rounded-2xl px-3 py-2 text-sm leading-relaxed',
+                  msg.isAi
+                    ? 'bg-secondary text-foreground'
+                    : msg.authorId === 'me'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground',
+                )}>
+                  {msg.text}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Live poll */}
-      {poll && (
+      {/* Live poll — only shown if one exists */}
+      {poll && pollOptions.length > 0 && (
         <div className="shrink-0 border-t border-border px-3 py-3">
           <p className="mb-2 text-xs font-semibold text-foreground">{poll.question}</p>
           <div className="flex flex-col gap-1.5">

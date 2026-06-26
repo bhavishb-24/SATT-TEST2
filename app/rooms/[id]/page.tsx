@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ParticipantsPanel } from '@/components/rooms/participants-panel'
 import { WorkspacePanel }    from '@/components/rooms/workspace-panel'
 import { ChatPanel }         from '@/components/rooms/chat-panel'
-import { SEED_ROOM }         from '@/lib/room-types'
-import type { WorkspaceTab } from '@/lib/room-types'
+import type { WorkspaceTab, StudyRoom } from '@/lib/room-types'
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Beginner:     'bg-emerald-50 text-emerald-700',
@@ -15,12 +14,59 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   Advanced:     'bg-red-50 text-red-700',
 }
 
-export default function RoomPage() {
-  const [room]       = useState(SEED_ROOM)
+/**
+ * In production this room state would come from a real-time backend
+ * (e.g. Neon + Supabase Realtime / Ably / Pusher). For now the room
+ * initialises with only the AI tutor present and no messages, which is
+ * the honest state before any real participants join.
+ */
+function buildEmptyRoom(id: string): StudyRoom {
+  return {
+    id,
+    name: 'Study Room',
+    topic: '',
+    exam: 'SAT',
+    difficulty: 'Intermediate',
+    online: 1,
+    maxParticipants: 10,
+    scheduledTime: 'Now',
+    emoji: '📚',
+    color: '#0e8a6a',
+    visibility: 'public',
+    code: id.toUpperCase().slice(0, 8),
+    hostId: 'me',
+    description: '',
+    participants_list: [
+      {
+        id: 'ai',
+        name: 'Sage AI',
+        initial: 'S',
+        color: 'bg-primary',
+        level: 99,
+        xp: 0,
+        status: 'ready',
+        speaking: false,
+        handRaised: false,
+        accuracy: 100,
+        questionsAnswered: 0,
+      },
+    ],
+    messages: [],
+    aiStatus: 'idle',
+    activeTab: 'whiteboard',
+    poll: null,
+    teamQuestProgress: 0,
+    teamQuestLabel: 'Solve 100 questions together',
+    sessionStartedAt: new Date().toISOString(),
+  }
+}
+
+export default function RoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [room]       = useState<StudyRoom>(() => buildEmptyRoom(id))
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('whiteboard')
   const [muted,  setMuted]  = useState(false)
   const [camOff, setCamOff] = useState(true)
-  // Mobile panel: 'participants' | 'workspace' | 'chat'
   const [mobilePanel, setMobilePanel] = useState<'participants' | 'workspace' | 'chat'>('workspace')
 
   return (
@@ -40,7 +86,6 @@ export default function RoomPage() {
           </span>
         </div>
 
-        {/* Live count */}
         <div className="hidden items-center gap-1.5 sm:flex">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -49,7 +94,6 @@ export default function RoomPage() {
           <span className="text-xs font-semibold text-foreground">{room.online} online</span>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => setMuted((m) => !m)}
@@ -72,13 +116,14 @@ export default function RoomPage() {
             <i className={cn('ti', camOff ? 'ti-video-off' : 'ti-video')} aria-hidden="true" />
           </button>
           <button
-            title="Hand raise"
+            title="Raise hand"
             className="flex h-8 w-8 items-center justify-center rounded-xl text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
           >
             <i className="ti ti-hand-stop" aria-hidden="true" />
           </button>
           <button
-            title="Share code"
+            title="Copy room code"
+            onClick={() => navigator.clipboard.writeText(room.code).catch(() => {})}
             className="hidden h-8 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-mono font-bold text-primary transition-colors hover:bg-secondary sm:flex"
           >
             <i className="ti ti-copy text-xs" aria-hidden="true" />
@@ -96,10 +141,10 @@ export default function RoomPage() {
 
       {/* ── Mobile tab switcher ─────────────────────────────────────── */}
       <div className="flex shrink-0 border-b border-border bg-card lg:hidden">
-        {([ 
-          { id: 'participants' as const, label: 'People',    icon: 'ti-users' },
-          { id: 'workspace'   as const, label: 'Board',     icon: 'ti-chalkboard' },
-          { id: 'chat'        as const, label: 'Chat',      icon: 'ti-message-circle-2' },
+        {([
+          { id: 'participants' as const, label: 'People',  icon: 'ti-users' },
+          { id: 'workspace'   as const, label: 'Board',   icon: 'ti-chalkboard' },
+          { id: 'chat'        as const, label: 'Chat',    icon: 'ti-message-circle-2' },
         ] as const).map((p) => (
           <button
             key={p.id}
@@ -151,7 +196,7 @@ export default function RoomPage() {
           'w-full shrink-0 overflow-hidden lg:block lg:w-72',
           mobilePanel === 'chat' ? 'block' : 'hidden',
         )}>
-          <ChatPanel messages={room.messages} poll={room.poll} />
+          <ChatPanel messages={room.messages} poll={room.poll} roomCode={room.code} />
         </div>
       </main>
     </div>

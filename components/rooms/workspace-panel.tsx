@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import type { WorkspaceTab, AiStatus } from '@/lib/room-types'
 
@@ -19,46 +18,14 @@ const TABS: { id: WorkspaceTab; label: string; icon: string }[] = [
   { id: 'notes',     label: 'Notes',      icon: 'ti-notebook' },
 ]
 
-// ── Minimal shared whiteboard UI ─────────────────────────────────────────────
-// Renders an animated dot-grid canvas with a fake AI stroke illustration,
-// live cursor dots, and a toolbar. No actual canvas drawing in this milestone.
-
-interface Cursor {
-  id: string
-  name: string
-  color: string
-  x: number
-  y: number
-}
-
-const SEED_CURSORS: Cursor[] = [
-  { id: 'p2', name: 'Priya',  color: '#3b82f6', x: 42, y: 28 },
-  { id: 'p1', name: 'Jordan', color: '#10b981', x: 61, y: 55 },
-]
+// ── Whiteboard ───────────────────────────────────────────────────────────────
+// Empty canvas with drawing toolbar. Cursors and shared strokes
+// are populated in real time once a multiplayer backend is connected.
 
 function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
-  const [cursors, setCursors] = useState<Cursor[]>(SEED_CURSORS)
-  const animRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Gently drift the cursor positions for the live feel
-  useEffect(() => {
-    function drift() {
-      setCursors((prev) =>
-        prev.map((c) => ({
-          ...c,
-          x: Math.min(90, Math.max(5, c.x + (Math.random() - 0.5) * 2)),
-          y: Math.min(85, Math.max(5, c.y + (Math.random() - 0.5) * 2)),
-        })),
-      )
-      animRef.current = setTimeout(drift, 1200)
-    }
-    animRef.current = setTimeout(drift, 1200)
-    return () => { if (animRef.current) clearTimeout(animRef.current) }
-  }, [])
-
   return (
     <div className="flex h-full flex-col">
-      {/* toolbar */}
+      {/* Toolbar */}
       <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-4 py-2">
         {[
           { icon: 'ti-pencil',     title: 'Draw' },
@@ -85,73 +52,16 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
         </div>
       </div>
 
-      {/* board surface */}
+      {/* Board surface — empty until participants join and draw */}
       <div className="relative flex-1 overflow-hidden board-grid bg-background/60">
 
-        {/* AI drawing illustration */}
-        <svg
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          viewBox="0 0 800 480"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
-          {/* Axis lines */}
-          <line x1="120" y1="380" x2="680" y2="380" stroke="#0e8a6a" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-          <line x1="120" y1="380" x2="120" y2="80" stroke="#0e8a6a" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-
-          {/* Parabola path */}
-          <path
-            d="M 160 340 Q 400 30 640 340"
-            fill="none"
-            stroke="#0e8a6a"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            pathLength="100"
-            className="ai-stroke"
-            style={{ strokeDasharray: 100, strokeDashoffset: 0 }}
-          />
-
-          {/* Vertex dot */}
-          <circle cx="400" cy="56" r="5" fill="#0e8a6a" opacity="0.8" className="ai-ink" />
-
-          {/* Labels */}
-          <text x="410" y="52" fontSize="13" fill="#0e8a6a" fontFamily="'Inter', sans-serif" className="ai-ink" opacity="0.9">
-            vertex
-          </text>
-          <text x="690" y="385" fontSize="13" fill="#0e8a6a" fontFamily="'Inter', sans-serif" opacity="0.7">x</text>
-          <text x="110" y="75" fontSize="13" fill="#0e8a6a" fontFamily="'Inter', sans-serif" opacity="0.7">y</text>
-
-          {/* Equation label */}
-          <text x="460" y="220" fontSize="18" fill="#1a1a1a" fontFamily="'Instrument Serif', serif" fontWeight="bold" opacity="0.85">
-            y = ax² + bx + c
-          </text>
-          <text x="460" y="248" fontSize="13" fill="#6f6f6b" fontFamily="'Inter', sans-serif">
-            opens up when a {">"} 0
-          </text>
-
-          {/* AI cursor dot */}
-          <circle cx="400" cy="56" r="8" fill="none" stroke="#0e8a6a" strokeWidth="1.5" className="ink-pulse" opacity="0.6" />
-        </svg>
-
-        {/* Live cursors */}
-        {cursors.map((c) => (
-          <div
-            key={c.id}
-            className="pointer-events-none absolute transition-all duration-[1200ms] ease-in-out"
-            style={{ left: `${c.x}%`, top: `${c.y}%` }}
-          >
-            {/* cursor arrow */}
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M1 1 L14 6 L8 8 L6 14 Z" fill={c.color} stroke="white" strokeWidth="1" />
-            </svg>
-            <span
-              className="mt-0.5 block rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-              style={{ background: c.color }}
-            >
-              {c.name}
-            </span>
-          </div>
-        ))}
+        {/* Empty state — shown when no one has drawn yet */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center pointer-events-none select-none">
+          <i className="ti ti-pencil-question text-4xl text-border" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground/60">
+            The whiteboard is empty — start drawing or ask the AI to explain a topic.
+          </p>
+        </div>
 
         {/* AI tutor status overlay */}
         {aiStatus !== 'idle' && (
@@ -170,50 +80,9 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
   )
 }
 
-function QuestionsTab() {
-  return (
-    <div className="flex h-full flex-col gap-4 p-5 overflow-y-auto">
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Group Practice · Question 4 of 10</p>
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <p className="mb-1 text-xs font-medium text-primary">SAT Math · Algebra</p>
-        <p className="font-serif text-lg font-bold text-foreground leading-snug">
-          If 3x − 7 = 2(x + 5), what is the value of x?
-        </p>
-        <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
-          {[
-            { label: 'A', value: '7' },
-            { label: 'B', value: '12' },
-            { label: 'C', value: '17' },
-            { label: 'D', value: '3' },
-          ].map((opt) => (
-            <button
-              key={opt.label}
-              className="flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-left transition-all hover:border-primary/40 hover:bg-secondary"
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-xs font-bold text-muted-foreground">
-                {opt.label}
-              </span>
-              <span className="text-sm font-medium text-foreground">{opt.value}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="flex items-center justify-between rounded-2xl border border-border bg-muted/40 px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <i className="ti ti-clock text-primary" aria-hidden="true" />
-          <span className="font-mono font-bold text-foreground tabular-nums">0:42</span>
-          <span>remaining</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <i className="ti ti-users text-xs text-primary" aria-hidden="true" />
-          3 / 4 answered
-        </div>
-      </div>
-    </div>
-  )
-}
+// ── Placeholder for future tabs ───────────────────────────────────────────────
 
-function PlaceholderTab({ label }: { label: string }) {
+function PlaceholderTab({ label, description }: { label: string; description: string }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-secondary">
@@ -221,9 +90,7 @@ function PlaceholderTab({ label }: { label: string }) {
       </div>
       <div>
         <p className="font-serif text-xl font-bold text-foreground">{label}</p>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          The AI tutor will populate this when you need it. Start by asking a question in chat.
-        </p>
+        <p className="mt-1.5 text-sm text-muted-foreground text-pretty">{description}</p>
       </div>
     </div>
   )
@@ -263,10 +130,30 @@ export function WorkspacePanel({ activeTab, onTabChange, aiStatus, roomName }: P
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'whiteboard' && <WhiteboardTab aiStatus={aiStatus} />}
-        {activeTab === 'questions'  && <QuestionsTab />}
-        {activeTab === 'flashcards' && <PlaceholderTab label="Group Flashcards" />}
-        {activeTab === 'practice'   && <PlaceholderTab label="Practice Test" />}
-        {activeTab === 'notes'      && <PlaceholderTab label="Shared Notes" />}
+        {activeTab === 'questions'  && (
+          <PlaceholderTab
+            label="Group Questions"
+            description="Questions will appear here once the AI generates them for your session."
+          />
+        )}
+        {activeTab === 'flashcards' && (
+          <PlaceholderTab
+            label="Group Flashcards"
+            description="The AI will create shared flashcards based on what the group is studying."
+          />
+        )}
+        {activeTab === 'practice'   && (
+          <PlaceholderTab
+            label="Practice Test"
+            description="Start a timed group practice round — the AI scores and reviews everyone together."
+          />
+        )}
+        {activeTab === 'notes'      && (
+          <PlaceholderTab
+            label="Shared Notes"
+            description="Notes typed here are visible to everyone in the room in real time."
+          />
+        )}
       </div>
     </div>
   )

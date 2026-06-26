@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import type { RoomParticipant, AiStatus } from '@/lib/room-types'
 
@@ -42,6 +43,23 @@ function VoiceWave({ active }: { active: boolean }) {
   )
 }
 
+function useRelativeTime(isoString: string) {
+  const [label, setLabel] = useState('just started')
+  useEffect(() => {
+    function update() {
+      const diffSec = Math.round((Date.now() - new Date(isoString).getTime()) / 1000)
+      if (diffSec < 60)  { setLabel('just started'); return }
+      const mins = Math.floor(diffSec / 60)
+      if (mins < 60)     { setLabel(`${mins}m ago`); return }
+      setLabel(`${Math.floor(mins / 60)}h ago`)
+    }
+    update()
+    const id = setInterval(update, 30_000)
+    return () => clearInterval(id)
+  }, [isoString])
+  return label
+}
+
 export function ParticipantsPanel({
   participants,
   aiStatus,
@@ -52,14 +70,21 @@ export function ParticipantsPanel({
 }: Props) {
   const aiParticipant = participants.find((p) => p.id === 'ai')
   const students = participants.filter((p) => p.id !== 'ai')
+  const relativeTime = useRelativeTime(sessionStartedAt)
 
   return (
     <aside className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 
       {/* Session info chip */}
       <div className="flex items-center justify-between rounded-2xl border border-border bg-muted/40 px-3 py-2 text-xs">
-        <span className="font-medium text-muted-foreground">Started {sessionStartedAt}</span>
-        <span className="rounded-full bg-secondary px-2 py-0.5 font-mono font-bold text-primary">{roomCode}</span>
+        <span className="font-medium text-muted-foreground">Started {relativeTime}</span>
+        <button
+          onClick={() => navigator.clipboard.writeText(roomCode).catch(() => {})}
+          title="Copy room code"
+          className="rounded-full bg-secondary px-2 py-0.5 font-mono font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+        >
+          {roomCode}
+        </button>
       </div>
 
       {/* AI Tutor card — always pinned at top */}
@@ -124,8 +149,13 @@ export function ParticipantsPanel({
       {/* Participants */}
       <div className="flex-1">
         <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Students · {students.length}
+          {students.length > 0 ? `Students · ${students.length}` : 'Students'}
         </p>
+        {students.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-center text-xs text-muted-foreground">
+            No one else has joined yet. Share the room code to invite friends.
+          </p>
+        )}
         <ul className="flex flex-col gap-1.5">
           {students.map((p) => (
             <li
