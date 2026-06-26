@@ -129,6 +129,7 @@ export type DashboardView =
   | 'progress'
   | 'achievements'
   | 'brain'
+  | 'community'
   | 'checklist'
   | 'morning'
   | 'asktutor'

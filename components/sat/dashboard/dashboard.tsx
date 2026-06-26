@@ -28,6 +28,7 @@ import { PostDiagnostic } from '../post-diagnostic'
 import { ScanQuestionModal } from './scan-question-modal'
 import { AchievementsView, AchievementToast } from './achievements-view'
 import { BrainView } from './brain-view'
+import { CommunityView } from './community-view'
 import { useGamification } from '@/lib/use-gamification'
 
 interface DashboardProps {
@@ -60,6 +61,7 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   progress: { title: 'Progress', sub: 'Track what you have done' },
   achievements: { title: 'Achievements', sub: 'XP, badges, quests, leagues & your journey' },
   brain: { title: 'AI Learning Brain\u2122', sub: 'Your personalized learning intelligence' },
+  community: { title: 'Community Question Bank', sub: 'Discover, create, and share SAT questions' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
   asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
@@ -225,6 +227,13 @@ export function Dashboard({
                 stats={statsApi.stats}
                 gamification={gamificationApi.state}
                 triage={triage}
+              />
+            )}
+
+            {view === 'community' && (
+              <CommunityView
+                weakAreas={triage.weakAreas}
+                stats={statsApi.stats}
               />
             )}
 
