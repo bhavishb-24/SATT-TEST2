@@ -73,11 +73,11 @@ export async function createRoom(params: {
      RETURNING *`,
     [code, params.name, params.exam, params.topic, params.host_id, params.host_name, params.max_members],
   )
-  // Also add the host as first member
+  // Also add the host as first member with fresh last_seen so they are immediately visible
   await pool.query(
-    `INSERT INTO room_members (room_id, user_id, user_name)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (room_id, user_id) DO NOTHING`,
+    `INSERT INTO room_members (room_id, user_id, user_name, last_seen)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (room_id, user_id) DO UPDATE SET last_seen = now()`,
     [rows[0].id, params.host_id, params.host_name],
   )
   return rows[0]

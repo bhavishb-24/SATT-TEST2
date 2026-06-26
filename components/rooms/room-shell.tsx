@@ -107,7 +107,6 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
       const res  = await fetch('/api/rooms/members', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        cache:   'no-store',
         body: JSON.stringify({ room_id: id, user_id: me.id, user_name: me.name }),
       })
       const data = await res.json()

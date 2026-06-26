@@ -34,8 +34,11 @@ function newGuestId(): string {
 /**
  * Returns a stable room identity.
  * - If a real signed-in user is supplied, that is always used.
- * - Otherwise a persistent guest identity is read from (or written to)
- *   localStorage so the same browser keeps the same id across navigations.
+ * - Otherwise a per-tab guest identity is read from (or written to)
+ *   sessionStorage. Using sessionStorage (not localStorage) is critical:
+ *   two browser tabs sharing localStorage would get the same guest id,
+ *   so both heartbeats would upsert the same row and each tab would only
+ *   ever see one member — itself.
  */
 export function getRoomIdentity(user?: { id: string; name: string } | null): RoomIdentity {
   if (user?.id) return { id: user.id, name: user.name }
@@ -44,8 +47,9 @@ export function getRoomIdentity(user?: { id: string; name: string } | null): Roo
     return { id: newGuestId(), name: randomName() }
   }
 
+  // Per-tab storage so two tabs always have distinct identities.
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = sessionStorage.getItem(KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as RoomIdentity
       if (parsed?.id && parsed?.name) return parsed
@@ -53,6 +57,6 @@ export function getRoomIdentity(user?: { id: string; name: string } | null): Roo
   } catch { /* ignore corrupt storage */ }
 
   const identity: RoomIdentity = { id: newGuestId(), name: randomName() }
-  try { localStorage.setItem(KEY, JSON.stringify(identity)) } catch { /* ignore */ }
+  try { sessionStorage.setItem(KEY, JSON.stringify(identity)) } catch { /* ignore */ }
   return identity
 }
