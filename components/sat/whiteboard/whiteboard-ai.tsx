@@ -60,6 +60,8 @@ export function WhiteboardAi() {
 
   // Live AI worked-solution for a student question (null = use the demo triangle).
   const [solution, setSolution] = useState<SolveResult | null>(null)
+  const solutionRef = useRef<SolveResult | null>(null)
+  solutionRef.current = solution
 
   // How many ink steps the current lesson has.
   const [totalSteps, setTotalSteps] = useState(DEMO_STEPS)
@@ -92,6 +94,15 @@ export function WhiteboardAi() {
 
   // "Check my work": AI vision review of the student's own drawing.
   const [reviewing, setReviewing] = useState(false)
+
+  // "Ask about this": the AI looks at the marked region and draws a fresh
+  // step-by-step breakdown off to the side of the infinite canvas.
+  const [exploring, setExploring] = useState(false)
+  const [breakdown, setBreakdown] = useState<SolveResult | null>(null)
+  const [breakdownStep, setBreakdownStep] = useState(0)
+  const breakdownStepRef = useRef(0)
+  breakdownStepRef.current = breakdownStep
+  const breakdownToken = useRef(0)
 
   // Practice mode ("Your Turn")
   const [practice, setPractice] = useState<PracticeProblem | null>(null)
@@ -504,6 +515,111 @@ export function WhiteboardAi() {
     [reviewing, addMessage, streamAssistant, recordMemory],
   )
 
+  // Reveal a side-canvas breakdown step by step, narrating each line. Uses its
+  // own token so it never plays at the same time as the main lesson narration.
+  const runBreakdownReveal = useCallback(
+    async (data: SolveResult) => {
+      const token = ++breakdownToken.current
+      setBreakdownStep(0)
+      breakdownStepRef.current = 0
+      if (data.intro) {
+        const spoke = await narration.narrate(data.intro)
+        if (breakdownToken.current !== token) return
+        if (!spoke) await wait(1400)
+        else await wait(250)
+      }
+      for (let s = 1; s <= data.steps.length; s++) {
+        if (breakdownToken.current !== token) return
+        setBreakdownStep(s)
+        breakdownStepRef.current = s
+        const spoke = await narration.narrate(data.steps[s - 1]?.say ?? '')
+        if (breakdownToken.current !== token) return
+        if (!spoke) await wait(2000)
+        else await wait(300)
+      }
+    },
+    [narration],
+  )
+
+  // "Ask about this" — the AI sees a composite screenshot of the board, finds
+  // the region the student marked, and draws a fresh breakdown off to the side.
+  const handleAskAboutThis = useCallback(
+    async (imageDataUrl: string | null) => {
+      if (exploring) return
+      if (!imageDataUrl) {
+        addMessage({
+          role: 'assistant',
+          content:
+            "Circle, underline, highlight, or draw an arrow to whatever you want me to dig into \u2014 then tap **Ask about this** and I\u2019ll break down exactly that part on the side.",
+        })
+        return
+      }
+      // Stop any main lesson narration so the two voices never overlap.
+      cancelPlayback()
+      breakdownToken.current++
+      addMessage({ role: 'student', content: 'Can you break down the part I marked?' })
+      setExploring(true)
+
+      // Text grounding so the model has context beyond the pixels.
+      const sol = solutionRef.current
+      const currentSolution = sol
+        ? `Title: ${sol.title}\nSteps:\n${sol.steps
+            .map((s, i) => `${i + 1}. ${s.board}`)
+            .join('\n')}\nAnswer: ${sol.answer}`
+        : `Worked steps:\n${aiLinesRef.current.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+
+      try {
+        const res = await fetch('/api/whiteboard-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'explore',
+            persona: personaRef.current,
+            question: activeQuestionRef.current,
+            imageDataUrl,
+            currentSolution,
+          }),
+        })
+        if (!res.ok) throw new Error(`explore failed: ${res.status}`)
+        const data = (await res.json()) as SolveResult
+        if (!Array.isArray(data.steps) || data.steps.length === 0) throw new Error('no steps')
+
+        setBreakdown(data)
+        addMessage({
+          role: 'assistant',
+          content: data.focus
+            ? `Good question \u2014 let me break down **${data.focus}** over on the side of the board.`
+            : "Let me break that down for you on the side of the board.",
+        })
+        recordMemory({
+          icon: 'ti-zoom-scan',
+          text: `Asked about: ${data.focus ?? 'a marked region'}`,
+          tone: 'good',
+        })
+        setExploring(false)
+        await runBreakdownReveal(data)
+      } catch (err) {
+        console.log('[v0] explore error:', err)
+        setExploring(false)
+        addMessage({
+          role: 'assistant',
+          content:
+            "I couldn\u2019t quite make out what you marked just now. Try circling one specific part a little more clearly, then tap **Ask about this** again.",
+        })
+      }
+    },
+    [exploring, addMessage, cancelPlayback, recordMemory, runBreakdownReveal],
+  )
+
+  // Dismiss the side breakdown; the board pans back to the main work.
+  const handleDismissBreakdown = useCallback(() => {
+    breakdownToken.current++
+    narration.stop()
+    setBreakdown(null)
+    setBreakdownStep(0)
+    breakdownStepRef.current = 0
+  }, [narration])
+
   // Practice mode.
   const handleStartPractice = useCallback(async () => {
     setPracticeLoading(true)
@@ -628,6 +744,12 @@ export function WhiteboardAi() {
   // Return to the question-entry screen to work a brand-new question.
   const handleNewQuestion = useCallback(() => {
     cancelPlayback()
+    breakdownToken.current++
+    narration.stop()
+    setBreakdown(null)
+    setBreakdownStep(0)
+    breakdownStepRef.current = 0
+    setExploring(false)
     setPhase('input')
     setSolution(null)
     setAiStep(0)
@@ -637,7 +759,7 @@ export function WhiteboardAi() {
     setSummary(null)
     setQuestionInput('')
     setMessages([...OPENING_MESSAGES])
-  }, [cancelPlayback])
+  }, [cancelPlayback, narration])
 
   const handleUpload = useCallback(() => {
     addMessage({ role: 'student', content: '📎 Uploaded a new SAT question.' })
@@ -726,6 +848,11 @@ export function WhiteboardAi() {
             onStepTo={handleStepTo}
             onReviewDrawing={handleReviewDrawing}
             reviewing={reviewing}
+            onAskAboutThis={handleAskAboutThis}
+            exploring={exploring}
+            breakdown={breakdown}
+            breakdownStep={breakdownStep}
+            onDismissBreakdown={handleDismissBreakdown}
           />
           {phase === 'input' && (
             <QuestionEntry

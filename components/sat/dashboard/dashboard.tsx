@@ -26,6 +26,15 @@ import { Checklist } from '../checklist'
 import { MorningMode } from '../morning-mode'
 import { PostDiagnostic } from '../post-diagnostic'
 import { ScanQuestionModal } from './scan-question-modal'
+import { AchievementsView, AchievementToast } from './achievements-view'
+import { BrainView } from './brain-view'
+import { CommunityView } from './community-view'
+import { ProfileView } from './profile-view'
+import { SettingsView } from './settings-view'
+import { NotificationsView } from './notifications-view'
+import { PremiumView } from './premium-view'
+import { HelpView } from './help-view'
+import { useGamification } from '@/lib/use-gamification'
 
 interface DashboardProps {
   triage: TriageData
@@ -55,6 +64,14 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   mocktest: { title: 'Mock Tests', sub: 'Full-length SAT-style practice tests' },
   flashcards: { title: 'Flashcards', sub: 'Quick recall review' },
   progress: { title: 'Progress', sub: 'Track what you have done' },
+  achievements: { title: 'Achievements', sub: 'XP, badges, quests, leagues & your journey' },
+  brain: { title: 'AI Learning Brain\u2122', sub: 'Your personalized learning intelligence' },
+  community: { title: 'Community Question Bank', sub: 'Discover, create, and share SAT questions' },
+  profile: { title: 'My Profile', sub: 'Your learning identity and achievements' },
+  settings: { title: 'Settings', sub: 'Account, preferences, and privacy' },
+  notifications: { title: 'Notifications', sub: 'Activity, reminders, and updates' },
+  premium: { title: 'SAT Sage Premium', sub: 'Unlock the full experience' },
+  help: { title: 'Help Center', sub: 'FAQs, AI support, and feedback' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
   asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
@@ -83,6 +100,16 @@ export function Dashboard({
   const [tourActive, setTourActive] = useState(true)
   const finishTour = useCallback(() => setTourActive(false), [])
   const theme = getPanicTheme(triage.panic)
+
+  // Gamification system
+  const gamificationApi = useGamification({
+    practiceCorrect: statsApi.stats.practiceCorrect,
+    practiceAnswered: statsApi.stats.practiceAnswered,
+    flashcardsKnown: statsApi.stats.flashcardsKnown,
+    flashcardsReviewed: statsApi.stats.flashcardsReviewed,
+    topicsCompleted: statsApi.stats.topicsCompleted,
+    focusSeconds: statsApi.stats.focusSeconds,
+  })
   const countdown = useCountdown(triage.testStartTime)
   const timeZone = useTimeZone()
   const times = deriveTimes(triage.testStartTime)
@@ -94,8 +121,7 @@ export function Dashboard({
   const meta = VIEW_TITLES[view]
   const centeredView =
     view === 'practice' ||
-    view === 'flashcards' ||
-    view === 'progress'
+    view === 'flashcards'
 
   return (
     <div className="flex min-h-dvh bg-background">
@@ -146,6 +172,7 @@ export function Dashboard({
                 wakeLabel={wakeLabel}
                 timeZoneLabel={timeZone?.label ?? null}
                 onNavigate={setView}
+                gamification={gamificationApi.state}
               />
             )}
 
@@ -169,24 +196,86 @@ export function Dashboard({
               <PracticeView
                 triage={triage}
                 theme={theme}
-                onAnswer={statsApi.recordPractice}
+                onAnswer={(section, correct) => {
+                  statsApi.recordPractice(section, correct)
+                  gamificationApi.recordPracticeAnswer()
+                }}
               />
             )}
 
             {view === 'mocktest' && (
-              <MockTestView theme={theme} onAnswer={statsApi.recordPractice} />
+              <MockTestView
+                theme={theme}
+                onAnswer={(section, correct) => {
+                  statsApi.recordPractice(section, correct)
+                  gamificationApi.recordPracticeAnswer()
+                }}
+              />
             )}
 
             {view === 'flashcards' && (
               <FlashcardsView
                 theme={theme}
-                onReview={statsApi.recordFlashcard}
+                onReview={(known) => {
+                  statsApi.recordFlashcard(known)
+                  gamificationApi.recordFlashcardReview(known)
+                }}
                 weakAreas={triage.weakAreas}
               />
             )}
 
             {view === 'progress' && (
               <ProgressView stats={statsApi.stats} theme={theme} />
+            )}
+
+            {view === 'achievements' && (
+              <AchievementsView api={gamificationApi} />
+            )}
+
+            {view === 'brain' && (
+              <BrainView
+                stats={statsApi.stats}
+                gamification={gamificationApi.state}
+                triage={triage}
+              />
+            )}
+
+            {view === 'community' && (
+              <CommunityView
+                weakAreas={triage.weakAreas}
+                stats={statsApi.stats}
+              />
+            )}
+
+            {view === 'profile' && (
+              <ProfileView
+                triage={triage}
+                stats={statsApi.stats}
+                gamification={gamificationApi.state}
+                onNavigate={setView}
+              />
+            )}
+
+            {view === 'settings' && (
+              <SettingsView
+                triage={triage}
+                onNavigate={setView}
+              />
+            )}
+
+            {view === 'notifications' && (
+              <NotificationsView
+                stats={statsApi.stats}
+                gamification={gamificationApi.state}
+              />
+            )}
+
+            {view === 'premium' && (
+              <PremiumView onNavigate={setView} />
+            )}
+
+            {view === 'help' && (
+              <HelpView onNavigate={setView} />
             )}
 
             {view === 'checklist' && (
@@ -213,6 +302,19 @@ export function Dashboard({
       </div>
 
       <MobileNav active={view} onNavigate={setView} theme={theme} />
+
+      {/* Achievement unlock toasts */}
+      {gamificationApi.state.newlyUnlocked.length > 0 && (
+        <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2 lg:bottom-6 lg:right-6 pointer-events-none">
+          {gamificationApi.state.newlyUnlocked.map((achievement) => (
+            <AchievementToast
+              key={achievement.id}
+              achievement={achievement}
+              onDismiss={gamificationApi.dismissNewlyUnlocked}
+            />
+          ))}
+        </div>
+      )}
 
       {tourActive && <DashboardTour onNavigate={setView} onFinish={finishTour} />}
 

@@ -127,9 +127,17 @@ export type DashboardView =
   | 'mocktest'
   | 'flashcards'
   | 'progress'
+  | 'achievements'
+  | 'brain'
+  | 'community'
   | 'checklist'
   | 'morning'
   | 'asktutor'
+  | 'profile'
+  | 'settings'
+  | 'notifications'
+  | 'premium'
+  | 'help'
 
 export interface AppStats {
   topicsCompleted: number

@@ -18,7 +18,15 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'practice', label: 'Practice', icon: 'ti-pencil-question' },
   { view: 'mocktest', label: 'Mock Tests', icon: 'ti-clipboard-check' },
   { view: 'flashcards', label: 'Flashcards', icon: 'ti-cards' },
+  { view: 'achievements', label: 'Achievements', icon: 'ti-trophy' },
+  { view: 'brain', label: 'AI Brain\u2122', icon: 'ti-brain' },
+  { view: 'community', label: 'Question Bank', icon: 'ti-stack-2' },
   { view: 'checklist', label: 'Night Checklist', icon: 'ti-checklist' },
+  { view: 'profile', label: 'Profile', icon: 'ti-user-circle' },
+  { view: 'notifications', label: 'Notifications', icon: 'ti-bell' },
+  { view: 'premium', label: 'Premium', icon: 'ti-crown' },
+  { view: 'settings', label: 'Settings', icon: 'ti-settings' },
+  { view: 'help', label: 'Help', icon: 'ti-help-circle' },
   { view: 'morning', label: 'Morning Mode', icon: 'ti-sunrise' },
   { view: 'asktutor', label: 'Ask AI Tutor', icon: 'ti-camera-question' },
 ]
@@ -106,6 +114,20 @@ export function Sidebar({
                 className="ti ti-sparkles ml-auto text-sm text-primary"
                 aria-hidden="true"
               />
+            </Link>
+          </li>
+
+          {/* Study Rooms — standalone route */}
+          <li>
+            <Link
+              href="/rooms"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <i className="ti ti-users-group text-lg" aria-hidden="true" />
+              Study Rooms
+              <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground">
+                NEW
+              </span>
             </Link>
           </li>
         </ul>

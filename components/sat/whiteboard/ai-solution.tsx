@@ -23,6 +23,8 @@ interface AiSolutionProps {
   /** Number of steps revealed so far (0 = nothing, steps.length = complete). */
   step: number
   answer: string
+  /** Slightly tighter sizing for the side-canvas breakdown panel. */
+  compact?: boolean
 }
 
 /**
@@ -39,6 +41,7 @@ export function AiSolution({
   annotation,
   step,
   answer,
+  compact,
 }: AiSolutionProps) {
   const hasDiagram = visual === 'geometry' && Array.isArray(diagram) && diagram.length > 0
   const hasGraph = visual === 'graph' && !!graph && graph.items.length > 0
@@ -65,7 +68,8 @@ export function AiSolution({
           {/* Topic heading */}
           <p
             className={cn(
-              'mb-4 font-serif text-2xl font-bold text-foreground transition-all duration-500',
+              'mb-4 font-serif font-bold text-foreground transition-all duration-500',
+              compact ? 'mb-3 text-xl' : 'text-2xl',
               step >= 1 ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
             )}
           >
@@ -96,7 +100,8 @@ export function AiSolution({
                   </span>
                   <span
                     className={cn(
-                      'font-serif text-lg leading-relaxed text-foreground sm:text-xl',
+                      'font-serif leading-relaxed text-foreground',
+                      compact ? 'text-base sm:text-lg' : 'text-lg sm:text-xl',
                       isLast && 'font-bold',
                     )}
                   >

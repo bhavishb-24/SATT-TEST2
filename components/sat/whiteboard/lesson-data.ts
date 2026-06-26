@@ -199,6 +199,13 @@ export interface SolveResult {
   /** Sentence annotation (when visual = "annotation"). */
   annotation: AnnotationSpec | null
   answer: string
+  /**
+   * Short label of what the student marked on the board, set only by the
+   * "explore" flow (e.g. "Why 6² + 8² = c²"). Harmless for the normal solve.
+   */
+  focus?: string
+  /** One spoken sentence to open a side-canvas breakdown (explore flow only). */
+  intro?: string
 }
 
 // An AI-generated, lesson-specific summary shown in the recap modal.
