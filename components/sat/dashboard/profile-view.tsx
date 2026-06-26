@@ -98,14 +98,14 @@ export function ProfileView({ triage, stats, gamification, onNavigate }: Profile
 
       {/* ── Hero card ─────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-        {/* Background gradient strip */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-primary/10 via-secondary to-primary/5" />
+        {/* Background banner strip — fixed height so it doesn't overflow name */}
+        <div className="h-20 w-full bg-secondary" aria-hidden="true" />
 
-        <div className="relative px-6 pb-6 pt-6">
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end">
+        <div className="relative px-6 pb-6">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end -mt-10">
             {/* Avatar */}
             <div className="relative">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-card bg-secondary text-3xl font-bold text-primary shadow-md">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-background bg-secondary text-3xl font-bold text-primary shadow-md">
                 {displayName ? displayName.charAt(0).toUpperCase() : '?'}
               </div>
               {/* Level badge */}
@@ -364,7 +364,7 @@ export function ProfileView({ triage, stats, gamification, onNavigate }: Profile
                         ? 'border-primary bg-secondary text-primary'
                         : 'border-border bg-muted text-muted-foreground',
                     )}>
-                      <span role="img" aria-label={m.event}>{m.icon}</span>
+                      <i className={cn('ti', m.icon, 'text-sm')} aria-hidden="true" />
                     </div>
                     {i < gamification.journey.length - 1 && (
                       <div className={cn('mt-1 w-0.5 flex-1', m.done ? 'bg-primary/30' : 'bg-border')} />

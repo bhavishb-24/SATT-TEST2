@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import type { DashboardView } from '@/lib/sat-types'
 import type { PanicTheme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -23,13 +24,25 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'community', label: 'Question Bank', icon: 'ti-stack-2' },
   { view: 'checklist', label: 'Night Checklist', icon: 'ti-checklist' },
   { view: 'profile', label: 'Profile', icon: 'ti-user-circle' },
-  { view: 'notifications', label: 'Notifications', icon: 'ti-bell' },
   { view: 'premium', label: 'Premium', icon: 'ti-crown' },
-  { view: 'settings', label: 'Settings', icon: 'ti-settings' },
   { view: 'help', label: 'Help', icon: 'ti-help-circle' },
-  { view: 'morning', label: 'Morning Mode', icon: 'ti-sunrise' },
   { view: 'asktutor', label: 'Ask AI Tutor', icon: 'ti-camera-question' },
 ]
+
+/** Returns true if the current local hour is between 5 AM and 11 AM (morning). */
+function useIsMorning() {
+  const [isMorning, setIsMorning] = useState(false)
+  useEffect(() => {
+    const check = () => {
+      const h = new Date().getHours()
+      setIsMorning(h >= 5 && h < 11)
+    }
+    check()
+    const id = setInterval(check, 60_000)
+    return () => clearInterval(id)
+  }, [])
+  return isMorning
+}
 
 interface SidebarProps {
   active: DashboardView
@@ -46,10 +59,12 @@ export function Sidebar({
   countdownLabel,
   countdownSub,
 }: SidebarProps) {
+  const isMorning = useIsMorning()
+
   return (
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 py-5">
+      <div className="flex items-center gap-2.5 px-4 py-4">
         <Image
           src="/logo.png"
           alt="SAT Sage logo"
@@ -57,12 +72,40 @@ export function Sidebar({
           height={36}
           className="h-9 w-9 rounded-lg object-contain"
         />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold leading-tight text-foreground">
             SAT Sage
           </p>
           <p className="truncate text-xs text-muted-foreground">Night-before mode</p>
         </div>
+        {/* Notification icon */}
+        <button
+          type="button"
+          onClick={() => onNavigate('notifications')}
+          aria-label="Notifications"
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+            active === 'notifications'
+              ? cn(theme.accentBg, 'text-white')
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <i className="ti ti-bell text-base" aria-hidden="true" />
+        </button>
+        {/* Settings icon */}
+        <button
+          type="button"
+          onClick={() => onNavigate('settings')}
+          aria-label="Settings"
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+            active === 'settings'
+              ? cn(theme.accentBg, 'text-white')
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <i className="ti ti-settings text-base" aria-hidden="true" />
+        </button>
       </div>
 
       {/* Countdown */}
@@ -101,6 +144,27 @@ export function Sidebar({
               </li>
             )
           })}
+
+          {/* Morning Mode — only shown during morning hours (5am–11am) */}
+          {isMorning && (
+            <li>
+              <button
+                type="button"
+                data-tour="nav-morning"
+                onClick={() => onNavigate('morning')}
+                aria-current={active === 'morning' ? 'page' : undefined}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  active === 'morning'
+                    ? cn(theme.accentBg, 'text-white')
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <i className="ti ti-sunrise text-lg" aria-hidden="true" />
+                Morning Mode
+              </button>
+            </li>
+          )}
 
           {/* Whiteboard lives on its own full-screen route, so it uses a real link. */}
           <li>

@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, useEffect, useState, useCallback } from 'react'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 import { cn } from '@/lib/utils'
 import type { LivePoll } from '@/lib/room-types'
 
@@ -133,15 +135,65 @@ export function ChatPanel({
     }
   }, [input, messages, streaming, roomName, exam, topic])
 
-  /** Render **bold** markers as <strong> — safe, AI output only */
-  function renderText(text: string) {
-    return {
-      __html: text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
+  /**
+   * Render AI output to safe HTML supporting LaTeX math, bold, and newlines.
+   * Uses a tokenization approach: split on math delimiters first, then escape
+   * plain-text segments and apply inline formatting only to those segments.
+   */
+  function renderText(text: string): { __html: string } {
+    // Tokenize: split into alternating [plainText, mathBlock, plainText, …]
+    const DISPLAY_RE = /\\\[([\s\S]+?)\\\]/g
+    const INLINE_RE  = /\\\((.+?)\\\)/gs
+    const tokens: Array<{ type: 'text' | 'display' | 'inline'; content: string }> = []
+
+    // First pass: extract display math \[...\]
+    let lastIdx = 0
+    let m: RegExpExecArray | null
+    DISPLAY_RE.lastIndex = 0
+    while ((m = DISPLAY_RE.exec(text)) !== null) {
+      if (m.index > lastIdx) tokens.push({ type: 'text', content: text.slice(lastIdx, m.index) })
+      tokens.push({ type: 'display', content: m[1] })
+      lastIdx = m.index + m[0].length
     }
+    if (lastIdx < text.length) tokens.push({ type: 'text', content: text.slice(lastIdx) })
+
+    // Second pass: within text tokens, extract inline math \(...\)
+    const tokens2: typeof tokens = []
+    for (const tok of tokens) {
+      if (tok.type !== 'text') { tokens2.push(tok); continue }
+      INLINE_RE.lastIndex = 0
+      let li = 0
+      let im: RegExpExecArray | null
+      while ((im = INLINE_RE.exec(tok.content)) !== null) {
+        if (im.index > li) tokens2.push({ type: 'text', content: tok.content.slice(li, im.index) })
+        tokens2.push({ type: 'inline', content: im[1] })
+        li = im.index + im[0].length
+      }
+      if (li < tok.content.length) tokens2.push({ type: 'text', content: tok.content.slice(li) })
+    }
+
+    // Render each token
+    const parts = tokens2.map((tok) => {
+      if (tok.type === 'display') {
+        try {
+          return `<div style="overflow-x:auto;padding:4px 0">${katex.renderToString(tok.content.trim(), { displayMode: true, throwOnError: false })}</div>`
+        } catch { return `<code>${tok.content}</code>` }
+      }
+      if (tok.type === 'inline') {
+        try {
+          return katex.renderToString(tok.content.trim(), { displayMode: false, throwOnError: false })
+        } catch { return `<code>${tok.content}</code>` }
+      }
+      // Plain text: escape then apply inline formatting
+      return tok.content
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^(\d+)\.\s+(.+)$/gm,
+          '<div style="display:flex;gap:6px;margin-top:4px"><span style="font-weight:700;flex-shrink:0">$1.</span><span>$2</span></div>')
+        .replace(/\n/g, '<br />')
+    })
+
+    return { __html: parts.join('') }
   }
 
   return (

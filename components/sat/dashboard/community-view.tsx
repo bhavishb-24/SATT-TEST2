@@ -293,11 +293,7 @@ function DiscoverPanel({
   const [activeSection, setActiveSection] = useState<'All' | 'Math' | 'Reading & Writing'>('All')
 
   // All question arrays start empty — no fake data
-  const trending: QuestionCardData[] = []
-  const editorPicks: QuestionCardData[] = []
   const aiRecommended: QuestionCardData[] = []
-  const byWeakness: QuestionCardData[] = []
-  const weeklyChallenge: QuestionCardData[] = []
   const teacherVerified: QuestionCardData[] = []
 
   function openQuestion(_id: string) {
@@ -367,42 +363,7 @@ function DiscoverPanel({
         </div>
       </div>
 
-      {/* Strips */}
-      <QuestionStrip
-        label="Trending Questions"
-        icon="ti-trending-up"
-        questions={trending}
-        emptyTitle="No trending questions yet"
-        emptyBody="Be the first creator. Questions you publish will appear here as the community discovers them."
-        emptyCta="Create a question"
-        onEmptyCta={onSwitchCreate}
-        onOpen={openQuestion}
-      />
-
-      <QuestionStrip
-        label="Editor Picks"
-        icon="ti-star"
-        questions={editorPicks}
-        emptyTitle="Editor picks coming soon"
-        emptyBody="The SAT Sage team curates the best community questions weekly. Check back after publishing."
-        emptyCta="Publish your first question"
-        onEmptyCta={onSwitchCreate}
-        onOpen={openQuestion}
-      />
-
-      {weakAreas.length > 0 && (
-        <QuestionStrip
-          label={`Based on your weaknesses — ${weakAreas.slice(0, 2).join(', ')}`}
-          icon="ti-brain"
-          questions={byWeakness}
-          emptyTitle="No community questions in your weak areas yet"
-          emptyBody={`You struggle with ${weakAreas.slice(0, 2).join(' and ')}. Create the first questions in these areas and help others like you.`}
-          emptyCta="Create a question"
-          onEmptyCta={onSwitchCreate}
-          onOpen={openQuestion}
-        />
-      )}
-
+      {/* Strips — only AI Recommended and Teacher Verified */}
       <QuestionStrip
         label="AI Recommended for You"
         icon="ti-sparkles"
@@ -410,17 +371,6 @@ function DiscoverPanel({
         emptyTitle="Practice more to unlock AI recommendations"
         emptyBody="Answer at least 10 practice questions and your AI tutor will curate a personalized feed."
         emptyCta="Go to Practice"
-        onEmptyCta={onSwitchCreate}
-        onOpen={openQuestion}
-      />
-
-      <QuestionStrip
-        label="Weekly Challenge"
-        icon="ti-trophy"
-        questions={weeklyChallenge}
-        emptyTitle="Weekly challenge starts when creators join"
-        emptyBody="Every week the community votes on the best new question. Publish yours and compete."
-        emptyCta="Enter this week"
         onEmptyCta={onSwitchCreate}
         onOpen={openQuestion}
       />

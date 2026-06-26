@@ -96,9 +96,19 @@ export function Dashboard({
   const [view, setView] = useState<DashboardView>('home')
   // Full-screen post-plan progress check overlay.
   const [postDiagnosticOpen, setPostDiagnosticOpen] = useState(false)
-  // The interactive product tour auto-starts the first time the dashboard loads.
-  const [tourActive, setTourActive] = useState(true)
-  const finishTour = useCallback(() => setTourActive(false), [])
+  // The interactive product tour auto-starts only the very first time.
+  // We persist the "seen" flag so returning from Whiteboard doesn't re-trigger it.
+  const [tourActive, setTourActive] = useState(() => {
+    try {
+      return localStorage.getItem('sat:tour-seen') !== 'true'
+    } catch {
+      return true
+    }
+  })
+  const finishTour = useCallback(() => {
+    setTourActive(false)
+    try { localStorage.setItem('sat:tour-seen', 'true') } catch { /* ignore */ }
+  }, [])
   const theme = getPanicTheme(triage.panic)
 
   // Gamification system
@@ -286,6 +296,7 @@ export function Dashboard({
                 onContinue={() => setView('morning')}
                 onStartPostDiagnostic={() => setPostDiagnosticOpen(true)}
                 hasPostDiagnostic={!!postDiagnostic}
+                practiceAnswered={statsApi.stats.practiceAnswered}
               />
             )}
 

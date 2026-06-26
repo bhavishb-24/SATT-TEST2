@@ -6,6 +6,9 @@ import type { PlanTopic, TriageData } from '@/lib/sat-types'
 import { deriveTimes } from '@/lib/time-utils'
 import { Confetti } from './confetti'
 
+// Minimum practice questions before the post-diagnostic is unlocked.
+const MIN_PRACTICE_TO_UNLOCK = 10
+
 interface Props {
   triage: TriageData
   topics: PlanTopic[]
@@ -15,6 +18,8 @@ interface Props {
   onStartPostDiagnostic: () => void
   /** Whether a post-diagnostic has already been completed. */
   hasPostDiagnostic: boolean
+  /** Number of practice questions answered — used to gate the post-diagnostic. */
+  practiceAnswered?: number
 }
 
 interface CheckItemProps {
@@ -71,7 +76,9 @@ export function Checklist({
   onContinue,
   onStartPostDiagnostic,
   hasPostDiagnostic,
+  practiceAnswered = 0,
 }: Props) {
+  const postDiagLocked = !hasPostDiagnostic && practiceAnswered < MIN_PRACTICE_TO_UNLOCK
   const times = deriveTimes(triage.testStartTime)
   const wakeLabel = times?.wakeUpLabel ?? ''
   const sprint = triage.timeBudget === 'sprint'
@@ -248,28 +255,48 @@ export function Checklist({
       )}
 
       {/* Post-plan progress check */}
-      <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+      <section className={`rounded-2xl border p-5 ${postDiagLocked ? 'border-border bg-muted/40' : 'border-primary/30 bg-primary/5'}`}>
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15">
-            <span className="ti ti-progress-check text-xl text-primary" aria-hidden="true" />
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${postDiagLocked ? 'bg-muted' : 'bg-primary/15'}`}>
+            <span className={`ti ${postDiagLocked ? 'ti-lock text-muted-foreground' : 'ti-progress-check text-primary'} text-xl`} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-foreground">
               {hasPostDiagnostic ? 'Run another progress check' : 'See how far you have come'}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              Take a fresh 60-question diagnostic (30 Math + 30 Reading &amp; Writing) and we&apos;ll
-              compare it to your very first one — what improved, what you did well, and what to keep
-              studying.
-            </p>
-            <button
-              type="button"
-              onClick={onStartPostDiagnostic}
-              className="mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <span className="ti ti-clipboard-check" aria-hidden="true" />
-              {hasPostDiagnostic ? 'Take a new diagnostic check' : 'Take diagnostic test'}
-            </button>
+            {postDiagLocked ? (
+              <>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  Unlock this by answering at least {MIN_PRACTICE_TO_UNLOCK} practice questions first.
+                  You&apos;ve answered <span className="font-semibold text-foreground">{practiceAnswered}</span> so far.
+                </p>
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-primary/40 transition-all duration-500"
+                    style={{ width: `${Math.min(100, (practiceAnswered / MIN_PRACTICE_TO_UNLOCK) * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {Math.max(0, MIN_PRACTICE_TO_UNLOCK - practiceAnswered)} more to go
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  Take a fresh 60-question diagnostic (30 Math + 30 Reading &amp; Writing) and we&apos;ll
+                  compare it to your very first one — what improved, what you did well, and what to keep
+                  studying.
+                </p>
+                <button
+                  type="button"
+                  onClick={onStartPostDiagnostic}
+                  className="mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <span className="ti ti-clipboard-check" aria-hidden="true" />
+                  {hasPostDiagnostic ? 'Take a new diagnostic check' : 'Take diagnostic test'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>
