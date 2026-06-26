@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 
 export const maxDuration = 30
@@ -35,7 +34,7 @@ export async function POST(req: Request) {
   ].filter(Boolean).join(' | ')
 
   const result = streamText({
-    model: openai('gpt-4o-mini'),
+    model: 'openai/gpt-4o-mini',
     system: `You are Sage AI, a friendly expert ${exam ?? 'SAT'} tutor inside a live collaborative study room.${context ? ` Context — ${context}.` : ''}
 
 Your job:

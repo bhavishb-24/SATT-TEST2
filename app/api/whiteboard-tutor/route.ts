@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai'
 import { streamText, type ModelMessage } from 'ai'
 import { PERSONAS, type PersonaKey } from '@/components/sat/whiteboard/lesson-data'
 
@@ -64,7 +63,7 @@ export async function POST(req: Request) {
     }))
 
   const result = streamText({
-    model: openai('gpt-4o-mini'),
+    model: 'openai/gpt-4o-mini',
     system: `${BASE_PROMPT}${personaInstruction(persona)}\n\n${questionContextFor(question)}`,
     messages: modelMessages,
   })

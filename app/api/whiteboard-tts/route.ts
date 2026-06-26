@@ -20,6 +20,10 @@ export async function POST(req: Request) {
   const text = (body.text ?? '').trim()
   if (!text) return new Response('Missing text', { status: 400 })
 
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response('TTS unavailable — OPENAI_API_KEY not configured', { status: 503 })
+  }
+
   try {
     const { audio } = await generateSpeech({
       model: openai.speech('gpt-4o-mini-tts'),

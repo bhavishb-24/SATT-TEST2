@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 
 export const maxDuration = 30
@@ -61,7 +60,7 @@ Return ONLY the JSON array. No other text.`
 
   try {
     const { text } = await generateText({
-      model: openai('gpt-4o-mini'),
+      model: 'openai/gpt-4o-mini',
       prompt,
       temperature: 0.7,
     })
