@@ -1,146 +1,206 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 import type { DiagnosticRecord, GuestUser } from './sat-types'
 
-const USER_KEY = 'ser:guest-user'
-const DIAGNOSTIC_KEY = 'ser:diagnostic'
-const POST_DIAGNOSTIC_KEY = 'ser:post-diagnostic'
+// ─── Local-storage fallback keys (guest / offline) ───────────────────────────
+const LS_GUEST       = 'ser:guest-user'
+const LS_DIAG        = 'ser:diagnostic'
+const LS_POST_DIAG   = 'ser:post-diagnostic'
 
-const ADJECTIVES = [
-  'Brave',
-  'Calm',
-  'Bright',
-  'Sharp',
-  'Steady',
-  'Bold',
-  'Quick',
-  'Focused',
-]
-const NOUNS = ['Scholar', 'Owl', 'Comet', 'Falcon', 'Pioneer', 'Voyager', 'Spark', 'Ace']
+function supabaseUserToGuest(u: User): GuestUser {
+  return {
+    id:        u.id,
+    name:      u.user_metadata?.display_name ?? u.email?.split('@')[0] ?? 'Student',
+    createdAt: new Date(u.created_at).getTime(),
+  }
+}
 
 function randomName(): string {
-  const a = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
-  const n = NOUNS[Math.floor(Math.random() * NOUNS.length)]
-  const num = Math.floor(Math.random() * 90 + 10)
-  return `${a} ${n} ${num}`
+  const adj  = ['Brave','Calm','Bright','Sharp','Steady','Bold','Quick','Focused']
+  const noun = ['Scholar','Owl','Comet','Falcon','Pioneer','Voyager','Spark','Ace']
+  const num  = Math.floor(Math.random() * 90 + 10)
+  return `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]} ${num}`
 }
 
 function randomId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID()
-  }
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
   return `guest_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
 }
 
+// ─── AuthApi interface — identical surface to before ─────────────────────────
 export interface AuthApi {
-  user: GuestUser | null
-  ready: boolean
-  signInAsGuest: (name?: string) => GuestUser
-  signOut: () => void
-  /** The AI's "memory" of the diagnostic for this guest. */
-  diagnostic: DiagnosticRecord | null
-  saveDiagnostic: (record: DiagnosticRecord) => void
-  clearDiagnostic: () => void
-  /** The post-plan diagnostic, taken after working through the study plan. */
-  postDiagnostic: DiagnosticRecord | null
-  savePostDiagnostic: (record: DiagnosticRecord) => void
+  user:                GuestUser | null
+  ready:               boolean
+  /** True when the user has a real Supabase session (not a local guest). */
+  isAuthenticated:     boolean
+  signInAsGuest:       (name?: string) => GuestUser
+  signOut:             () => void
+  diagnostic:          DiagnosticRecord | null
+  saveDiagnostic:      (record: DiagnosticRecord) => void
+  clearDiagnostic:     () => void
+  postDiagnostic:      DiagnosticRecord | null
+  savePostDiagnostic:  (record: DiagnosticRecord) => void
   clearPostDiagnostic: () => void
 }
 
-/**
- * Lightweight, anonymous guest authentication. A guest identity is generated
- * client-side and persisted in localStorage (no backend / no database). The
- * AI's diagnostic "memory" is stored alongside the guest so it survives reloads.
- */
 export function useAuth(): AuthApi {
-  const [user, setUser] = useState<GuestUser | null>(null)
-  const [diagnostic, setDiagnostic] = useState<DiagnosticRecord | null>(null)
+  const [user,           setUser]           = useState<GuestUser | null>(null)
+  const [supaUser,       setSupaUser]       = useState<User | null>(null)
+  const [diagnostic,     setDiagnostic]     = useState<DiagnosticRecord | null>(null)
   const [postDiagnostic, setPostDiagnostic] = useState<DiagnosticRecord | null>(null)
-  const [ready, setReady] = useState(false)
+  const [ready,          setReady]          = useState(false)
 
+  // ── Bootstrap: check Supabase session, then fall back to guest localStorage ─
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(USER_KEY)
-      if (raw) setUser(JSON.parse(raw) as GuestUser)
-      const diag = localStorage.getItem(DIAGNOSTIC_KEY)
-      if (diag) setDiagnostic(JSON.parse(diag) as DiagnosticRecord)
-      const post = localStorage.getItem(POST_DIAGNOSTIC_KEY)
-      if (post) setPostDiagnostic(JSON.parse(post) as DiagnosticRecord)
-    } catch {
-      // ignore corrupt storage
-    } finally {
+    const supabase = createClient()
+
+    async function boot() {
+      const { data: { user: sbUser } } = await supabase.auth.getUser()
+
+      if (sbUser) {
+        // Real authenticated user — prefer Supabase diagnostics
+        setSupaUser(sbUser)
+        setUser(supabaseUserToGuest(sbUser))
+        await loadDiagnosticsFromDB(sbUser.id, supabase)
+      } else {
+        // No session — load guest from localStorage
+        try {
+          const raw  = localStorage.getItem(LS_GUEST)
+          const diag = localStorage.getItem(LS_DIAG)
+          const post = localStorage.getItem(LS_POST_DIAG)
+          if (raw)  setUser(JSON.parse(raw) as GuestUser)
+          if (diag) setDiagnostic(JSON.parse(diag) as DiagnosticRecord)
+          if (post) setPostDiagnostic(JSON.parse(post) as DiagnosticRecord)
+        } catch { /* ignore corrupt storage */ }
+      }
       setReady(true)
     }
+
+    boot()
+
+    // Listen for auth state changes (login / logout in another tab)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setSupaUser(session.user)
+        setUser(supabaseUserToGuest(session.user))
+        await loadDiagnosticsFromDB(session.user.id, supabase)
+      } else {
+        setSupaUser(null)
+        // Reload guest state from localStorage
+        try {
+          const raw  = localStorage.getItem(LS_GUEST)
+          const diag = localStorage.getItem(LS_DIAG)
+          const post = localStorage.getItem(LS_POST_DIAG)
+          setUser(raw  ? JSON.parse(raw)  as GuestUser       : null)
+          setDiagnostic(diag ? JSON.parse(diag) as DiagnosticRecord : null)
+          setPostDiagnostic(post ? JSON.parse(post) as DiagnosticRecord : null)
+        } catch { /* ignore */ }
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Load diagnostics from Supabase ─────────────────────────────────────────
+  async function loadDiagnosticsFromDB(
+    userId: string,
+    supabase: ReturnType<typeof createClient>,
+  ) {
+    const { data } = await supabase
+      .from('diagnostics')
+      .select('kind, record')
+      .eq('user_id', userId)
+      .order('taken_at', { ascending: false })
+
+    if (!data) return
+    for (const row of data) {
+      if (row.kind === 'pre'  && !diagnostic)     setDiagnostic(row.record as DiagnosticRecord)
+      if (row.kind === 'post' && !postDiagnostic) setPostDiagnostic(row.record as DiagnosticRecord)
+    }
+  }
+
+  // ── signInAsGuest — kept so the triage flow still works without an account ─
   const signInAsGuest = useCallback((name?: string): GuestUser => {
     const guest: GuestUser = {
-      id: randomId(),
-      name: name?.trim() || randomName(),
+      id:        randomId(),
+      name:      name?.trim() || randomName(),
       createdAt: Date.now(),
     }
-    try {
-      localStorage.setItem(USER_KEY, JSON.stringify(guest))
-    } catch {
-      // ignore
-    }
+    try { localStorage.setItem(LS_GUEST, JSON.stringify(guest)) } catch { /* ignore */ }
     setUser(guest)
     return guest
   }, [])
 
-  const signOut = useCallback(() => {
+  // ── signOut — clears both Supabase session and local guest state ─────────
+  const signOut = useCallback(async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
     try {
-      localStorage.removeItem(USER_KEY)
-      localStorage.removeItem(DIAGNOSTIC_KEY)
-      localStorage.removeItem(POST_DIAGNOSTIC_KEY)
-    } catch {
-      // ignore
-    }
+      localStorage.removeItem(LS_GUEST)
+      localStorage.removeItem(LS_DIAG)
+      localStorage.removeItem(LS_POST_DIAG)
+    } catch { /* ignore */ }
     setUser(null)
+    setSupaUser(null)
     setDiagnostic(null)
     setPostDiagnostic(null)
   }, [])
 
-  const saveDiagnostic = useCallback((record: DiagnosticRecord) => {
-    try {
-      localStorage.setItem(DIAGNOSTIC_KEY, JSON.stringify(record))
-    } catch {
-      // ignore
-    }
+  // ── saveDiagnostic — persists to Supabase if authenticated, else localStorage
+  const saveDiagnostic = useCallback(async (record: DiagnosticRecord) => {
     setDiagnostic(record)
-  }, [])
-
-  const clearDiagnostic = useCallback(() => {
-    try {
-      localStorage.removeItem(DIAGNOSTIC_KEY)
-    } catch {
-      // ignore
+    if (supaUser) {
+      const supabase = createClient()
+      await supabase.from('diagnostics').upsert(
+        { user_id: supaUser.id, kind: 'pre', record },
+        { onConflict: 'user_id,kind' },
+      )
+    } else {
+      try { localStorage.setItem(LS_DIAG, JSON.stringify(record)) } catch { /* ignore */ }
     }
+  }, [supaUser])
+
+  const clearDiagnostic = useCallback(async () => {
     setDiagnostic(null)
-  }, [])
-
-  const savePostDiagnostic = useCallback((record: DiagnosticRecord) => {
-    try {
-      localStorage.setItem(POST_DIAGNOSTIC_KEY, JSON.stringify(record))
-    } catch {
-      // ignore
+    if (supaUser) {
+      const supabase = createClient()
+      await supabase.from('diagnostics').delete().match({ user_id: supaUser.id, kind: 'pre' })
+    } else {
+      try { localStorage.removeItem(LS_DIAG) } catch { /* ignore */ }
     }
+  }, [supaUser])
+
+  const savePostDiagnostic = useCallback(async (record: DiagnosticRecord) => {
     setPostDiagnostic(record)
-  }, [])
-
-  const clearPostDiagnostic = useCallback(() => {
-    try {
-      localStorage.removeItem(POST_DIAGNOSTIC_KEY)
-    } catch {
-      // ignore
+    if (supaUser) {
+      const supabase = createClient()
+      await supabase.from('diagnostics').upsert(
+        { user_id: supaUser.id, kind: 'post', record },
+        { onConflict: 'user_id,kind' },
+      )
+    } else {
+      try { localStorage.setItem(LS_POST_DIAG, JSON.stringify(record)) } catch { /* ignore */ }
     }
+  }, [supaUser])
+
+  const clearPostDiagnostic = useCallback(async () => {
     setPostDiagnostic(null)
-  }, [])
+    if (supaUser) {
+      const supabase = createClient()
+      await supabase.from('diagnostics').delete().match({ user_id: supaUser.id, kind: 'post' })
+    } else {
+      try { localStorage.removeItem(LS_POST_DIAG) } catch { /* ignore */ }
+    }
+  }, [supaUser])
 
   return {
     user,
     ready,
+    isAuthenticated: !!supaUser,
     signInAsGuest,
     signOut,
     diagnostic,
