@@ -29,6 +29,11 @@ import { ScanQuestionModal } from './scan-question-modal'
 import { AchievementsView, AchievementToast } from './achievements-view'
 import { BrainView } from './brain-view'
 import { CommunityView } from './community-view'
+import { ProfileView } from './profile-view'
+import { SettingsView } from './settings-view'
+import { NotificationsView } from './notifications-view'
+import { PremiumView } from './premium-view'
+import { HelpView } from './help-view'
 import { useGamification } from '@/lib/use-gamification'
 
 interface DashboardProps {
@@ -62,6 +67,11 @@ const VIEW_TITLES: Record<DashboardView, { title: string; sub: string }> = {
   achievements: { title: 'Achievements', sub: 'XP, badges, quests, leagues & your journey' },
   brain: { title: 'AI Learning Brain\u2122', sub: 'Your personalized learning intelligence' },
   community: { title: 'Community Question Bank', sub: 'Discover, create, and share SAT questions' },
+  profile: { title: 'My Profile', sub: 'Your learning identity and achievements' },
+  settings: { title: 'Settings', sub: 'Account, preferences, and privacy' },
+  notifications: { title: 'Notifications', sub: 'Activity, reminders, and updates' },
+  premium: { title: 'SAT Sage Premium', sub: 'Unlock the full experience' },
+  help: { title: 'Help Center', sub: 'FAQs, AI support, and feedback' },
   checklist: { title: 'Night Checklist', sub: 'Prep for test day' },
   morning: { title: 'Morning Mode', sub: 'Your test-day warm-up' },
   asktutor: { title: 'Ask AI Tutor', sub: 'Snap a question and get a Socratic walkthrough' },
@@ -235,6 +245,37 @@ export function Dashboard({
                 weakAreas={triage.weakAreas}
                 stats={statsApi.stats}
               />
+            )}
+
+            {view === 'profile' && (
+              <ProfileView
+                triage={triage}
+                stats={statsApi.stats}
+                gamification={gamificationApi.state}
+                onNavigate={setView}
+              />
+            )}
+
+            {view === 'settings' && (
+              <SettingsView
+                triage={triage}
+                onNavigate={setView}
+              />
+            )}
+
+            {view === 'notifications' && (
+              <NotificationsView
+                stats={statsApi.stats}
+                gamification={gamificationApi.state}
+              />
+            )}
+
+            {view === 'premium' && (
+              <PremiumView onNavigate={setView} />
+            )}
+
+            {view === 'help' && (
+              <HelpView onNavigate={setView} />
             )}
 
             {view === 'checklist' && (

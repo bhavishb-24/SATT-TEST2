@@ -133,6 +133,11 @@ export type DashboardView =
   | 'checklist'
   | 'morning'
   | 'asktutor'
+  | 'profile'
+  | 'settings'
+  | 'notifications'
+  | 'premium'
+  | 'help'
 
 export interface AppStats {
   topicsCompleted: number

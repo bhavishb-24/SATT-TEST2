@@ -22,6 +22,11 @@ export const NAV_ITEMS: NavItem[] = [
   { view: 'brain', label: 'AI Brain\u2122', icon: 'ti-brain' },
   { view: 'community', label: 'Question Bank', icon: 'ti-stack-2' },
   { view: 'checklist', label: 'Night Checklist', icon: 'ti-checklist' },
+  { view: 'profile', label: 'Profile', icon: 'ti-user-circle' },
+  { view: 'notifications', label: 'Notifications', icon: 'ti-bell' },
+  { view: 'premium', label: 'Premium', icon: 'ti-crown' },
+  { view: 'settings', label: 'Settings', icon: 'ti-settings' },
+  { view: 'help', label: 'Help', icon: 'ti-help-circle' },
   { view: 'morning', label: 'Morning Mode', icon: 'ti-sunrise' },
   { view: 'asktutor', label: 'Ask AI Tutor', icon: 'ti-camera-question' },
 ]
