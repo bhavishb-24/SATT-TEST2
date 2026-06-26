@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { WorkspaceTab, AiStatus } from '@/lib/room-types'
+import type { BoardApi } from '@/lib/use-room-live'
+import type { RoomStroke, StrokePoint } from '@/lib/rooms-db'
 
 interface Props {
   activeTab: WorkspaceTab
@@ -11,6 +13,39 @@ interface Props {
   roomName: string
   exam?: string
   topic?: string
+  board?: BoardApi
+}
+
+// Fixed pixel widths per tool (kept constant so lines look the same everywhere)
+function toolWidth(tool: string) {
+  return tool === 'eraser' ? 28 : tool === 'highlight' ? 18 : 3
+}
+
+// Draw one stroke (points are normalized 0..1) onto a canvas of size W×H.
+function drawStroke(ctx: CanvasRenderingContext2D, s: { tool: string; color: string; width: number; points: StrokePoint[] }, W: number, H: number) {
+  const pts = s.points
+  if (!pts.length) return
+  ctx.save()
+  if (s.tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.lineWidth = s.width
+  } else {
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.strokeStyle = s.tool === 'highlight' ? s.color + '55' : s.color
+    ctx.lineWidth   = s.width
+  }
+  ctx.lineCap  = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.moveTo(pts[0].x * W, pts[0].y * H)
+  if (pts.length === 1) {
+    // single tap → tiny dot
+    ctx.lineTo(pts[0].x * W + 0.1, pts[0].y * H + 0.1)
+  } else {
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * W, pts[i].y * H)
+  }
+  ctx.stroke()
+  ctx.restore()
 }
 
 const TABS: { id: WorkspaceTab; label: string; icon: string }[] = [
@@ -23,40 +58,68 @@ const TABS: { id: WorkspaceTab; label: string; icon: string }[] = [
 
 // ── Whiteboard ───────────────────────────────────────────────────────────────
 
-function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
-  const canvasRef    = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const drawingRef   = useRef(false)
-  const lastPosRef   = useRef<{ x: number; y: number } | null>(null)
-  const historyRef   = useRef<ImageData[]>([])
-  const [histLen,    setHistLen]    = useState(0)
-  const [tool,       setTool]       = useState<'pen' | 'highlight' | 'eraser'>('pen')
-  const [color,      setColor]      = useState('#1e293b')
+function WhiteboardTab({ aiStatus, board }: { aiStatus: AiStatus; board?: BoardApi }) {
+  const canvasRef     = useRef<HTMLCanvasElement>(null)
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const drawingRef    = useRef(false)
+  const lastPosRef    = useRef<{ x: number; y: number } | null>(null)
+  const strokePtsRef  = useRef<StrokePoint[]>([])     // in-progress stroke (normalized)
+  const allStrokesRef = useRef<RoomStroke[]>([])      // full board cache (for redraw on resize/reset)
+  const cursorThrottle= useRef(0)
+  const [tool,  setTool]  = useState<'pen' | 'highlight' | 'eraser'>('pen')
+  const [color, setColor] = useState('#1e293b')
+  const toolRef  = useRef(tool)
+  const colorRef = useRef(color)
+  useEffect(() => { toolRef.current = tool }, [tool])
+  useEffect(() => { colorRef.current = color }, [color])
 
-  // Resize canvas to match its CSS container exactly, preserving content
+  // Redraw the entire board cache at the current canvas size.
+  const redrawAll = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    for (const s of allStrokesRef.current) drawStroke(ctx, s, canvas.width, canvas.height)
+  }, [])
+
+  // Size the canvas to its container, then repaint from the cache (vectors scale).
   useEffect(() => {
     const container = containerRef.current
     const canvas    = canvasRef.current
     if (!container || !canvas) return
-
     function resize() {
       const w = container!.clientWidth
       const h = container!.clientHeight
       if (!w || !h) return
-      // Save current pixels
-      const ctx = canvas!.getContext('2d')!
-      const snapshot = ctx.getImageData(0, 0, canvas!.width, canvas!.height)
       canvas!.width  = w
       canvas!.height = h
-      // Restore pixels (best-effort — they scale down if container shrank)
-      ctx.putImageData(snapshot, 0, 0)
+      redrawAll()
     }
-
     const ro = new ResizeObserver(resize)
     ro.observe(container)
-    resize() // initial size
+    resize()
     return () => ro.disconnect()
-  }, [])
+  }, [redrawAll])
+
+  // Subscribe to incoming strokes from peers (and our own echoed back).
+  useEffect(() => {
+    if (!board) return
+    return board.subscribeBoard(({ strokes, reset }) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')!
+      if (reset) {
+        allStrokesRef.current = strokes.slice()
+        redrawAll()
+        return
+      }
+      for (const s of strokes) {
+        allStrokesRef.current.push(s)
+        // Our own strokes were already painted live — don't double-draw them.
+        if (s.user_id !== board.meId) drawStroke(ctx, s, canvas.width, canvas.height)
+      }
+    })
+  }, [board, redrawAll])
 
   function getPos(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current!
@@ -72,63 +135,78 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
     e.preventDefault()
     const canvas = canvasRef.current!
     const ctx    = canvas.getContext('2d')!
-    // Push undo snapshot
-    historyRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height))
-    setHistLen(historyRef.current.length)
-    drawingRef.current  = true
-    lastPosRef.current  = getPos(e)
+    drawingRef.current = true
+    const pos = getPos(e)
+    lastPosRef.current = pos
+    strokePtsRef.current = [{ x: pos.x / canvas.width, y: pos.y / canvas.height }]
     ctx.beginPath()
-    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y)
+    ctx.moveTo(pos.x, pos.y)
+  }
+
+  function applyStyle(ctx: CanvasRenderingContext2D) {
+    if (toolRef.current === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out'
+      ctx.lineWidth = toolWidth('eraser')
+    } else {
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.strokeStyle = toolRef.current === 'highlight' ? colorRef.current + '55' : colorRef.current
+      ctx.lineWidth   = toolWidth(toolRef.current)
+    }
+    ctx.lineCap  = 'round'
+    ctx.lineJoin = 'round'
   }
 
   function draw(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
     e.preventDefault()
-    if (!drawingRef.current) return
     const canvas = canvasRef.current!
-    const ctx    = canvas.getContext('2d')!
     const pos    = getPos(e)
 
-    if (tool === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out'
-      ctx.lineWidth = 28
-    } else {
-      ctx.globalCompositeOperation = 'source-over'
-      ctx.strokeStyle = tool === 'highlight' ? color + '55' : color
-      ctx.lineWidth   = tool === 'highlight' ? 18 : 3
+    // Broadcast cursor position (throttled) even while drawing.
+    const now = Date.now()
+    if (board && now - cursorThrottle.current > 50) {
+      cursorThrottle.current = now
+      board.sendCursor(pos.x / canvas.width, pos.y / canvas.height)
     }
-    ctx.lineCap  = 'round'
-    ctx.lineJoin = 'round'
+
+    if (!drawingRef.current) return
+    const ctx = canvas.getContext('2d')!
+    applyStyle(ctx)
     ctx.lineTo(pos.x, pos.y)
     ctx.stroke()
     ctx.beginPath()
     ctx.moveTo(pos.x, pos.y)
     lastPosRef.current = pos
+    strokePtsRef.current.push({ x: pos.x / canvas.width, y: pos.y / canvas.height })
   }
 
   function endDraw() {
+    if (!drawingRef.current) return
     drawingRef.current = false
     lastPosRef.current = null
-    // Reset composite op after eraser
     const ctx = canvasRef.current?.getContext('2d')
     if (ctx) ctx.globalCompositeOperation = 'source-over'
+
+    const pts = strokePtsRef.current
+    strokePtsRef.current = []
+    if (pts.length && board) {
+      const stroke = { tool, color, width: toolWidth(tool), points: pts }
+      // Keep in local cache so resize/reset redraws stay complete.
+      allStrokesRef.current.push({ seq: -1, user_id: board.meId, ...stroke })
+      board.sendStroke(stroke)
+    }
+  }
+
+  function handleLeave() {
+    endDraw()
+    board?.sendCursor(null, null)
   }
 
   function undo() {
-    if (!historyRef.current.length) return
-    const canvas = canvasRef.current!
-    const ctx    = canvas.getContext('2d')!
-    const last   = historyRef.current.pop()!
-    setHistLen(historyRef.current.length)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.putImageData(last, 0, 0)
+    board?.boardAction('undo')
   }
 
   function clearBoard() {
-    const canvas = canvasRef.current!
-    const ctx    = canvas.getContext('2d')!
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    historyRef.current = []
-    setHistLen(0)
+    board?.boardAction('clear')
   }
 
   const TOOLS = [
@@ -174,9 +252,8 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={undo}
-            title="Undo"
-            disabled={histLen === 0}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-primary disabled:opacity-40"
+            title="Undo my last stroke"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
           >
             <i className="ti ti-arrow-back" aria-hidden="true" />
           </button>
@@ -210,11 +287,29 @@ function WhiteboardTab({ aiStatus }: { aiStatus: AiStatus }) {
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={endDraw}
-          onMouseLeave={endDraw}
+          onMouseLeave={handleLeave}
           onTouchStart={startDraw}
           onTouchMove={draw}
           onTouchEnd={endDraw}
         />
+
+        {/* Live peer cursors */}
+        {board?.cursors.map((c) => (
+          <div
+            key={c.id}
+            className="pointer-events-none absolute z-10 -translate-x-1 -translate-y-1 transition-all duration-150 ease-out"
+            style={{ left: `${c.x * 100}%`, top: `${c.y * 100}%` }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M3 2l5.5 14 2.2-5.8L16.5 8 3 2z" className={c.color} fill="currentColor" stroke="white" strokeWidth="1.2" />
+            </svg>
+            <span
+              className={cn('ml-3 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm', c.color.replace('text-', 'bg-'))}
+            >
+              {c.name}
+            </span>
+          </div>
+        ))}
 
         {/* AI tutor status overlay */}
         {aiStatus !== 'idle' && (
@@ -723,7 +818,7 @@ function NotesTab({ roomName }: { roomName: string }) {
 
 // ── Root ─────────────────────────────────────────────────────────────────────
 
-export function WorkspacePanel({ activeTab, onTabChange, aiStatus, roomName, exam = 'SAT', topic = '' }: Props) {
+export function WorkspacePanel({ activeTab, onTabChange, aiStatus, roomName, exam = 'SAT', topic = '', board }: Props) {
   return (
     <div className="flex h-full flex-col">
 
@@ -756,7 +851,7 @@ export function WorkspacePanel({ activeTab, onTabChange, aiStatus, roomName, exa
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'whiteboard' && <WhiteboardTab aiStatus={aiStatus} />}
+        {activeTab === 'whiteboard' && <WhiteboardTab aiStatus={aiStatus} board={board} />}
         {activeTab === 'questions'  && <QuestionsTab exam={exam} topic={topic} />}
         {activeTab === 'flashcards' && <FlashcardsTab exam={exam} topic={topic} />}
         {activeTab === 'practice'   && <PracticeTab exam={exam} topic={topic} />}
