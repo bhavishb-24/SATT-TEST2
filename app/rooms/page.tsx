@@ -1,30 +1,72 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { CreateRoomModal } from '@/components/rooms/create-room-modal'
 import { JoinRoomModal }   from '@/components/rooms/join-room-modal'
+import { useAuth }         from '@/lib/use-auth'
+import type { StudyRoom }  from '@/lib/rooms-db'
 
-const DIFFICULTY_COLOR: Record<string, string> = {
-  Beginner:     'bg-emerald-50 text-emerald-700',
-  Intermediate: 'bg-amber-50 text-amber-700',
-  Advanced:     'bg-red-50 text-red-700',
+function timeAgo(iso: string) {
+  const secs = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
+  if (secs < 60)  return 'just now'
+  const mins = Math.floor(secs / 60)
+  if (mins < 60)  return `${mins}m ago`
+  const hrs  = Math.floor(mins / 60)
+  if (hrs  < 24)  return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
+function ExamBadge({ exam }: { exam: string }) {
+  const colors: Record<string, string> = {
+    SAT:  'bg-blue-100 text-blue-700',
+    ACT:  'bg-amber-100 text-amber-700',
+    PSAT: 'bg-violet-100 text-violet-700',
+  }
+  return (
+    <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide', colors[exam] ?? 'bg-muted text-muted-foreground')}>
+      {exam}
+    </span>
+  )
 }
 
 export default function RoomsPage() {
-  const [createOpen, setCreateOpen] = useState(false)
-  const [joinOpen,   setJoinOpen]   = useState(false)
+  const router        = useRouter()
+  const { user }      = useAuth()
+  const [rooms,       setRooms]       = useState<StudyRoom[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [showCreate,  setShowCreate]  = useState(false)
+  const [showJoin,    setShowJoin]    = useState(false)
 
-  // Public rooms would be fetched from the database here.
-  // Until the backend is wired, we show an honest empty state.
-  const publicRooms: { id: string; name: string; topic: string; difficulty: string; online: number; maxParticipants: number; scheduledTime: string; emoji: string; color: string }[] = []
+  const fetchRooms = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res  = await fetch('/api/rooms/list')
+      const data = await res.json()
+      if (data.rooms) setRooms(data.rooms)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { fetchRooms() }, [fetchRooms])
+
+  function handleRoomCreated(room: StudyRoom) {
+    setShowCreate(false)
+    router.push(`/rooms/${room.id}`)
+  }
+
+  function handleRoomJoined(room: StudyRoom) {
+    setShowJoin(false)
+    router.push(`/rooms/${room.id}`)
+  }
 
   return (
     <div className="min-h-dvh bg-background font-sans">
 
-      {/* ── Nav ─────────────────────────────────────────────────────────── */}
+      {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
@@ -38,13 +80,15 @@ export default function RoomsPage() {
           </nav>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setJoinOpen(true)}
+              type="button"
+              onClick={() => setShowJoin(true)}
               className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-secondary"
             >
               Join with code
             </button>
             <button
-              onClick={() => setCreateOpen(true)}
+              type="button"
+              onClick={() => setShowCreate(true)}
               className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
             >
               Create room
@@ -53,36 +97,33 @@ export default function RoomsPage() {
         </div>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden px-4 pb-20 pt-20 sm:px-6 sm:pt-28">
+      {/* Hero */}
+      <section className="relative overflow-hidden px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[520px] opacity-30"
-          style={{
-            background:
-              'radial-gradient(ellipse 80% 60% at 50% -10%, #0e8a6a33 0%, transparent 70%)',
-          }}
+          className="pointer-events-none absolute inset-x-0 top-0 h-96 opacity-30"
+          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% -10%, #0e8a6a33 0%, transparent 70%)' }}
         />
-
         <div className="relative mx-auto max-w-4xl text-center">
-          <h1 className="font-serif text-5xl font-bold leading-tight text-foreground text-balance sm:text-6xl lg:text-7xl">
+          <h1 className="text-balance text-5xl font-bold leading-tight text-foreground sm:text-6xl">
             Study better.<br />
             <span className="text-primary">Together.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
-            Create a live study room, invite friends, and let your AI tutor teach, draw, and keep everyone on track — in real time.
+          <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
+            Create a live study room, invite friends with a 6-letter code, and study in real time with an AI tutor.
           </p>
-
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90 hover:shadow-xl hover:shadow-primary/25"
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90"
             >
               <i className="ti ti-plus text-lg" aria-hidden="true" />
               Create study room
             </button>
             <button
-              onClick={() => setJoinOpen(true)}
+              type="button"
+              onClick={() => setShowJoin(true)}
               className="flex items-center gap-2 rounded-2xl border border-border bg-card px-6 py-3.5 text-base font-medium text-foreground shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
             >
               <i className="ti ti-key text-lg text-primary" aria-hidden="true" />
@@ -92,161 +133,104 @@ export default function RoomsPage() {
         </div>
       </section>
 
-      {/* ── Public rooms ────────────────────────────────────────────────── */}
+      {/* Live rooms list */}
       <section className="px-4 pb-24 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary">Live now</p>
-              <h2 className="mt-1 font-serif text-3xl font-bold text-foreground">Public rooms</h2>
+              <h2 className="mt-1 text-2xl font-bold text-foreground">Active rooms</h2>
             </div>
+            <button
+              type="button"
+              onClick={fetchRooms}
+              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <i className="ti ti-refresh text-sm" aria-hidden="true" />
+              Refresh
+            </button>
           </div>
 
-          {publicRooms.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {publicRooms.map((room) => (
-                <Link
-                  key={room.id}
-                  href={`/rooms/${room.id}`}
-                  className="group relative flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl"
-                      style={{ background: room.color + '22' }}
-                    >
-                      {room.emoji}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                      </span>
-                      <span className="text-xs font-semibold text-foreground">{room.online} online</span>
-                    </div>
-                  </div>
-
-                  <div className="flex-1">
-                    <h3 className="font-serif text-lg font-bold text-foreground">{room.name}</h3>
-                    <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">{room.topic}</p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={cn('rounded-full px-2.5 py-0.5 text-[11px] font-semibold', DIFFICULTY_COLOR[room.difficulty])}>
-                      {room.difficulty}
-                    </span>
-                    <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      <i className="ti ti-clock text-xs" aria-hidden="true" />
-                      {room.scheduledTime}
-                    </span>
-                    <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-                      <i className="ti ti-users text-xs" aria-hidden="true" />
-                      {room.online}/{room.maxParticipants}
-                    </span>
-                  </div>
-
-                  <div className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-secondary opacity-0 transition-opacity group-hover:opacity-100">
-                    <i className="ti ti-arrow-right text-sm text-primary" aria-hidden="true" />
-                  </div>
-                </Link>
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-[72px] animate-pulse rounded-2xl bg-muted" />
               ))}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-border bg-card/50 py-20 text-center">
+          ) : rooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border bg-card/50 py-20 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-secondary">
                 <i className="ti ti-users-group text-3xl text-primary" aria-hidden="true" />
               </div>
               <div>
-                <p className="font-serif text-xl font-bold text-foreground">No public rooms yet</p>
-                <p className="mt-1.5 max-w-xs text-sm text-muted-foreground text-pretty">
-                  Be the first to create one. Invite friends with a code and start studying together.
+                <p className="text-lg font-bold text-foreground">No active rooms yet</p>
+                <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                  Be the first to create one. Invite friends with a 6-letter code.
                 </p>
               </div>
               <button
-                onClick={() => setCreateOpen(true)}
+                type="button"
+                onClick={() => setShowCreate(true)}
                 className="flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
               >
                 <i className="ti ti-plus text-base" aria-hidden="true" />
                 Create the first room
               </button>
             </div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {rooms.map((room) => (
+                <li key={room.id}>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/rooms/${room.id}`)}
+                    className="group flex w-full items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+                      <i className="ti ti-users text-lg" aria-hidden="true" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-semibold text-foreground">{room.name}</p>
+                        <ExamBadge exam={room.exam} />
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {room.topic} &middot; {room.host_name} &middot; {timeAgo(room.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <i className="ti ti-user text-sm" aria-hidden="true" />
+                        <span>{room.member_count ?? 1}/{room.max_members}</span>
+                      </div>
+                      <span className="rounded-lg bg-secondary px-2 py-0.5 font-mono text-[11px] font-bold text-primary">
+                        {room.code}
+                      </span>
+                    </div>
+                    <i className="ti ti-arrow-right ml-1 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </section>
 
-      {/* ── Feature strip ───────────────────────────────────────────────── */}
-      <section className="border-t border-border bg-card px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">How it works</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-foreground sm:text-4xl">
-              This is how studying should have always worked.
-            </h2>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: 'ti-chalkboard',
-                title: 'Shared whiteboard',
-                desc: 'Everyone draws, writes, and solves together — like Figma, but for math and reading.',
-              },
-              {
-                icon: 'ti-robot',
-                title: 'AI joins your room',
-                desc: 'Your AI tutor explains, draws diagrams, generates quizzes, and detects who is struggling.',
-              },
-              {
-                icon: 'ti-sword',
-                title: 'Battle mode',
-                desc: 'Math duels, vocabulary blitz, reading races. Compete with friends on a live leaderboard.',
-              },
-              {
-                icon: 'ti-clipboard-text',
-                title: 'Instant summaries',
-                desc: 'Every session auto-generates notes, flashcards, and a personalised mistake summary.',
-              },
-            ].map((f) => (
-              <div key={f.title} className="rounded-3xl border border-border bg-background p-6">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary">
-                  <i className={cn('ti', f.icon, 'text-xl text-primary')} aria-hidden="true" />
-                </div>
-                <h3 className="font-serif text-lg font-bold text-foreground">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ─────────────────────────────────────────────────────────── */}
-      <section className="px-4 py-24 sm:px-6">
-        <div className="mx-auto max-w-2xl rounded-3xl border border-primary/20 bg-secondary p-10 text-center shadow-sm">
-          <p className="font-serif text-3xl font-bold text-foreground sm:text-4xl">
-            Your study squad is waiting.
-          </p>
-          <p className="mx-auto mt-4 max-w-md text-base text-muted-foreground text-pretty">
-            Create a room, invite friends with a code, and let the AI guide your session from first question to final review.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => setCreateOpen(true)}
-              className="rounded-2xl bg-primary px-7 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-90"
-            >
-              Create a room
-            </button>
-            <button
-              onClick={() => setJoinOpen(true)}
-              className="rounded-2xl border border-border bg-card px-7 py-3.5 text-base font-medium text-foreground shadow-sm transition-all hover:shadow-md"
-            >
-              Join with code
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {createOpen && <CreateRoomModal onClose={() => setCreateOpen(false)} />}
-      {joinOpen   && <JoinRoomModal   onClose={() => setJoinOpen(false)} />}
+      {/* Modals */}
+      {showCreate && (
+        <CreateRoomModal
+          user={user}
+          onClose={() => setShowCreate(false)}
+          onCreated={handleRoomCreated}
+        />
+      )}
+      {showJoin && (
+        <JoinRoomModal
+          user={user}
+          onClose={() => setShowJoin(false)}
+          onJoined={handleRoomJoined}
+        />
+      )}
     </div>
   )
 }

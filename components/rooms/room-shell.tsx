@@ -1,76 +1,183 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/use-auth'
 import { ParticipantsPanel } from '@/components/rooms/participants-panel'
 import { WorkspacePanel }    from '@/components/rooms/workspace-panel'
 import { ChatPanel }         from '@/components/rooms/chat-panel'
 import { VideoStrip }        from '@/components/rooms/video-strip'
-import type { WorkspaceTab, StudyRoom } from '@/lib/room-types'
+import type { WorkspaceTab, StudyRoom, RoomParticipant } from '@/lib/room-types'
+import type { StudyRoom as DBRoom, RoomMember } from '@/lib/rooms-db'
 
-const DIFFICULTY_COLOR: Record<string, string> = {
-  Beginner:     'bg-emerald-50 text-emerald-700',
-  Intermediate: 'bg-amber-50 text-amber-700',
-  Advanced:     'bg-red-50 text-red-700',
+// Member avatar colour palette
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500',
+  'bg-rose-500',  'bg-cyan-500',   'bg-pink-500',   'bg-orange-500',
+]
+
+function memberToParticipant(m: RoomMember, index: number): RoomParticipant {
+  return {
+    id:                m.user_id,
+    name:              m.user_name,
+    initial:           m.user_name.charAt(0).toUpperCase(),
+    color:             AVATAR_COLORS[index % AVATAR_COLORS.length],
+    level:             1,
+    xp:                0,
+    status:            'ready',
+    speaking:          false,
+    handRaised:        false,
+    accuracy:          0,
+    questionsAnswered: 0,
+  }
 }
 
-function buildRoom(id: string, name: string, exam: string, topic: string): StudyRoom {
-  const code = id.split('-').pop()?.toUpperCase().slice(0, 6) ?? id.toUpperCase().slice(0, 6)
-  return {
-    id,
-    name,
-    topic,
-    exam: exam as StudyRoom['exam'],
-    difficulty: 'Intermediate',
-    online: 1,
-    maxParticipants: 10,
-    scheduledTime: 'Now',
-    emoji: '📚',
-    color: '#0e8a6a',
-    visibility: 'public',
-    code,
-    hostId: 'me',
-    description: '',
-    participants_list: [
-      {
-        id: 'ai',
-        name: 'Sage AI',
-        initial: 'S',
-        color: 'bg-primary',
-        level: 99,
-        xp: 0,
-        status: 'ready',
-        speaking: false,
-        handRaised: false,
-        accuracy: 100,
-        questionsAnswered: 0,
-      },
-    ],
-    messages: [],
-    aiStatus: 'idle',
-    activeTab: 'whiteboard',
-    poll: null,
-    teamQuestProgress: 0,
-    teamQuestLabel: 'Solve 100 questions together',
-    sessionStartedAt: new Date().toISOString(),
-  }
+const AI_PARTICIPANT: RoomParticipant = {
+  id:                'ai',
+  name:              'Sage AI',
+  initial:           'S',
+  color:             'bg-primary',
+  level:             99,
+  xp:                0,
+  status:            'ready',
+  speaking:          false,
+  handRaised:        false,
+  accuracy:          100,
+  questionsAnswered: 0,
 }
 
 interface Props {
   id:    string
+  // Fallback display values used while the room loads from DB
   name:  string
   exam:  string
   topic: string
 }
 
-export function RoomShell({ id, name, exam, topic }: Props) {
-  const [room]       = useState<StudyRoom>(() => buildRoom(id, name, exam, topic))
-  const [activeTab,  setActiveTab]  = useState<WorkspaceTab>('whiteboard')
-  const [muted,      setMuted]      = useState(false)
-  const [camOff,     setCamOff]     = useState(true)
-  const [videoVisible, setVideoVisible] = useState(false)
-  const [mobilePanel, setMobilePanel]  = useState<'participants' | 'workspace' | 'chat'>('workspace')
+export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: topicFallback }: Props) {
+  const { user } = useAuth()
+
+  // ── DB room state ────────────────────────────────────────────────────────
+  const [dbRoom,       setDbRoom]       = useState<DBRoom | null>(null)
+  const [members,      setMembers]      = useState<RoomMember[]>([])
+  const [loadError,    setLoadError]    = useState('')
+  const registered     = useRef(false)
+
+  // Derived display values — prefer DB data, fall back to URL params
+  const displayName  = dbRoom?.name  ?? nameFallback
+  const displayExam  = dbRoom?.exam  ?? examFallback
+  const displayTopic = dbRoom?.topic ?? topicFallback
+  const roomCode     = dbRoom?.code  ?? id.toUpperCase().slice(0, 6)
+
+  // ── Load room + register as member ────────────────────────────────────────
+  const fetchMembers = useCallback(async (roomId: string) => {
+    try {
+      const res  = await fetch(`/api/rooms/members?room_id=${roomId}`)
+      const data = await res.json()
+      if (data.members) setMembers(data.members)
+    } catch { /* silently ignore */ }
+  }, [])
+
+  useEffect(() => {
+    async function init() {
+      try {
+        // Fetch room metadata
+        const res  = await fetch(`/api/rooms/list`)
+        const data = await res.json()
+        const found: DBRoom | undefined = data.rooms?.find((r: DBRoom) => r.id === id)
+        if (found) {
+          setDbRoom(found)
+        } else {
+          setLoadError('Room not found or no longer active.')
+          return
+        }
+
+        // Register this user as a member (heartbeat upsert)
+        if (!registered.current && user) {
+          registered.current = true
+          await fetch('/api/rooms/members', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              room_id:   id,
+              user_id:   user.id,
+              user_name: user.name,
+            }),
+          })
+        }
+
+        // Fetch full member list
+        await fetchMembers(id)
+      } catch {
+        setLoadError('Could not connect to room.')
+      }
+    }
+    init()
+
+    // Poll for new members every 5 seconds
+    const interval = setInterval(() => fetchMembers(id), 5000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.id])
+
+  // ── Build the participant list (AI always first, then real members) ────────
+  const participants: RoomParticipant[] = [
+    AI_PARTICIPANT,
+    ...members.map((m, i) => memberToParticipant(m, i)),
+  ]
+
+  // ── Build the legacy StudyRoom shape for sub-components that need it ───────
+  const legacyRoom: StudyRoom = {
+    id,
+    name:              displayName,
+    topic:             displayTopic,
+    exam:              displayExam as StudyRoom['exam'],
+    difficulty:        'Intermediate',
+    online:            members.length || 1,
+    maxParticipants:   dbRoom?.max_members ?? 10,
+    scheduledTime:     'Now',
+    emoji:             '📚',
+    color:             '#0e8a6a',
+    visibility:        'public',
+    code:              roomCode,
+    hostId:            dbRoom?.host_id ?? '',
+    description:       '',
+    participants_list: participants,
+    messages:          [],
+    aiStatus:          'idle',
+    activeTab:         'whiteboard',
+    poll:              null,
+    teamQuestProgress: 0,
+    teamQuestLabel:    'Solve 100 questions together',
+    sessionStartedAt:  dbRoom?.created_at ?? new Date().toISOString(),
+  }
+
+  const [activeTab,     setActiveTab]     = useState<WorkspaceTab>('whiteboard')
+  const [muted,         setMuted]         = useState(false)
+  const [camOff,        setCamOff]        = useState(true)
+  const [videoVisible,  setVideoVisible]  = useState(false)
+  const [mobilePanel,   setMobilePanel]   = useState<'participants' | 'workspace' | 'chat'>('workspace')
+
+  if (loadError) {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-background">
+        <i className="ti ti-alert-circle text-4xl text-destructive" aria-hidden="true" />
+        <p className="text-lg font-semibold text-foreground">{loadError}</p>
+        <Link href="/rooms" className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-90">
+          Back to rooms
+        </Link>
+      </div>
+    )
+  }
+
+  const [codeCopied, setCodeCopied] = useState(false)
+
+  function copyCode() {
+    navigator.clipboard.writeText(roomCode).catch(() => {})
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
 
   return (
     <div className="flex h-dvh flex-col bg-background font-sans overflow-hidden">
@@ -80,18 +187,15 @@ export function RoomShell({ id, name, exam, topic }: Props) {
         <Link
           href="/rooms"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Back to rooms"
         >
           <i className="ti ti-chevron-left text-lg" aria-hidden="true" />
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-lg" aria-hidden="true">{room.emoji}</span>
-          <span className="truncate text-sm font-bold text-foreground">{room.name}</span>
-          <span className={cn(
-            'hidden rounded-full px-2 py-0.5 text-[11px] font-semibold sm:inline-flex',
-            DIFFICULTY_COLOR[room.difficulty],
-          )}>
-            {room.difficulty}
+          <span className="truncate text-sm font-bold text-foreground">{displayName}</span>
+          <span className="hidden rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground sm:inline-flex">
+            {displayExam}
           </span>
         </div>
 
@@ -100,11 +204,12 @@ export function RoomShell({ id, name, exam, topic }: Props) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          <span className="text-xs font-semibold text-foreground">{room.online} online</span>
+          <span className="text-xs font-semibold text-foreground">{members.length || 1} online</span>
         </div>
 
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() => setMuted((m) => !m)}
             title={muted ? 'Unmute' : 'Mute'}
             className={cn(
@@ -117,6 +222,7 @@ export function RoomShell({ id, name, exam, topic }: Props) {
             <i className={cn('ti', muted ? 'ti-microphone-off' : 'ti-microphone')} aria-hidden="true" />
           </button>
           <button
+            type="button"
             onClick={() => { const next = !camOff; setCamOff(!next); setVideoVisible(next) }}
             title={camOff ? 'Turn camera on' : 'Turn camera off'}
             className={cn(
@@ -129,18 +235,21 @@ export function RoomShell({ id, name, exam, topic }: Props) {
             <i className={cn('ti', camOff ? 'ti-video-off' : 'ti-video')} aria-hidden="true" />
           </button>
           <button
+            type="button"
             title="Raise hand"
             className="flex h-8 w-8 items-center justify-center rounded-xl text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
           >
             <i className="ti ti-hand-stop" aria-hidden="true" />
           </button>
+          {/* Copy code button — always shows the real DB code */}
           <button
-            title="Copy room code"
-            onClick={() => navigator.clipboard.writeText(room.code).catch(() => {})}
+            type="button"
+            title={codeCopied ? 'Copied!' : 'Copy room code'}
+            onClick={copyCode}
             className="hidden h-8 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-mono font-bold text-primary transition-colors hover:bg-secondary sm:flex"
           >
-            <i className="ti ti-copy text-xs" aria-hidden="true" />
-            {room.code}
+            <i className={cn('ti text-xs', codeCopied ? 'ti-check' : 'ti-copy')} aria-hidden="true" />
+            {roomCode}
           </button>
           <Link
             href="/rooms"
@@ -177,7 +286,7 @@ export function RoomShell({ id, name, exam, topic }: Props) {
 
       {/* ── Video strip ─────────────────────────────────────────────── */}
       <VideoStrip
-        participants={room.participants_list}
+        participants={participants}
         muted={muted}
         camOff={camOff}
         visible={videoVisible}
@@ -193,12 +302,12 @@ export function RoomShell({ id, name, exam, topic }: Props) {
           mobilePanel === 'participants' ? 'block' : 'hidden',
         )}>
           <ParticipantsPanel
-            participants={room.participants_list}
-            aiStatus={room.aiStatus}
-            teamQuestLabel={room.teamQuestLabel}
-            teamQuestProgress={room.teamQuestProgress}
-            sessionStartedAt={room.sessionStartedAt}
-            roomCode={room.code}
+            participants={participants}
+            aiStatus={legacyRoom.aiStatus}
+            teamQuestLabel={legacyRoom.teamQuestLabel}
+            teamQuestProgress={legacyRoom.teamQuestProgress}
+            sessionStartedAt={legacyRoom.sessionStartedAt}
+            roomCode={roomCode}
           />
         </div>
 
@@ -210,10 +319,10 @@ export function RoomShell({ id, name, exam, topic }: Props) {
           <WorkspacePanel
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            aiStatus={room.aiStatus}
-            roomName={room.name}
-            exam={room.exam}
-            topic={room.topic}
+            aiStatus={legacyRoom.aiStatus}
+            roomName={displayName}
+            exam={displayExam}
+            topic={displayTopic}
           />
         </div>
 
@@ -223,11 +332,11 @@ export function RoomShell({ id, name, exam, topic }: Props) {
           mobilePanel === 'chat' ? 'block' : 'hidden',
         )}>
           <ChatPanel
-            poll={room.poll}
-            roomCode={room.code}
-            roomName={room.name}
-            exam={room.exam}
-            topic={room.topic}
+            poll={legacyRoom.poll}
+            roomCode={roomCode}
+            roomName={displayName}
+            exam={displayExam}
+            topic={displayTopic}
           />
         </div>
       </main>
