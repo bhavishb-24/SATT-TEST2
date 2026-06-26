@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/use-auth'
+import { getRoomIdentity } from '@/lib/room-identity'
 import { ParticipantsPanel } from '@/components/rooms/participants-panel'
 import { WorkspacePanel }    from '@/components/rooms/workspace-panel'
 import { ChatPanel }         from '@/components/rooms/chat-panel'
@@ -56,13 +57,20 @@ interface Props {
 }
 
 export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: topicFallback }: Props) {
-  const { user } = useAuth()
+  const { user, ready } = useAuth()
 
   // ── DB room state ────────────────────────────────────────────────────────
-  const [dbRoom,       setDbRoom]       = useState<DBRoom | null>(null)
-  const [members,      setMembers]      = useState<RoomMember[]>([])
-  const [loadError,    setLoadError]    = useState('')
-  const registered     = useRef(false)
+  const [dbRoom,    setDbRoom]    = useState<DBRoom | null>(null)
+  const [members,   setMembers]   = useState<RoomMember[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [loaded,    setLoaded]    = useState(false)
+
+  // Stable identity for THIS browser (signed-in user, else persistent guest).
+  // Computed once auth has settled so we don't register a guest then a user.
+  const me = useMemo(
+    () => (ready ? getRoomIdentity(user) : null),
+    [ready, user],
+  )
 
   // Derived display values — prefer DB data, fall back to URL params
   const displayName  = dbRoom?.name  ?? nameFallback
@@ -70,56 +78,60 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
   const displayTopic = dbRoom?.topic ?? topicFallback
   const roomCode     = dbRoom?.code  ?? id.toUpperCase().slice(0, 6)
 
-  // ── Load room + register as member ────────────────────────────────────────
-  const fetchMembers = useCallback(async (roomId: string) => {
-    try {
-      const res  = await fetch(`/api/rooms/members?room_id=${roomId}`)
-      const data = await res.json()
-      if (data.members) setMembers(data.members)
-    } catch { /* silently ignore */ }
-  }, [])
-
+  // ── Load the room itself (by id) ───────────────────────────────────────────
   useEffect(() => {
-    async function init() {
+    let cancelled = false
+    async function loadRoom() {
       try {
-        // Fetch room metadata
-        const res  = await fetch(`/api/rooms/list`)
-        const data = await res.json()
-        const found: DBRoom | undefined = data.rooms?.find((r: DBRoom) => r.id === id)
-        if (found) {
-          setDbRoom(found)
-        } else {
-          setLoadError('Room not found or no longer active.')
+        const res  = await fetch(`/api/rooms/get?id=${encodeURIComponent(id)}`, { cache: 'no-store' })
+        if (res.status === 404) {
+          if (!cancelled) { setLoadError('This room no longer exists or has ended.'); setLoaded(true) }
           return
         }
-
-        // Register this user as a member (heartbeat upsert)
-        if (!registered.current && user) {
-          registered.current = true
-          await fetch('/api/rooms/members', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              room_id:   id,
-              user_id:   user.id,
-              user_name: user.name,
-            }),
-          })
-        }
-
-        // Fetch full member list
-        await fetchMembers(id)
+        const data = await res.json()
+        if (!cancelled && data.room) { setDbRoom(data.room); setLoaded(true) }
       } catch {
-        setLoadError('Could not connect to room.')
+        if (!cancelled) { setLoadError('Could not connect to the room.'); setLoaded(true) }
       }
     }
-    init()
+    loadRoom()
+    return () => { cancelled = true }
+  }, [id])
 
-    // Poll for new members every 5 seconds
-    const interval = setInterval(() => fetchMembers(id), 5000)
-    return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user?.id])
+  // ── Heartbeat + roster poll ────────────────────────────────────────────────
+  // A single POST both records presence (last_seen = now) AND returns the
+  // current active roster, so everyone sees everyone in near real-time.
+  const heartbeat = useCallback(async () => {
+    if (!me) return
+    try {
+      const res  = await fetch('/api/rooms/members', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache:   'no-store',
+        body: JSON.stringify({ room_id: id, user_id: me.id, user_name: me.name }),
+      })
+      const data = await res.json()
+      if (data.members) setMembers(data.members)
+    } catch { /* silently ignore — next tick retries */ }
+  }, [id, me])
+
+  useEffect(() => {
+    if (!me || loadError) return
+    heartbeat() // register immediately
+    const interval = setInterval(heartbeat, 4000)
+    // Leave the room promptly when the tab closes
+    const onUnload = () => {
+      navigator.sendBeacon?.(
+        '/api/rooms/leave',
+        new Blob([JSON.stringify({ room_id: id, user_id: me.id })], { type: 'application/json' }),
+      )
+    }
+    window.addEventListener('beforeunload', onUnload)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('beforeunload', onUnload)
+    }
+  }, [me, loadError, heartbeat, id])
 
   // ── Build the participant list (AI always first, then real members) ────────
   const participants: RoomParticipant[] = [
@@ -158,10 +170,22 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
   const [camOff,        setCamOff]        = useState(true)
   const [videoVisible,  setVideoVisible]  = useState(false)
   const [mobilePanel,   setMobilePanel]   = useState<'participants' | 'workspace' | 'chat'>('workspace')
+  const [copied,        setCopied]        = useState(false)
 
+  // Copy a full shareable invite link (falls back to the bare code).
+  const copyInvite = useCallback(() => {
+    const link = typeof window !== 'undefined'
+      ? `${window.location.origin}/rooms?join=${roomCode}`
+      : roomCode
+    navigator.clipboard.writeText(link).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [roomCode])
+
+  // ── Loading / error states ────────────────────────────────────────────────
   if (loadError) {
     return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-background">
+      <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <i className="ti ti-alert-circle text-4xl text-destructive" aria-hidden="true" />
         <p className="text-lg font-semibold text-foreground">{loadError}</p>
         <Link href="/rooms" className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:opacity-90">
@@ -171,12 +195,13 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
     )
   }
 
-  const [codeCopied, setCodeCopied] = useState(false)
-
-  function copyCode() {
-    navigator.clipboard.writeText(roomCode).catch(() => {})
-    setCodeCopied(true)
-    setTimeout(() => setCodeCopied(false), 2000)
+  if (!loaded) {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-background">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden="true" />
+        <p className="text-sm font-medium text-muted-foreground">Joining room…</p>
+      </div>
+    )
   }
 
   return (
@@ -241,15 +266,15 @@ export function RoomShell({ id, name: nameFallback, exam: examFallback, topic: t
           >
             <i className="ti ti-hand-stop" aria-hidden="true" />
           </button>
-          {/* Copy code button — always shows the real DB code */}
+          {/* Copy invite link — shows the real DB code, copies a full link */}
           <button
             type="button"
-            title={codeCopied ? 'Copied!' : 'Copy room code'}
-            onClick={copyCode}
+            title={copied ? 'Invite link copied!' : 'Copy invite link'}
+            onClick={copyInvite}
             className="hidden h-8 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-mono font-bold text-primary transition-colors hover:bg-secondary sm:flex"
           >
-            <i className={cn('ti text-xs', codeCopied ? 'ti-check' : 'ti-copy')} aria-hidden="true" />
-            {roomCode}
+            <i className={cn('ti text-xs', copied ? 'ti-check' : 'ti-link')} aria-hidden="true" />
+            {copied ? 'Copied!' : roomCode}
           </button>
           <Link
             href="/rooms"

@@ -1,6 +1,10 @@
 import { getRoomMembers, joinRoom } from '@/lib/rooms-db'
 import { NextResponse } from 'next/server'
 
+// Presence data must never be cached.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/rooms/members?room_id=xxx
 export async function GET(req: Request) {
   try {

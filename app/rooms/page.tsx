@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
@@ -33,18 +33,20 @@ function ExamBadge({ exam }: { exam: string }) {
   )
 }
 
-export default function RoomsPage() {
+function RoomsPageInner() {
   const router        = useRouter()
+  const searchParams  = useSearchParams()
   const { user }      = useAuth()
   const [rooms,       setRooms]       = useState<StudyRoom[]>([])
   const [loading,     setLoading]     = useState(true)
   const [showCreate,  setShowCreate]  = useState(false)
   const [showJoin,    setShowJoin]    = useState(false)
+  const [joinCode,    setJoinCode]    = useState('')
 
   const fetchRooms = useCallback(async () => {
     setLoading(true)
     try {
-      const res  = await fetch('/api/rooms/list')
+      const res  = await fetch('/api/rooms/list', { cache: 'no-store' })
       const data = await res.json()
       if (data.rooms) setRooms(data.rooms)
     } catch { /* ignore */ }
@@ -52,6 +54,21 @@ export default function RoomsPage() {
   }, [])
 
   useEffect(() => { fetchRooms() }, [fetchRooms])
+
+  // Auto-refresh the live list every 8s so new rooms appear without manual reload
+  useEffect(() => {
+    const t = setInterval(fetchRooms, 8000)
+    return () => clearInterval(t)
+  }, [fetchRooms])
+
+  // Invite-link support: /rooms?join=ABC123 opens the join modal prefilled
+  useEffect(() => {
+    const code = searchParams.get('join')
+    if (code) {
+      setJoinCode(code.toUpperCase())
+      setShowJoin(true)
+    }
+  }, [searchParams])
 
   function handleRoomCreated(room: StudyRoom) {
     setShowCreate(false)
@@ -227,10 +244,20 @@ export default function RoomsPage() {
       {showJoin && (
         <JoinRoomModal
           user={user}
-          onClose={() => setShowJoin(false)}
+          initialCode={joinCode}
+          onClose={() => { setShowJoin(false); setJoinCode('') }}
           onJoined={handleRoomJoined}
         />
       )}
     </div>
+  )
+}
+
+// useSearchParams must be inside a Suspense boundary.
+export default function RoomsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-background" />}>
+      <RoomsPageInner />
+    </Suspense>
   )
 }

@@ -2,19 +2,21 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/use-auth'
+import { getRoomIdentity } from '@/lib/room-identity'
 import type { StudyRoom } from '@/lib/rooms-db'
 
 interface Props {
-  user?:    { id: string; name: string } | null
-  onClose:  () => void
-  onJoined: (room: StudyRoom) => void
+  user?:        { id: string; name: string } | null
+  initialCode?: string
+  onClose:      () => void
+  onJoined:     (room: StudyRoom) => void
 }
 
-export function JoinRoomModal({ user, onClose, onJoined }: Props) {
+export function JoinRoomModal({ user, initialCode = '', onClose, onJoined }: Props) {
   const { user: authUser } = useAuth()
   const resolvedUser = user ?? authUser
 
-  const [code,    setCode]    = useState('')
+  const [code,    setCode]    = useState(initialCode.toUpperCase())
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
@@ -24,13 +26,14 @@ export function JoinRoomModal({ user, onClose, onJoined }: Props) {
     setError('')
     setLoading(true)
     try {
+      const me   = getRoomIdentity(resolvedUser)
       const res  = await fetch('/api/rooms/join', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code:      trimmed,
-          user_id:   resolvedUser?.id   ?? `guest_${Date.now()}`,
-          user_name: resolvedUser?.name ?? 'Anonymous',
+          user_id:   me.id,
+          user_name: me.name,
         }),
       })
       const data = await res.json()

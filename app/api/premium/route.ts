@@ -1,6 +1,9 @@
 import { isPremiumUser } from '@/lib/rooms-db'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/premium?email=xxx
 export async function GET(req: Request) {
   try {

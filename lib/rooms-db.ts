@@ -87,7 +87,8 @@ export async function createRoom(params: {
 
 export async function getRoomByCode(code: string): Promise<StudyRoom | null> {
   const { rows } = await pool.query<StudyRoom>(
-    `SELECT r.*, COUNT(m.id)::int AS member_count
+    `SELECT r.*,
+            COUNT(m.id) FILTER (WHERE m.last_seen > now() - interval '40 seconds')::int AS member_count
      FROM study_rooms r
      LEFT JOIN room_members m ON m.room_id = r.id
      WHERE r.code = $1 AND r.is_active = true
@@ -101,7 +102,8 @@ export async function getRoomByCode(code: string): Promise<StudyRoom | null> {
 
 export async function getRoomById(id: string): Promise<StudyRoom | null> {
   const { rows } = await pool.query<StudyRoom>(
-    `SELECT r.*, COUNT(m.id)::int AS member_count
+    `SELECT r.*,
+            COUNT(m.id) FILTER (WHERE m.last_seen > now() - interval '40 seconds')::int AS member_count
      FROM study_rooms r
      LEFT JOIN room_members m ON m.room_id = r.id
      WHERE r.id = $1 AND r.is_active = true
@@ -115,7 +117,8 @@ export async function getRoomById(id: string): Promise<StudyRoom | null> {
 
 export async function listRooms(limit = 20): Promise<StudyRoom[]> {
   const { rows } = await pool.query<StudyRoom>(
-    `SELECT r.*, COUNT(m.id)::int AS member_count
+    `SELECT r.*,
+            COUNT(m.id) FILTER (WHERE m.last_seen > now() - interval '40 seconds')::int AS member_count
      FROM study_rooms r
      LEFT JOIN room_members m ON m.room_id = r.id
      WHERE r.is_active = true
@@ -134,23 +137,29 @@ export async function joinRoom(params: {
   user_id:   string
   user_name: string
 }): Promise<{ ok: boolean; error?: string }> {
-  // Check capacity
-  const { rows: cap } = await pool.query<{ max_members: number; member_count: string }>(
-    `SELECT r.max_members, COUNT(m.id) AS member_count
+  // Check capacity against currently-active members only, and never block a
+  // member who is already in the room (re-join / heartbeat).
+  const { rows: cap } = await pool.query<{ max_members: number; member_count: string; already: boolean }>(
+    `SELECT r.max_members,
+            COUNT(m.id) FILTER (WHERE m.last_seen > now() - interval '40 seconds') AS member_count,
+            bool_or(m.user_id = $2) AS already
      FROM study_rooms r
      LEFT JOIN room_members m ON m.room_id = r.id
      WHERE r.id = $1 AND r.is_active = true
      GROUP BY r.id`,
-    [params.room_id],
+    [params.room_id, params.user_id],
   )
   if (!cap[0]) return { ok: false, error: 'Room not found' }
   const current = parseInt(cap[0].member_count, 10)
-  if (current >= cap[0].max_members) return { ok: false, error: 'Room is full' }
+  if (!cap[0].already && current >= cap[0].max_members) {
+    return { ok: false, error: 'Room is full' }
+  }
 
   await pool.query(
-    `INSERT INTO room_members (room_id, user_id, user_name)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (room_id, user_id) DO UPDATE SET user_name = $3`,
+    `INSERT INTO room_members (room_id, user_id, user_name, last_seen)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (room_id, user_id)
+     DO UPDATE SET user_name = $3, last_seen = now()`,
     [params.room_id, params.user_id, params.user_name],
   )
   return { ok: true }
@@ -159,11 +168,23 @@ export async function joinRoom(params: {
 // ─── Get members ─────────────────────────────────────────────────────────────
 
 export async function getRoomMembers(room_id: string): Promise<RoomMember[]> {
+  // Only return members seen in the last 40 seconds — i.e. currently present.
   const { rows } = await pool.query<RoomMember>(
-    `SELECT * FROM room_members WHERE room_id = $1 ORDER BY joined_at ASC`,
+    `SELECT * FROM room_members
+     WHERE room_id = $1 AND last_seen > now() - interval '40 seconds'
+     ORDER BY joined_at ASC`,
     [room_id],
   )
   return rows
+}
+
+// ─── Leave (remove member) ─────────────────────────────────────────────────
+
+export async function leaveRoom(room_id: string, user_id: string): Promise<void> {
+  await pool.query(
+    `DELETE FROM room_members WHERE room_id = $1 AND user_id = $2`,
+    [room_id, user_id],
+  )
 }
 
 // ─── Premium check ───────────────────────────────────────────────────────────

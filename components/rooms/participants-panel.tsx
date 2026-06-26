@@ -73,8 +73,12 @@ export function ParticipantsPanel({
   const relativeTime = useRelativeTime(sessionStartedAt)
   const [codeCopied, setCodeCopied] = useState(false)
 
+  // Copy a full shareable invite link so friends land straight on the join flow.
   const copyCode = useCallback(() => {
-    navigator.clipboard.writeText(roomCode).catch(() => {})
+    const link = typeof window !== 'undefined'
+      ? `${window.location.origin}/rooms?join=${roomCode}`
+      : roomCode
+    navigator.clipboard.writeText(link).catch(() => {})
     setCodeCopied(true)
     setTimeout(() => setCodeCopied(false), 2000)
   }, [roomCode])
@@ -88,10 +92,10 @@ export function ParticipantsPanel({
         <button
           type="button"
           onClick={copyCode}
-          title={codeCopied ? 'Copied!' : 'Copy room code'}
+          title={codeCopied ? 'Invite link copied!' : 'Copy invite link'}
           className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-mono font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
         >
-          <i className={cn('ti text-[10px]', codeCopied ? 'ti-check' : 'ti-copy')} aria-hidden="true" />
+          <i className={cn('ti text-[10px]', codeCopied ? 'ti-check' : 'ti-link')} aria-hidden="true" />
           {roomCode}
         </button>
       </div>
@@ -213,7 +217,7 @@ export function ParticipantsPanel({
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-secondary hover:text-primary"
       >
         <i className={cn('ti text-base', codeCopied ? 'ti-check' : 'ti-user-plus')} aria-hidden="true" />
-        {codeCopied ? `Code copied: ${roomCode}` : 'Invite a friend (copy code)'}
+        {codeCopied ? 'Invite link copied!' : 'Invite a friend'}
       </button>
     </aside>
   )

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/use-auth'
+import { getRoomIdentity } from '@/lib/room-identity'
 import type { StudyRoom } from '@/lib/rooms-db'
 
 const EXAMS  = ['SAT', 'ACT', 'PSAT', 'AP'] as const
@@ -41,6 +42,7 @@ export function CreateRoomModal({ user, onClose, onCreated }: Props) {
     setError('')
     setLoading(true)
     try {
+      const me   = getRoomIdentity(resolvedUser)
       const res  = await fetch('/api/rooms/create', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,8 +50,8 @@ export function CreateRoomModal({ user, onClose, onCreated }: Props) {
           name:        name.trim(),
           exam,
           topic,
-          host_id:     resolvedUser?.id   ?? `guest_${Date.now()}`,
-          host_name:   resolvedUser?.name ?? 'Anonymous',
+          host_id:     me.id,
+          host_name:   me.name,
           max_members: max,
         }),
       })
