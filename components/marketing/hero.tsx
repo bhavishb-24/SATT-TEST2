@@ -72,10 +72,10 @@ export function Hero() {
               <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
             </Link>
             <Link
-              href={SITE.appPath}
+              href="/how-it-works"
               className="flex min-h-[54px] items-center justify-center gap-2 rounded-xl border border-border bg-card px-7 text-base font-semibold text-foreground transition-colors hover:bg-muted"
             >
-              Try it now
+              See how it works
             </Link>
           </motion.div>
 
@@ -86,9 +86,9 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {[
-              'No account needed',
               '100% free',
-              'Works the night before or 1 year out',
+              'Currently in beta',
+              'Works up to 1 year out',
             ].map((item) => (
               <li key={item} className="flex items-center gap-1.5">
                 <span className="ti ti-check text-base text-primary" aria-hidden="true" />

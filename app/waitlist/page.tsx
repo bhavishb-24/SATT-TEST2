@@ -47,10 +47,9 @@ export default function WaitlistPage() {
                 </span>
               </h1>
               <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
-                {SITE.name} is free to use right now. We are building even more for
-                students who want to prep smart from up to 12 months out. Join the waitlist
-                and be first to know when live coaching, study groups, and personalized
-                progress reports go live.
+                {SITE.name} is in beta and we are onboarding students in batches. Secure
+                your spot now and be among the first to get access when we open the doors,
+                along with live coaching, study groups, and personalized progress reports.
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
                 {['Free forever', 'No spam', 'Unsubscribe anytime'].map((item) => (
@@ -80,22 +79,17 @@ export default function WaitlistPage() {
             </ul>
           </FadeInOnScroll>
 
-          {/* Try now nudge */}
+          {/* Beta notice */}
           <FadeInOnScroll>
-            <div className="rounded-2xl border border-border bg-card/60 px-6 py-5">
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 px-6 py-5">
               <p className="text-sm font-semibold text-foreground">
-                Don&apos;t want to wait?
+                Currently in beta
               </p>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                The core app is free and available right now. No account needed.
+                We are onboarding students in batches so we can give everyone the best
+                experience. Join the waitlist and we will email you as soon as your spot
+                is ready.
               </p>
-              <Link
-                href={SITE.appPath}
-                className="mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-              >
-                Try it now
-                <span className="ti ti-arrow-right text-sm" aria-hidden="true" />
-              </Link>
             </div>
           </FadeInOnScroll>
         </div>

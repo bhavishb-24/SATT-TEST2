@@ -1,7 +1,7 @@
 export const SITE = {
   name: 'SAT Sage',
   shortName: 'SAT Sage',
-  tagline: 'Your free last-minute SAT coach',
+  tagline: 'Your AI-powered SAT coach. Now in beta.',
   appPath: '/waitlist',
   supportEmail: 'help@satemergencyroom.com',
   // The date legal documents were last revised. Update when policies change.
