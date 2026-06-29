@@ -34,7 +34,19 @@ export default function AdminInvitePanel({ initialCodes }: { initialCodes: Invit
   }
 
   async function copyCode(code: string) {
-    await navigator.clipboard.writeText(code)
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch {
+      // Fallback for blocked Clipboard API (e.g. cross-origin iframes)
+      const el = document.createElement('textarea')
+      el.value = code
+      el.style.position = 'fixed'
+      el.style.opacity = '0'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
     setCopied(code)
     setTimeout(() => setCopied(null), 2000)
   }
