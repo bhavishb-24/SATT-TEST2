@@ -1,7 +1,6 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 
 const COOKIE_NAME = 'admin_auth'
 const COOKIE_MAX_AGE = 60 * 60 * 8 // 8 hours
@@ -32,13 +31,13 @@ export async function adminLogin(formData: FormData) {
   const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, 'true', { ...COOKIE_OPTIONS, maxAge: COOKIE_MAX_AGE })
 
-  redirect('/admin')
+  return { success: true }
 }
 
 export async function adminLogout() {
   const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, '', { ...COOKIE_OPTIONS, maxAge: 0 })
-  redirect('/admin/login')
+  return { success: true }
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {

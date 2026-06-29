@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { adminLogin } from '@/app/admin/actions'
 import { cn } from '@/lib/utils'
 
 export default function AdminLoginPage() {
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -12,9 +14,17 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setError(null)
     const formData = new FormData(e.currentTarget)
+    const password = formData.get('password') as string
     startTransition(async () => {
       const result = await adminLogin(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      } else if (result?.success) {
+        // Store the key client-side so it survives in preview iframes where
+        // third-party cookies are blocked. Used to authorize admin actions.
+        try { sessionStorage.setItem('admin_key', password) } catch { /* ignore */ }
+        router.push('/admin')
+      }
     })
   }
 

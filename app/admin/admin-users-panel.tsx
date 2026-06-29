@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { type AdminUser } from '@/app/auth/actions'
 
 function timeAgo(iso: string | null): string {
@@ -21,12 +21,23 @@ function fmt(iso: string): string {
   })
 }
 
-export default function AdminUsersPanel({ initial }: { initial: AdminUser[] }) {
-  const [users] = useState<AdminUser[]>(initial)
+export default function AdminUsersPanel({
+  initial,
+  onRefresh,
+}: {
+  initial: AdminUser[]
+  onRefresh: () => Promise<void>
+}) {
   const [search, setSearch] = useState('')
-  const [, startTransition] = useTransition()
+  const [refreshing, setRefreshing] = useState(false)
 
-  const filtered = users.filter((u) =>
+  async function handleRefresh() {
+    setRefreshing(true)
+    await onRefresh()
+    setRefreshing(false)
+  }
+
+  const filtered = initial.filter((u) =>
     u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.display_name.toLowerCase().includes(search.toLowerCase()),
   )
@@ -37,9 +48,9 @@ export default function AdminUsersPanel({ initial }: { initial: AdminUser[] }) {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total users',    value: users.length },
-          { label: 'Active sessions', value: users.filter(u => u.has_session).length },
-          { label: 'Signed in today', value: users.filter(u => {
+          { label: 'Total users',     value: initial.length },
+          { label: 'Active sessions', value: initial.filter(u => u.has_session).length },
+          { label: 'Signed in today', value: initial.filter(u => {
               if (!u.last_sign_in) return false
               return Date.now() - new Date(u.last_sign_in).getTime() < 86_400_000
             }).length },
@@ -51,16 +62,27 @@ export default function AdminUsersPanel({ initial }: { initial: AdminUser[] }) {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <i className="ti ti-search absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <input
-          type="search"
-          placeholder="Search by name or email…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
+      {/* Search + Refresh */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <i className="ti ti-search absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <input
+            type="search"
+            placeholder="Search by name or email…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          <i className={`ti ti-refresh text-base ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+          Refresh
+        </button>
       </div>
 
       {/* Table */}
@@ -82,10 +104,7 @@ export default function AdminUsersPanel({ initial }: { initial: AdminUser[] }) {
                 </td>
               </tr>
             ) : filtered.map((u, i) => (
-              <tr
-                key={u.id}
-                className={i % 2 === 0 ? 'bg-card' : 'bg-muted/20'}
-              >
+              <tr key={u.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/20'}>
                 <td className="px-4 py-3">
                   <p className="font-medium text-foreground">{u.display_name !== '—' ? u.display_name : u.email}</p>
                   <p className="text-xs text-muted-foreground">{u.email}</p>
@@ -110,7 +129,7 @@ export default function AdminUsersPanel({ initial }: { initial: AdminUser[] }) {
         </table>
       </div>
 
-      <p className="text-right text-xs text-muted-foreground">{filtered.length} of {users.length} users</p>
+      <p className="text-right text-xs text-muted-foreground">{filtered.length} of {initial.length} users</p>
     </div>
   )
 }
