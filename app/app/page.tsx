@@ -16,6 +16,7 @@ import { getPanicTheme } from '@/lib/theme'
 import { useVoice } from '@/lib/use-voice'
 import { useStats } from '@/lib/use-stats'
 import { useAuth } from '@/lib/use-auth'
+import type { SavedSession } from '@/lib/use-auth'
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout'
 import { AuthGate } from '@/components/sat/auth-gate'
 import { InactivityTimeoutModal } from '@/components/inactivity-timeout-modal'
@@ -27,26 +28,14 @@ import { Dashboard } from '@/components/sat/dashboard/dashboard'
 import { PanicOverlay } from '@/components/sat/panic-overlay'
 import { FloatingControls } from '@/components/sat/floating-controls'
 
-const SESSION_KEY = 'ser:active-session'
 
-interface SavedSession {
-  triage: TriageData
-  response: PlanResponse
-  topics: PlanTopic[]
-  completed: string[]
-}
 
 export default function Page() {
   const auth = useAuth()
   const [screen, setScreen] = useState<Screen>('triage')
   const { isWarningOpen, handleDismiss, handleLogout } = useInactivityTimeout(() => {
-    // When user times out, redirect to triage
     setScreen('triage')
-    try {
-      localStorage.removeItem(SESSION_KEY)
-    } catch {
-      // ignore
-    }
+    auth.clearSession()
     auth.signOut()
   })
   const [triage, setTriage] = useState<TriageData | null>(null)
@@ -68,43 +57,35 @@ export default function Page() {
     setTopicProgress(completed.size, topics.length)
   }, [completed, topics.length, setTopicProgress])
 
-  // Restore an in-progress session once auth is ready and a guest exists, so
-  // navigating away (e.g. to the Whiteboard) and back returns to the dashboard
-  // instead of resetting to the triage form.
+  // Restore an in-progress session once auth is ready so navigating away
+  // and back returns to the dashboard instead of resetting to the triage form.
   useEffect(() => {
     if (sessionRestored.current) return
     if (!auth.ready || !auth.user) return
     sessionRestored.current = true
-    try {
-      const raw = localStorage.getItem(SESSION_KEY)
-      if (!raw) return
-      const saved = JSON.parse(raw) as SavedSession
-      if (!saved.triage || !saved.response) return
+
+    auth.loadSession().then((saved) => {
+      if (!saved?.triage || !saved?.response) return
       setTriage(saved.triage)
       setResponse(saved.response)
       setTopics(saved.topics ?? saved.response.plan.topics)
       setCompleted(new Set(saved.completed ?? []))
       setScreen('dashboard')
-    } catch {
-      // ignore corrupt session
-    }
-  }, [auth.ready, auth.user])
+    })
+  }, [auth.ready, auth.user, auth.loadSession])
 
-  // Persist the active session whenever the dashboard is showing.
+  // Persist the active session to Supabase (authenticated) or localStorage (guest)
+  // whenever dashboard state changes.
   useEffect(() => {
     if (screen !== 'dashboard' || !triage || !response) return
-    try {
-      const payload: SavedSession = {
-        triage,
-        response,
-        topics,
-        completed: Array.from(completed),
-      }
-      localStorage.setItem(SESSION_KEY, JSON.stringify(payload))
-    } catch {
-      // ignore quota / serialization errors
+    const payload: SavedSession = {
+      triage,
+      response,
+      topics,
+      completed: Array.from(completed),
     }
-  }, [screen, triage, response, topics, completed])
+    auth.saveSession(payload)
+  }, [screen, triage, response, topics, completed, auth.saveSession])
 
   // Voice command routing. Kept stable via refs inside the hook.
   const handleCommand = useCallback(

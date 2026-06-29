@@ -3,12 +3,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import type { DiagnosticRecord, GuestUser } from './sat-types'
+import type { DiagnosticRecord, GuestUser, PlanResponse, PlanTopic, TriageData } from './sat-types'
+
+export interface SavedSession {
+  triage: TriageData
+  response: PlanResponse
+  topics: PlanTopic[]
+  completed: string[]
+}
 
 // ─── Local-storage fallback keys (guest / offline) ───────────────────────────
 const LS_GUEST       = 'ser:guest-user'
 const LS_DIAG        = 'ser:diagnostic'
 const LS_POST_DIAG   = 'ser:post-diagnostic'
+const LS_SESSION     = 'ser:active-session'
 
 function supabaseUserToGuest(u: User): GuestUser {
   return {
@@ -46,6 +54,12 @@ export interface AuthApi {
   postDiagnostic:      DiagnosticRecord | null
   savePostDiagnostic:  (record: DiagnosticRecord) => void
   clearPostDiagnostic: () => void
+  /** Load the persisted study session (triage + plan + topics + completed). */
+  loadSession: () => Promise<SavedSession | null>
+  /** Persist the study session. Called whenever dashboard state changes. */
+  saveSession: (session: SavedSession) => Promise<void>
+  /** Clear the persisted session (e.g. user starts fresh). */
+  clearSession: () => Promise<void>
 }
 
 export function useAuth(): AuthApi {
@@ -213,6 +227,61 @@ export function useAuth(): AuthApi {
     }
   }, [supaUser])
 
+  // ── loadSession ────────────────────────────────────────────────────────────
+  const loadSession = useCallback(async (): Promise<SavedSession | null> => {
+    if (supaUser) {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .select('triage, response, topics, completed')
+        .eq('user_id', supaUser.id)
+        .maybeSingle()
+      if (error || !data) return null
+      return {
+        triage:    data.triage    as TriageData,
+        response:  data.response  as PlanResponse,
+        topics:    data.topics    as PlanTopic[],
+        completed: data.completed as string[],
+      }
+    } else {
+      try {
+        const raw = localStorage.getItem(LS_SESSION)
+        if (!raw) return null
+        return JSON.parse(raw) as SavedSession
+      } catch { return null }
+    }
+  }, [supaUser])
+
+  // ── saveSession ────────────────────────────────────────────────────────────
+  const saveSession = useCallback(async (session: SavedSession): Promise<void> => {
+    if (supaUser) {
+      const supabase = createClient()
+      await supabase.from('user_sessions').upsert(
+        {
+          user_id:    supaUser.id,
+          triage:     session.triage,
+          response:   session.response,
+          topics:     session.topics,
+          completed:  session.completed,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      )
+    } else {
+      try { localStorage.setItem(LS_SESSION, JSON.stringify(session)) } catch { /* ignore */ }
+    }
+  }, [supaUser])
+
+  // ── clearSession ───────────────────────────────────────────────────────────
+  const clearSession = useCallback(async (): Promise<void> => {
+    if (supaUser) {
+      const supabase = createClient()
+      await supabase.from('user_sessions').delete().eq('user_id', supaUser.id)
+    } else {
+      try { localStorage.removeItem(LS_SESSION) } catch { /* ignore */ }
+    }
+  }, [supaUser])
+
   return {
     user,
     ready,
@@ -226,5 +295,8 @@ export function useAuth(): AuthApi {
     postDiagnostic,
     savePostDiagnostic,
     clearPostDiagnostic,
+    loadSession,
+    saveSession,
+    clearSession,
   }
 }
