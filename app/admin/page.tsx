@@ -1,44 +1,55 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { listInviteCodes, listUsers, type InviteCode, type AdminUser } from '@/app/auth/actions'
+import { listInviteCodes, listUsers, listWaitlist, type InviteCode, type AdminUser, type WaitlistEntry } from '@/app/auth/actions'
 import AdminInvitePanel from './admin-invite-panel'
 import AdminUsersPanel from './admin-users-panel'
+import AdminWaitlistPanel from './admin-waitlist-panel'
 
-type Tab = 'codes' | 'users'
+type Tab = 'codes' | 'users' | 'waitlist'
 
 export default function AdminPage() {
   const router = useRouter()
-  const [tab, setTab]       = useState<Tab>('codes')
-  const [codes, setCodes]   = useState<InviteCode[]>([])
-  const [users, setUsers]   = useState<AdminUser[]>([])
+  const [tab, setTab]         = useState<Tab>('codes')
+  const [codes, setCodes]     = useState<InviteCode[]>([])
+  const [users, setUsers]     = useState<AdminUser[]>([])
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [adminKey, setAdminKey] = useState('')
   const [loading, setLoading] = useState(true)
+
+  const fetchAll = useCallback(async (key: string) => {
+    const [c, u, w] = await Promise.all([
+      listInviteCodes(key),
+      listUsers(key),
+      listWaitlist(key),
+    ])
+    setCodes(c)
+    setUsers(u)
+    setWaitlist(w)
+  }, [])
 
   useEffect(() => {
     async function init() {
       const key = (() => {
         try { return sessionStorage.getItem('admin_key') } catch { return null }
       })()
-      if (!key) {
-        router.replace('/admin/login')
-        return
-      }
+      if (!key) { router.replace('/admin/login'); return }
       setAdminKey(key)
       try {
-        const [c, u] = await Promise.all([listInviteCodes(key), listUsers(key)])
-        setCodes(c)
-        setUsers(u)
+        await fetchAll(key)
         setLoading(false)
       } catch {
-        // Key invalid/stale — clear and bounce to login
         try { sessionStorage.removeItem('admin_key') } catch { /* ignore */ }
         router.replace('/admin/login')
       }
     }
     init()
-  }, [router])
+  }, [router, fetchAll])
+
+  const handleRefresh = useCallback(async () => {
+    if (adminKey) await fetchAll(adminKey)
+  }, [adminKey, fetchAll])
 
   if (loading) {
     return (
@@ -47,6 +58,12 @@ export default function AdminPage() {
       </div>
     )
   }
+
+  const tabs: { id: Tab; label: string; icon: string }[] = [
+    { id: 'codes',    label: 'Invite Codes',          icon: 'ti-key'      },
+    { id: 'users',    label: `Users (${users.length})`,    icon: 'ti-users'    },
+    { id: 'waitlist', label: `Waitlist (${waitlist.length})`, icon: 'ti-clock'    },
+  ]
 
   return (
     <div className="min-h-screen bg-background px-4 py-10">
@@ -57,7 +74,7 @@ export default function AdminPage() {
           <div>
             <h1 className="font-serif text-3xl font-bold text-foreground">Admin</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage invite codes and view users.
+              Manage invite codes, users, and the waitlist.
             </p>
           </div>
           <button
@@ -75,10 +92,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="mb-6 flex w-fit gap-1 rounded-xl border border-border bg-muted/40 p-1">
-          {([
-            { id: 'codes' as Tab, label: 'Invite Codes', icon: 'ti-key' },
-            { id: 'users' as Tab, label: `Users (${users.length})`, icon: 'ti-users' },
-          ]).map(t => (
+          {tabs.map(t => (
             <button
               key={t.id}
               type="button"
@@ -96,10 +110,14 @@ export default function AdminPage() {
         </div>
 
         {/* Tab content */}
-        {tab === 'codes' ? (
+        {tab === 'codes' && (
           <AdminInvitePanel initialCodes={codes} adminKey={adminKey} />
-        ) : (
-          <AdminUsersPanel initial={users} />
+        )}
+        {tab === 'users' && (
+          <AdminUsersPanel initial={users} onRefresh={handleRefresh} />
+        )}
+        {tab === 'waitlist' && (
+          <AdminWaitlistPanel initial={waitlist} onRefresh={handleRefresh} />
         )}
 
       </div>

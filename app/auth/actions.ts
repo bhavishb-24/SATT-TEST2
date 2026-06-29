@@ -111,6 +111,27 @@ export type AdminUser = {
   has_session: boolean
 }
 
+export type WaitlistEntry = {
+  id: string
+  name: string
+  email: string
+  sat_date: string | null
+  days_until_sat: string | null
+  created_at: string
+}
+
+/** List all waitlist entries (admin only). */
+export async function listWaitlist(adminKey?: string): Promise<WaitlistEntry[]> {
+  await requireAdmin(adminKey)
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('waitlist')
+    .select('id, name, email, sat_date, days_until_sat, created_at')
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as WaitlistEntry[]
+}
+
 /** List all registered users (admin only). */
 export async function listUsers(adminKey?: string): Promise<AdminUser[]> {
   await requireAdmin(adminKey)
