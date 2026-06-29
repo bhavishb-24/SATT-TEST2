@@ -24,7 +24,7 @@ export const FOOTER_GROUPS = [
       { label: 'How it works', href: '/how-it-works' },
       { label: 'FAQ', href: '/faq' },
       { label: 'Waitlist', href: '/waitlist' },
-      { label: 'Open the app', href: '/waitlist' },
+      { label: 'Join waitlist', href: '/waitlist' },
     ],
   },
   {

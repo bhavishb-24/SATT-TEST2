@@ -18,7 +18,7 @@ export function CtaBand() {
             href={SITE.appPath}
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-100"
           >
-            Open the app, free
+            Join waitlist, free
             <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
           </Link>
         </div>
