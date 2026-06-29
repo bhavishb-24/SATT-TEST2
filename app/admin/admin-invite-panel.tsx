@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { createInviteCodes, deleteInviteCode, type InviteCode } from '@/app/auth/actions'
 import { cn } from '@/lib/utils'
 
-export default function AdminInvitePanel({ initialCodes }: { initialCodes: InviteCode[] }) {
+export default function AdminInvitePanel({ initialCodes, adminKey }: { initialCodes: InviteCode[]; adminKey: string }) {
   const [codes, setCodes]       = useState<InviteCode[]>(initialCodes)
   const [count, setCount]       = useState(1)
   const [note, setNote]         = useState('')
@@ -16,7 +16,7 @@ export default function AdminInvitePanel({ initialCodes }: { initialCodes: Invit
     setError(null)
     startTransition(async () => {
       try {
-        const newCodes = await createInviteCodes(count, note)
+        const newCodes = await createInviteCodes(count, note, adminKey)
         setCodes(prev => [...newCodes, ...prev])
         setNote('')
       } catch (e: unknown) {
@@ -27,7 +27,7 @@ export default function AdminInvitePanel({ initialCodes }: { initialCodes: Invit
 
   function handleDelete(id: string) {
     startTransition(async () => {
-      await deleteInviteCode(id)
+      await deleteInviteCode(id, adminKey)
       setCodes(prev => prev.filter(c => c.id !== id))
     })
   }

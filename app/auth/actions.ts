@@ -41,7 +41,13 @@ export async function consumeInviteCode(
 
 // ── Admin actions ──────────────────────────────────────────────────────────
 
-async function requireAdmin() {
+// Auth check that works both with the cookie (normal browsers) and with an
+// admin key passed from the client (required inside cross-origin preview
+// iframes where third-party cookies are blocked).
+async function requireAdmin(adminKey?: string) {
+  if (adminKey && process.env.ADMIN_PASSWORD && adminKey === process.env.ADMIN_PASSWORD) {
+    return
+  }
   const authed = await isAdminAuthenticated()
   if (!authed) throw new Error('Unauthorized')
 }
@@ -56,8 +62,8 @@ export type InviteCode = {
 }
 
 /** List all invite codes (admin only). */
-export async function listInviteCodes(): Promise<InviteCode[]> {
-  await requireAdmin()
+export async function listInviteCodes(adminKey?: string): Promise<InviteCode[]> {
+  await requireAdmin(adminKey)
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('invite_codes')
@@ -70,8 +76,9 @@ export async function listInviteCodes(): Promise<InviteCode[]> {
 export async function createInviteCodes(
   count: number,
   note: string,
+  adminKey?: string,
 ): Promise<InviteCode[]> {
-  await requireAdmin()
+  await requireAdmin(adminKey)
   const supabase = createAdminClient()
 
   const rows = Array.from({ length: count }, () => ({
@@ -89,8 +96,8 @@ export async function createInviteCodes(
 }
 
 /** Delete an invite code by id (admin only). */
-export async function deleteInviteCode(id: string): Promise<void> {
-  await requireAdmin()
+export async function deleteInviteCode(id: string, adminKey?: string): Promise<void> {
+  await requireAdmin(adminKey)
   const supabase = createAdminClient()
   await supabase.from('invite_codes').delete().eq('id', id)
 }
@@ -105,8 +112,8 @@ export type AdminUser = {
 }
 
 /** List all registered users (admin only). */
-export async function listUsers(): Promise<AdminUser[]> {
-  await requireAdmin()
+export async function listUsers(adminKey?: string): Promise<AdminUser[]> {
+  await requireAdmin(adminKey)
   const supabase = createAdminClient()
 
   // Fetch auth users (up to 1000)

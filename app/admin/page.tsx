@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { isAdminAuthenticated, adminLogout } from '@/app/admin/actions'
 import { listInviteCodes, listUsers, type InviteCode, type AdminUser } from '@/app/auth/actions'
 import AdminInvitePanel from './admin-invite-panel'
 import AdminUsersPanel from './admin-users-panel'
@@ -14,19 +13,29 @@ export default function AdminPage() {
   const [tab, setTab]       = useState<Tab>('codes')
   const [codes, setCodes]   = useState<InviteCode[]>([])
   const [users, setUsers]   = useState<AdminUser[]>([])
+  const [adminKey, setAdminKey] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function init() {
-      const authed = await isAdminAuthenticated()
-      if (!authed) {
+      const key = (() => {
+        try { return sessionStorage.getItem('admin_key') } catch { return null }
+      })()
+      if (!key) {
         router.replace('/admin/login')
         return
       }
-      const [c, u] = await Promise.all([listInviteCodes(), listUsers()])
-      setCodes(c)
-      setUsers(u)
-      setLoading(false)
+      setAdminKey(key)
+      try {
+        const [c, u] = await Promise.all([listInviteCodes(key), listUsers(key)])
+        setCodes(c)
+        setUsers(u)
+        setLoading(false)
+      } catch {
+        // Key invalid/stale — clear and bounce to login
+        try { sessionStorage.removeItem('admin_key') } catch { /* ignore */ }
+        router.replace('/admin/login')
+      }
     }
     init()
   }, [router])
@@ -53,8 +62,8 @@ export default function AdminPage() {
           </div>
           <button
             type="button"
-            onClick={async () => {
-              await adminLogout()
+            onClick={() => {
+              try { sessionStorage.removeItem('admin_key') } catch { /* ignore */ }
               router.push('/admin/login')
             }}
             className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -88,7 +97,7 @@ export default function AdminPage() {
 
         {/* Tab content */}
         {tab === 'codes' ? (
-          <AdminInvitePanel initialCodes={codes} />
+          <AdminInvitePanel initialCodes={codes} adminKey={adminKey} />
         ) : (
           <AdminUsersPanel initial={users} />
         )}
