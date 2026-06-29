@@ -1,25 +1,43 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { isAdminAuthenticated, adminLogout } from '@/app/admin/actions'
-import { listInviteCodes, listUsers } from '@/app/auth/actions'
+import { listInviteCodes, listUsers, type InviteCode, type AdminUser } from '@/app/auth/actions'
 import AdminInvitePanel from './admin-invite-panel'
 import AdminUsersPanel from './admin-users-panel'
 
-export const metadata = { title: 'Admin — SAT Sage' }
+type Tab = 'codes' | 'users'
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>
-}) {
-  const authed = await isAdminAuthenticated()
-  if (!authed) redirect('/admin/login')
+export default function AdminPage() {
+  const router = useRouter()
+  const [tab, setTab]       = useState<Tab>('codes')
+  const [codes, setCodes]   = useState<InviteCode[]>([])
+  const [users, setUsers]   = useState<AdminUser[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const { tab = 'codes' } = await searchParams
+  useEffect(() => {
+    async function init() {
+      const authed = await isAdminAuthenticated()
+      if (!authed) {
+        router.replace('/admin/login')
+        return
+      }
+      const [c, u] = await Promise.all([listInviteCodes(), listUsers()])
+      setCodes(c)
+      setUsers(u)
+      setLoading(false)
+    }
+    init()
+  }, [router])
 
-  const [codes, users] = await Promise.all([
-    listInviteCodes(),
-    listUsers(),
-  ])
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <i className="ti ti-loader-2 animate-spin text-2xl text-muted-foreground" aria-hidden="true" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background px-4 py-10">
@@ -46,13 +64,14 @@ export default async function AdminPage({
 
         {/* Tabs */}
         <div className="mb-6 flex w-fit gap-1 rounded-xl border border-border bg-muted/40 p-1">
-          {[
-            { id: 'codes', label: 'Invite Codes', icon: 'ti-key' },
-            { id: 'users', label: `Users (${users.length})`, icon: 'ti-users' },
-          ].map(t => (
-            <a
+          {([
+            { id: 'codes' as Tab, label: 'Invite Codes', icon: 'ti-key' },
+            { id: 'users' as Tab, label: `Users (${users.length})`, icon: 'ti-users' },
+          ]).map(t => (
+            <button
               key={t.id}
-              href={`/admin?tab=${t.id}`}
+              type="button"
+              onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 tab === t.id
                   ? 'bg-card text-foreground shadow-sm'
@@ -61,7 +80,7 @@ export default async function AdminPage({
             >
               <i className={`ti ${t.icon}`} aria-hidden="true" />
               {t.label}
-            </a>
+            </button>
           ))}
         </div>
 
