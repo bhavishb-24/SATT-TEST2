@@ -66,7 +66,7 @@ export function AuthGate({ onGuestSignIn }: Props) {
     if (error) {
       setError(error.message)
     } else {
-      if (data.user) await consumeInviteCode(inviteCode, data.user.id)
+      if (data.user) await consumeInviteCode(inviteCode, data.user.id, { name: name.trim(), email: email.trim() })
       setNotice('Check your email to confirm your account, then sign in.')
       setPanel('signin')
     }
