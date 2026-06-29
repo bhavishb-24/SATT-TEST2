@@ -55,9 +55,12 @@ export default function SignUpPage() {
       return
     }
 
-    // 3. Consume the invite code
+    // 3. Consume the invite code and notify admin
     if (data.user) {
-      await consumeInviteCode(inviteCode, data.user.id)
+      await consumeInviteCode(inviteCode, data.user.id, {
+        name:  displayName.trim(),
+        email: email.trim(),
+      })
     }
 
     setDone(true)

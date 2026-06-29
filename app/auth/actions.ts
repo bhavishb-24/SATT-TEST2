@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminAuthenticated } from '@/app/admin/actions'
+import { sendNewUserNotification } from '@/lib/email'
 import { nanoid } from 'nanoid'
 
 /** Validate an invite code without consuming it. Returns true if valid & unused. */
@@ -18,13 +19,24 @@ export async function validateInviteCode(code: string): Promise<{ valid: boolean
   return { valid: true }
 }
 
-/** Mark an invite code as used after successful sign-up. */
-export async function consumeInviteCode(code: string, userId: string): Promise<void> {
+/** Mark an invite code as used after successful sign-up, and notify the admin. */
+export async function consumeInviteCode(
+  code: string,
+  userId: string,
+  meta?: { name?: string; email?: string },
+): Promise<void> {
   const supabase = createAdminClient()
   await supabase
     .from('invite_codes')
     .update({ used: true, used_by: userId, used_at: new Date().toISOString() })
     .eq('code', code.trim().toUpperCase())
+
+  // Fire-and-forget notification email
+  sendNewUserNotification({
+    name:        meta?.name  ?? '',
+    email:       meta?.email ?? '',
+    inviteCode:  code.trim().toUpperCase(),
+  })
 }
 
 // ── Admin actions ──────────────────────────────────────────────────────────
@@ -81,4 +93,39 @@ export async function deleteInviteCode(id: string): Promise<void> {
   await requireAdmin()
   const supabase = createAdminClient()
   await supabase.from('invite_codes').delete().eq('id', id)
+}
+
+export type AdminUser = {
+  id: string
+  email: string
+  display_name: string
+  created_at: string
+  last_sign_in: string | null
+  has_session: boolean
+}
+
+/** List all registered users (admin only). */
+export async function listUsers(): Promise<AdminUser[]> {
+  await requireAdmin()
+  const supabase = createAdminClient()
+
+  // Fetch auth users (up to 1000)
+  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (error) throw new Error(error.message)
+
+  // Fetch which users have an active session saved
+  const { data: sessions } = await supabase
+    .from('user_sessions')
+    .select('user_id')
+
+  const sessionIds = new Set((sessions ?? []).map((s: { user_id: string }) => s.user_id))
+
+  return data.users.map((u) => ({
+    id:           u.id,
+    email:        u.email ?? '—',
+    display_name: (u.user_metadata?.display_name as string) ?? '—',
+    created_at:   u.created_at,
+    last_sign_in: u.last_sign_in_at ?? null,
+    has_session:  sessionIds.has(u.id),
+  }))
 }
