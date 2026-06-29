@@ -61,7 +61,7 @@ function buildNotifications(
       title: 'AI insight: practice accuracy',
       body: `Your overall practice accuracy is ${acc}%. ${
         acc >= 70
-          ? 'Great work — keep reinforcing your strong topics.'
+          ? 'Great work. Keep reinforcing your strong topics.'
           : 'Focus on your weak areas in the Study Plan to improve.'
       }`,
       time: 'Based on your session',
@@ -77,7 +77,7 @@ function buildNotifications(
       icon: 'ti-flame',
       iconColor: 'text-orange-500',
       title: `${gamification.streak}-day streak active`,
-      body: 'Keep it going — study today to maintain your streak.',
+      body: 'Keep it going. Study today to maintain your streak.',
       time: 'Today',
       read: gamification.streak >= 3,
     })

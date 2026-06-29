@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
@@ -27,7 +29,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/app')
+    router.push(next && next.startsWith('/') ? next : '/app')
     router.refresh()
   }
 
@@ -102,13 +104,29 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
-            Create one free
-          </Link>
-        </p>
+        <div className="mt-6 flex flex-col items-center gap-1.5 text-center text-sm text-muted-foreground">
+          <p>
+            Have an invite code?{' '}
+            <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>
+          </p>
+          <p>
+            No invite code?{' '}
+            <Link href="/waitlist" className="font-medium text-primary hover:underline">
+              Join the waitlist
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

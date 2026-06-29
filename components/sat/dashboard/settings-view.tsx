@@ -439,7 +439,7 @@ export function SettingsView({ triage }: SettingsViewProps) {
               {twoFAEnabled && (
                 <div className="mt-4 rounded-xl bg-secondary/60 p-4">
                   <p className="text-sm text-secondary-foreground">
-                    To complete 2FA setup, connect an authenticator app like Google Authenticator or Authy. This requires a backend integration — connect Clerk or Supabase Auth to enable this feature.
+                    To complete 2FA setup, connect an authenticator app like Google Authenticator or Authy. This requires a backend integration. Connect Clerk or Supabase Auth to enable this feature.
                   </p>
                 </div>
               )}

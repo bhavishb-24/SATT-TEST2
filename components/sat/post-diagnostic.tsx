@@ -90,7 +90,7 @@ export function PostDiagnostic({
         strengths: strong.slice(0, 3),
         recommended_focus:
           missed.length > 0 ? `Keep drilling ${missed[0]}.` : 'Reinforce your strengths.',
-        encouragement: 'You came back for a progress check — that is exactly how scores climb.',
+        encouragement: 'You came back for a progress check. That is exactly how scores climb.',
       }
     }
 
@@ -130,7 +130,7 @@ export function PostDiagnostic({
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {`Now that you have worked through your plan, take a fresh ${
                 POST_MATH_COUNT + POST_RW_COUNT
-              }-question diagnostic — ${POST_MATH_COUNT} Math and ${POST_RW_COUNT} Reading & Writing. When you finish, we will:`}
+              }-question diagnostic (${POST_MATH_COUNT} Math and ${POST_RW_COUNT} Reading & Writing). When you finish, we will:`}
             </p>
             <ul className="mt-4 flex flex-col gap-3">
               <IntroItem icon="ti-arrows-diff" text="Compare these results against your very first diagnostic" />

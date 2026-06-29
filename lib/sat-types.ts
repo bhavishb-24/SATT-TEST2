@@ -7,6 +7,7 @@ export type TimeBudget =
 export interface TriageData {
   panic: number // 1-5
   testStartTime: string // e.g. "8:00 AM"
+  daysUntilSat: string // e.g. "7", "14", "30", "60", "90", "120", "150", "180", "210", "240", "270", "300", "330", "365", "365+"
   timeBudget: TimeBudget
   lastMath: string
   lastRW: string

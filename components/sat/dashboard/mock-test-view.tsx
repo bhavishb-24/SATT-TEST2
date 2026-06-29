@@ -129,7 +129,7 @@ export function MockTestView({ theme, onAnswer }: MockTestViewProps) {
           </div>
 
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-            Each test is freshly written by AI to mirror the digital SAT — a mix of Math and
+            Each test is freshly written by AI to mirror the digital SAT: a mix of Math and
             Reading &amp; Writing questions, no immediate answers, a running timer, and a full
             score breakdown with review at the end. Use the highlighter, calculator, and
             answer-elimination tools just like the real thing.

@@ -110,7 +110,7 @@ export function CoachFlow({
       const sorted = [...remaining].sort((a, b) => a.score_impact_percent - b.score_impact_percent)
       const toDrop = sorted[0]
       if (toDrop && !adaptations.find((a) => a.topic === toDrop.name)) {
-        const msg = `Running low on time — I removed ${toDrop.name} from your plan. Focus on what's left.`
+        const msg = `Running low on time. I removed ${toDrop.name} from your plan. Focus on what's left.`
         setAdaptations((prev) => [...prev, { topic: toDrop.name, message: msg }])
         setTopics((prev) => prev.filter((t) => t.name !== toDrop.name))
         setPendingBanner(msg)
@@ -149,7 +149,7 @@ export function CoachFlow({
       const newCount = (confusionCount[currentTopicIndex] ?? 0) + 1
       setConfusionCount((prev) => ({ ...prev, [currentTopicIndex]: newCount }))
       if (newCount >= 2 && currentTopic.confidence_low_steps.length > 0) {
-        const msg = `Simplified steps for ${currentTopic.name} — you were finding it tricky`
+        const msg = `Simplified steps for ${currentTopic.name}. You were finding it tricky.`
         setAdaptations((prev) => {
           if (prev.find((a) => a.topic === currentTopic.name && a.message === msg)) return prev
           return [...prev, { topic: currentTopic.name, message: msg }]
@@ -222,7 +222,7 @@ export function CoachFlow({
     if (!topicStartTime || !currentTopic) return
     const elapsed = (Date.now() - topicStartTime.getTime()) / 60000
     if (elapsed < currentTopic.time_minutes * 0.6) {
-      const msg = `You finished ${currentTopic.name} fast — I added extra review time to your next topic.`
+      const msg = `You finished ${currentTopic.name} fast. I added extra review time to your next topic.`
       setAdaptations((prev) => [...prev, { topic: currentTopic.name, message: msg }])
       setPendingBanner(msg)
       // give next topic extra time
@@ -642,7 +642,7 @@ function BreakScreen({
 
       {/* Breathing prompt */}
       <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-        While you wait — breathe in for 4, hold for 7, out for 8
+        While you wait: breathe in for 4, hold for 7, out for 8
       </p>
 
       {/* Animated breathing circle */}

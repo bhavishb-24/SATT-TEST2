@@ -93,9 +93,9 @@ export function compareDiagnostics(
 
   let headline: string
   if (verdict === 'improved') {
-    headline = `You improved by ${overall.delta} points — from ${overall.prePct}% to ${overall.postPct}%. The plan is working.`
+    headline = `You improved by ${overall.delta} points, from ${overall.prePct}% to ${overall.postPct}%. The plan is working.`
   } else if (verdict === 'declined') {
-    headline = `Your score dipped ${Math.abs(overall.delta)} points this time. That happens — let's tighten the weak spots below.`
+    headline = `Your score dipped ${Math.abs(overall.delta)} points this time. That happens. Let's tighten the weak spots below.`
   } else {
     headline = `You held steady at about ${overall.postPct}%. Lock in the topics below to push higher.`
   }

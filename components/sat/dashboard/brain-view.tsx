@@ -154,7 +154,7 @@ function BrainCell({
         'flex flex-col gap-1 rounded-2xl border p-3 transition-all duration-200 hover:shadow-md cursor-default select-none',
         color,
       )}
-      title={answered > 0 ? `${accuracy}% accuracy — ${answered} answered` : 'Not started yet'}
+      title={answered > 0 ? `${accuracy}% accuracy (${answered} answered)` : 'Not started yet'}
     >
       <div className="flex items-center justify-between gap-1">
         <span className="text-xs font-semibold leading-tight">{label}</span>
@@ -346,8 +346,8 @@ export function BrainView({ stats, gamification, triage }: BrainViewProps) {
   if (practiceAnswered === 0) {
     insights.push('Start answering practice questions to unlock personalized insights.')
   } else {
-    if (overallAccuracy >= 80) insights.push(`Your overall accuracy is ${overallAccuracy}% — excellent consistency across all sections.`)
-    else if (overallAccuracy >= 60) insights.push(`Overall accuracy is ${overallAccuracy}%. There is clear room to grow — keep pushing.`)
+    if (overallAccuracy >= 80) insights.push(`Your overall accuracy is ${overallAccuracy}%. Excellent consistency across all sections.`)
+    else if (overallAccuracy >= 60) insights.push(`Overall accuracy is ${overallAccuracy}%. There is clear room to grow. Keep pushing.`)
     else insights.push(`Accuracy sits at ${overallAccuracy}%. Focus on understanding mistakes before moving on.`)
 
     const weakSections = Object.entries(sectionStats)
@@ -355,7 +355,7 @@ export function BrainView({ stats, gamification, triage }: BrainViewProps) {
       .sort(([,a],[,b]) => pct(a.correct, a.answered) - pct(b.correct, b.answered))
     if (weakSections.length > 0) {
       const [key, s] = weakSections[0]
-      insights.push(`${key} is your biggest opportunity right now — ${pct(s.correct, s.answered)}% accuracy on ${s.answered} questions.`)
+      insights.push(`${key} is your biggest opportunity right now. You are at ${pct(s.correct, s.answered)}% accuracy on ${s.answered} questions.`)
     }
 
     const strongSections = Object.entries(sectionStats)
@@ -364,10 +364,10 @@ export function BrainView({ stats, gamification, triage }: BrainViewProps) {
       insights.push(`You are performing strongly in ${strongSections.map(([k]) => k).join(' and ')}.`)
     }
 
-    if (flashcardRetention >= 75) insights.push(`Flashcard retention at ${flashcardRetention}% — your memory is building well.`)
+    if (flashcardRetention >= 75) insights.push(`Flashcard retention at ${flashcardRetention}%. Your memory is building well.`)
     else if (flashcardsReviewed > 0) insights.push(`Flashcard retention is ${flashcardRetention}%. More daily review will strengthen long-term recall.`)
 
-    if (focusMinutes >= 30) insights.push(`You have logged ${focusMinutes} focused minutes — sustained attention is compounding your gains.`)
+    if (focusMinutes >= 30) insights.push(`You have logged ${focusMinutes} focused minutes. Sustained attention is compounding your gains.`)
 
     if (streak >= 3) insights.push(`${streak}-day streak active. Consistency is your biggest competitive advantage.`)
   }
@@ -382,11 +382,11 @@ export function BrainView({ stats, gamification, triage }: BrainViewProps) {
       .filter(([, s]) => s.answered >= 2 && pct(s.correct, s.answered) < 70)
       .sort(([,a],[,b]) => pct(a.correct, a.answered) - pct(b.correct, b.answered))
     weak.slice(0, 2).forEach(([key, s]) => {
-      recommendations.push(`Drill ${key} — ${s.answered - s.correct} incorrect so far. Target ${Math.ceil(s.answered * 0.3)} more questions today.`)
+      recommendations.push(`Drill ${key}: ${s.answered - s.correct} incorrect so far. Target ${Math.ceil(s.answered * 0.3)} more questions today.`)
     })
     if (triage.weakAreas?.length > 0 && weak.length === 0) {
       triage.weakAreas.slice(0, 2).forEach(area => {
-        recommendations.push(`Focus on ${area} — flagged during your initial triage.`)
+        recommendations.push(`Focus on ${area}. This area was flagged during your initial triage.`)
       })
     }
     if (focusMinutes < 15) recommendations.push('Log at least one 15-minute focus session to keep your streak alive.')
@@ -416,7 +416,7 @@ export function BrainView({ stats, gamification, triage }: BrainViewProps) {
         }
       `}</style>
 
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      {/* ── Hero ─���───────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-[#0a2218] p-8 text-white shadow-xl">
         <NeuralBackground />
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -525,16 +525,16 @@ export function BrainView({ stats, gamification, triage }: BrainViewProps) {
               <PatternCard icon="ti-trending-up" text={`Your first-attempt accuracy (${overallAccuracy}%) suggests strong foundational knowledge.`} />
             )}
             {overallAccuracy < 75 && practiceAnswered >= 10 && (
-              <PatternCard icon="ti-alert-triangle" text="Accuracy drops on questions answered later in a session — try shorter, more focused bursts." />
+              <PatternCard icon="ti-alert-triangle" text="Accuracy drops on questions answered later in a session. Try shorter, more focused bursts." />
             )}
             {flashcardRetention >= 70 && flashcardsReviewed > 0 && (
-              <PatternCard icon="ti-cards" text={`Card retention at ${flashcardRetention}% — spaced repetition is working for you.`} />
+              <PatternCard icon="ti-cards" text={`Card retention at ${flashcardRetention}%. Spaced repetition is working for you.`} />
             )}
             {streak >= 2 && (
               <PatternCard icon="ti-flame" text={`${streak}-day streak shows strong study habits forming.`} />
             )}
             {focusMinutes >= 20 && (
-              <PatternCard icon="ti-clock" text={`You have put in ${focusMinutes} focused minutes — consistency is building.`} />
+              <PatternCard icon="ti-clock" text={`You have put in ${focusMinutes} focused minutes. Consistency is building.`} />
             )}
             {Object.keys(sectionStats).length === 0 && (
               <PatternCard icon="ti-info-circle" text="Spread your practice across sections to unlock cross-section pattern insights." />

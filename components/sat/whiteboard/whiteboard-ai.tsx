@@ -171,7 +171,7 @@ export function WhiteboardAi() {
             ...prev,
             {
               role: 'assistant',
-              content: "I\u2019m here — could you rephrase that? Let\u2019s keep working through it together.",
+              content: "I\u2019m here. Could you rephrase that? Let\u2019s keep working through it together.",
             },
           ])
         }
@@ -335,7 +335,7 @@ export function WhiteboardAi() {
 
         await playLesson(
           data.steps.length,
-          `Great — let's work through this together. I'll write out **${data.title}** step by step on the board.`,
+          `Great! Let's work through this together. I'll write out **${data.title}** step by step on the board.`,
           `That's the full solution: the answer is **${data.answer}**. Want to try a similar one yourself? Tap **Your Turn**, or ask me anything about a step.`,
           `Worked through: ${data.title}`,
           {
@@ -402,7 +402,7 @@ export function WhiteboardAi() {
 
     await playLesson(
       DEMO_STEPS,
-      "Let's work through this geometry question together. I'll draw it out step by step — watch and listen along.",
+      "Let's work through this geometry question together. I'll draw it out step by step. Watch and listen along.",
       `So AC equals **10**. Want to try one yourself? Tap **Your Turn**, or type your own question to work through.`,
       `Worked through Q${QUESTION.number}: ${QUESTION.section}`,
       {
@@ -443,7 +443,7 @@ export function WhiteboardAi() {
       {
         role: 'assistant',
         content:
-          "Chat cleared. I'm still right here — ask me anything about this problem, or tap a step on the board to revisit it.",
+          "Chat cleared. I'm still right here. Ask me anything about this problem, or tap a step on the board to revisit it.",
       },
     ])
   }, [cancelPlayback])
@@ -638,7 +638,7 @@ export function WhiteboardAi() {
       console.log('[v0] practice error:', err)
       addMessage({
         role: 'assistant',
-        content: 'I couldn\u2019t build a practice problem just now — try again in a moment.',
+        content: 'I couldn\u2019t build a practice problem just now. Try again in a moment.',
       })
     } finally {
       setPracticeLoading(false)
@@ -668,14 +668,14 @@ export function WhiteboardAi() {
         recordMemory(
           data.correct
             ? { icon: 'ti-trophy', text: 'Solved a practice problem correctly', tone: 'good' }
-            : { icon: 'ti-alert-triangle', text: 'Missed a practice problem — review this', tone: 'watch' },
+            : { icon: 'ti-alert-triangle', text: 'Missed a practice problem. Review this topic.', tone: 'watch' },
         )
         void narration.narrate(data.feedback)
       } catch (err) {
         console.log('[v0] check error:', err)
         setPracticeFeedback({
           correct: false,
-          feedback: 'I had trouble checking that — give it another try in a moment.',
+          feedback: 'I had trouble checking that. Give it another try in a moment.',
         })
       } finally {
         setCheckingPractice(false)
@@ -732,7 +732,7 @@ export function WhiteboardAi() {
   )
 
   const handleAskAiDraw = useCallback(() => {
-    addMessage({ role: 'assistant', content: 'Sure — let me replay the solution step by step.' })
+    addMessage({ role: 'assistant', content: 'Sure! Let me replay the solution step by step.' })
     runReveal(totalStepsRef.current, { from: 0 })
   }, [addMessage, runReveal])
 
@@ -768,7 +768,7 @@ export function WhiteboardAi() {
       setThinking(false)
       addMessage({
         role: 'assistant',
-        content: 'Got it — I can see the question. Let\u2019s work through it together on the board.',
+        content: 'Got it. I can see the question. Let\u2019s work through it together on the board.',
       })
     }, 900)
   }, [addMessage])
@@ -1033,7 +1033,7 @@ function QuestionEntry({
               What question do you want to work through?
             </h2>
             <p className="text-sm text-muted-foreground">
-              Type or paste any SAT question — I&apos;ll solve it step by step on the board.
+              Type or paste any SAT question. I&apos;ll solve it step by step on the board.
             </p>
           </div>
         </div>

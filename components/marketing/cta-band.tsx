@@ -11,14 +11,14 @@ export function CtaBand() {
             The test is close. You don&apos;t have to face it alone.
           </h2>
           <p className="max-w-xl text-pretty text-lg leading-relaxed opacity-80">
-            Get a calm, personalized plan in about 60 seconds. No sign-up, no cost — just the
+            Get a calm, personalized plan in about 60 seconds. No sign-up, no cost. Just the
             focused help you need, right now.
           </p>
           <Link
             href={SITE.appPath}
             className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-100"
           >
-            Open the app — free
+            Join waitlist, free
             <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
           </Link>
         </div>

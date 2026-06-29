@@ -7,10 +7,10 @@ import {
   RW_WEAK_AREAS,
 } from '@/lib/constants'
 import type { TriageData, TimeBudget } from '@/lib/sat-types'
-import { buildTestTimeOptions, deriveTimes, TIME_BUDGET_LABELS } from '@/lib/time-utils'
+import { buildTestTimeOptions, deriveTimes } from '@/lib/time-utils'
 import { getPanicTheme } from '@/lib/theme'
 
-const TIME_BUDGETS: TimeBudget[] = ['all-day', 'evening', 'few-hours', 'sprint']
+
 
 interface Props {
   onSubmit: (data: TriageData) => void
@@ -48,7 +48,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function TriageForm({ onSubmit }: Props) {
   const [panic, setPanic] = useState(3)
   const [testStartTime, setTestStartTime] = useState('8:00 AM')
-  const [timeBudget, setTimeBudget] = useState<TimeBudget | ''>('')
+  const [daysUntilSat, setDaysUntilSat] = useState('')
   const [lastMath, setLastMath] = useState('')
   const [lastRW, setLastRW] = useState('')
   const [goalMath, setGoalMath] = useState('')
@@ -64,9 +64,9 @@ export function TriageForm({ onSubmit }: Props) {
   const [scoreReportText, setScoreReportText] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [errors, setErrors] = useState<{ weak?: string; time?: string }>({})
+  const [errors, setErrors] = useState<{ weak?: string; days?: string }>({})
   const weakRef = useRef<HTMLDivElement>(null)
-  const timeRef = useRef<HTMLDivElement>(null)
+  const daysRef = useRef<HTMLDivElement>(null)
 
   const theme = getPanicTheme(panic)
   const times = useMemo(() => deriveTimes(testStartTime), [testStartTime])
@@ -139,14 +139,14 @@ export function TriageForm({ onSubmit }: Props) {
   }
 
   function handleSubmit() {
-    const nextErrors: { weak?: string; time?: string } = {}
+    const nextErrors: { weak?: string; days?: string } = {}
+    if (!daysUntilSat) nextErrors.days = 'Tell us how far out your SAT is.'
     if (weakAreas.length === 0)
       nextErrors.weak = 'Pick at least one weak area so we can target your plan.'
-    if (!timeBudget) nextErrors.time = 'Tell us how much time you have right now.'
     setErrors(nextErrors)
 
-    if (nextErrors.time) {
-      timeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (nextErrors.days) {
+      daysRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (nextErrors.weak) {
@@ -157,7 +157,8 @@ export function TriageForm({ onSubmit }: Props) {
     onSubmit({
       panic,
       testStartTime,
-      timeBudget: timeBudget as TimeBudget,
+      daysUntilSat,
+      timeBudget: 'few-hours' as TimeBudget,
       lastMath,
       lastRW,
       goalMath,
@@ -174,10 +175,11 @@ export function TriageForm({ onSubmit }: Props) {
     <main className="animate-fade-in mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 pb-32 pt-8 lg:px-8 lg:pt-12">
       <header className="flex flex-col gap-1">
         <h1 className="font-serif text-4xl font-normal tracking-tight lg:text-5xl">
-          Let’s triage your night.
+          Let&apos;s build your plan.
         </h1>
         <p className="text-base text-muted-foreground">
-          A few quick questions so your coach can build the right plan.
+          A few quick questions so your coach can build the perfect plan, whether your SAT is
+          tomorrow or 12 months away.
         </p>
       </header>
 
@@ -215,55 +217,67 @@ export function TriageForm({ onSubmit }: Props) {
       {/* Left column */}
       <div className="flex flex-col gap-8">
 
-      {/* Section B — Test details */}
-      <section ref={timeRef} className="flex flex-col gap-5">
+      {/* Section B — Days until SAT */}
+      <section ref={daysRef} className="flex flex-col gap-5">
         <div>
-          <SectionLabel>What time does your SAT start tomorrow?</SectionLabel>
+          <SectionLabel>How many days until your SAT?</SectionLabel>
           <select
-            value={testStartTime}
-            onChange={(e) => setTestStartTime(e.target.value)}
+            value={daysUntilSat}
+            onChange={(e) => setDaysUntilSat(e.target.value)}
             className="min-h-[44px] w-full rounded-xl border border-border bg-card px-4 text-sm"
           >
-            {testTimeOptions.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
+            <option value="" disabled>
+              Select how far out your test is...
+            </option>
+            <option value="7">7 days (test is next week)</option>
+            <option value="14">14 days (two weeks out)</option>
+            <option value="30">30 days (about a month)</option>
+            <option value="60">2 months</option>
+            <option value="90">3 months</option>
+            <option value="120">4 months</option>
+            <option value="150">5 months</option>
+            <option value="180">6 months</option>
+            <option value="210">7 months</option>
+            <option value="240">8 months</option>
+            <option value="270">9 months</option>
+            <option value="300">10 months</option>
+            <option value="330">11 months</option>
+            <option value="365">12 months</option>
+            <option value="365+">More than 12 months</option>
           </select>
-          {times && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Sleep by <span className="font-semibold">{times.sleepDeadlineLabel}</span> · Wake
-              up by <span className="font-semibold">{times.wakeUpLabel}</span>
-            </p>
-          )}
-        </div>
-
-        <div>
-          <SectionLabel>How much time do you have right now?</SectionLabel>
-          <div className="flex flex-col gap-2">
-            {TIME_BUDGETS.map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setTimeBudget(b)}
-                aria-pressed={timeBudget === b}
-                className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition-colors ${
-                  timeBudget === b
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card hover:border-primary/50'
-                }`}
-              >
-                {TIME_BUDGET_LABELS[b]}
-              </button>
-            ))}
-          </div>
-          {errors.time && (
+          {errors.days && (
             <p className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
-              {errors.time}
+              {errors.days}
             </p>
           )}
         </div>
       </section>
+
+      {/* Section B2 — Test start time (only shown for 7 or 14 day window) */}
+      {(daysUntilSat === '7' || daysUntilSat === '14') && (
+        <section className="flex flex-col gap-5">
+          <div>
+            <SectionLabel>What time does your SAT start?</SectionLabel>
+            <select
+              value={testStartTime}
+              onChange={(e) => setTestStartTime(e.target.value)}
+              className="min-h-[44px] w-full rounded-xl border border-border bg-card px-4 text-sm"
+            >
+              {testTimeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            {times && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Sleep by <span className="font-semibold">{times.sleepDeadlineLabel}</span> · Wake
+                up by <span className="font-semibold">{times.wakeUpLabel}</span>
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Section C — Past scores */}
       <section className="flex flex-col gap-3">
@@ -402,7 +416,7 @@ export function TriageForm({ onSubmit }: Props) {
             onClick={handleSubmit}
             className={`flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold text-white transition-colors ${theme.accentBg}`}
           >
-            Build my emergency plan
+            Build my study plan
             <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
           </button>
         </div>
@@ -428,7 +442,7 @@ function NumberInput({
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
+        placeholder="e.g. 650"
         className="min-h-[44px] w-full rounded-xl border border-border bg-card px-4 text-sm"
       />
     </label>

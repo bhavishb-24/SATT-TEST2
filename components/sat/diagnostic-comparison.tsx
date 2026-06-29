@@ -123,14 +123,12 @@ export function DiagnosticComparison({
         </h2>
         {comparison && comparison.stillStudyTopics.length === 0 ? (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            You did not miss a single topic this time. Outstanding — review your strengths so they
-            stay sharp.
+            You did not miss a single topic this time. Outstanding work. Review your strengths so they stay sharp.
           </p>
         ) : (
           <>
             <p className="mt-1 text-sm text-muted-foreground">
-              These topics still tripped you up — they are the highest-value place to spend your
-              remaining time.
+              These topics still tripped you up. They are the highest-value place to spend your remaining time.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {(comparison ? comparison.stillStudyTopics : post.review.identified_weak_areas).map(

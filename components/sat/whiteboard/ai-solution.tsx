@@ -552,7 +552,7 @@ function AnnotationBoard({ spec, step }: { spec: AnnotationSpec; step: number })
               <i className="ti ti-arrow-right mt-0.5 text-primary" aria-hidden="true" />
               <span>
                 <span className="font-semibold text-foreground">{m.phrase}</span>
-                {' — '}
+                {': '}
                 {m.note}
               </span>
             </li>

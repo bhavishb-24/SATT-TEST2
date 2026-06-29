@@ -28,7 +28,7 @@ export default function NotFound() {
             href={SITE.appPath}
             className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-primary px-7 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Open the app
+            Join waitlist
             <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
           </Link>
         </div>

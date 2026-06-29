@@ -98,9 +98,9 @@ export function Checklist({
   const morningItems = useMemo(
     () => [
       `Wake up at ${wakeLabel}`,
-      'Eat a real breakfast — protein and carbs',
+      'Eat a real breakfast (protein and carbs)',
       'Arrive 15 minutes early',
-      'Use the formula reference sheet — it’s printed on the test',
+      'Use the formula reference sheet. It is printed on the test.',
       'Skip questions you don’t know and come back',
       'You prepared. Trust what you know.',
     ],
@@ -244,7 +244,7 @@ export function Checklist({
           <span className="ti ti-confetti text-4xl text-emerald-500" aria-hidden="true" />
           <h2 className="mt-2 text-xl font-extrabold">You’re all set.</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Everything is checked off. Get some rest — you’ve earned it.
+            Everything is checked off. Get some rest. You've earned it.
           </p>
           {triage.emergencyContact && (
             <p className="mt-3 rounded-xl bg-card p-3 text-sm font-medium">
@@ -284,7 +284,7 @@ export function Checklist({
               <>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                   Take a fresh 60-question diagnostic (30 Math + 30 Reading &amp; Writing) and we&apos;ll
-                  compare it to your very first one — what improved, what you did well, and what to keep
+                  compare it to your very first one: what improved, what you did well, and what to keep
                   studying.
                 </p>
                 <button

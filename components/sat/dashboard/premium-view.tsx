@@ -378,7 +378,7 @@ export function PremiumView({ onNavigate: _ }: PremiumViewProps) {
         {[
           {
             q: 'Can I cancel anytime?',
-            a: 'Yes. Cancel from Settings at any time — you keep Pro access until the end of your billing period.',
+            a: 'Yes. Cancel from Settings at any time. You keep Pro access until the end of your billing period.',
           },
           {
             q: 'What payment methods are accepted?',
@@ -386,7 +386,7 @@ export function PremiumView({ onNavigate: _ }: PremiumViewProps) {
           },
           {
             q: 'Is there a student discount?',
-            a: 'Yes — .edu email addresses receive 20% off Pro. Enter your school email at checkout.',
+            a: 'Yes. .edu email addresses receive 20% off Pro. Enter your school email at checkout.',
           },
           {
             q: 'Does Free really stay free?',

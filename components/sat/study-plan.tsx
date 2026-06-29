@@ -152,7 +152,7 @@ export function StudyPlan({
         </div>
         <p className="text-xs text-muted-foreground">
           {allDone
-            ? 'Every lesson complete — incredible work.'
+            ? 'Every lesson complete. Incredible work.'
             : 'Finish each lesson to unlock the next. Tip, example, then a real question.'}
         </p>
       </div>

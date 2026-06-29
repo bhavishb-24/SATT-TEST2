@@ -153,8 +153,8 @@ export function PanicOverlay({
 
           {/* Mental health escalation — always visible */}
           <p className="text-xs leading-relaxed text-white/80">
-            If you’re feeling more than test stress — if you’re having thoughts of hurting yourself
-            or feel like you can’t cope — please text HOME to 741741 to reach the Crisis Text Line.
+            If you’re feeling more than test stress, if you’re having thoughts of hurting yourself
+            or feel like you can’t cope, please text HOME to 741741 to reach the Crisis Text Line.
             This app is for SAT prep. Real support is one text away.
           </p>
         </div>

@@ -143,7 +143,7 @@ export function DiagnosticTest({
           <div>
             <p className="text-lg font-bold text-foreground">Building your diagnostic</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {`${QUESTION_COUNT} questions — ${MATH_COUNT} Math and ${RW_COUNT} Reading & Writing — so we can pinpoint exactly where to focus.`}
+              {`${QUESTION_COUNT} questions: ${MATH_COUNT} Math and ${RW_COUNT} Reading & Writing. This lets us pinpoint exactly where to focus.`}
             </p>
           </div>
         </div>
@@ -286,7 +286,7 @@ export function DiagnosticTest({
         </div>
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {`${MATH_COUNT} Math + ${RW_COUNT} Reading & Writing — be honest, we are finding weak spots, not grading you.`}
+            {`${MATH_COUNT} Math + ${RW_COUNT} Reading & Writing. Be honest: we are finding weak spots, not grading you.`}
           </p>
         </div>
       </header>
@@ -497,7 +497,7 @@ export function DiagnosticTest({
       {/* Eliminated hint */}
       {eliminatedForQ.size > 0 && (
         <p className="text-center text-xs text-muted-foreground">
-          {eliminatedForQ.size} choice{eliminatedForQ.size > 1 ? 's' : ''} eliminated —{' '}
+          {eliminatedForQ.size} choice{eliminatedForQ.size > 1 ? 's' : ''} eliminated.{' '}
           <button
             type="button"
             className="font-medium underline underline-offset-2 hover:text-foreground"

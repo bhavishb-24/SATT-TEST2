@@ -312,7 +312,7 @@ export function ChatPanel({
           </button>
         </div>
         <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
-          Sage AI answers live — ask anything about {exam ?? 'your exam'}.
+          Sage AI answers live. Ask anything about {exam ?? 'your exam'}.
         </p>
       </div>
     </aside>

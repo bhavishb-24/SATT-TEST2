@@ -32,7 +32,7 @@ export function SiteHeader() {
             href={SITE.appPath}
             className="hidden min-h-[40px] items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:flex"
           >
-            Open the app
+            Join waitlist
             <span className="ti ti-arrow-right text-base" aria-hidden="true" />
           </Link>
 
@@ -75,7 +75,7 @@ export function SiteHeader() {
               onClick={() => setOpen(false)}
               className="mt-2 flex min-h-[48px] items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-base font-semibold text-primary-foreground"
             >
-              Open the app
+              Join waitlist
               <span className="ti ti-arrow-right text-base" aria-hidden="true" />
             </Link>
           </nav>

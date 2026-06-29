@@ -27,7 +27,7 @@ const TOOLS: ToolDef[] = [
   { tool: 'arrow', label: 'Arrow', icon: 'ti-arrow-up-right' },
   { tool: 'shape', label: 'Box / rectangle', icon: 'ti-square' },
   { tool: null, action: 'graph', label: 'Graph', icon: 'ti-chart-dots' },
-  { tool: null, action: 'geometry', label: 'Geometry — ask AI to draw', icon: 'ti-triangle' },
+  { tool: null, action: 'geometry', label: 'Geometry: ask AI to draw', icon: 'ti-triangle' },
   { tool: 'text', label: 'Text', icon: 'ti-typography' },
   { tool: 'laser', label: 'Laser pointer', icon: 'ti-pointer' },
   { tool: 'eraser', label: 'Eraser', icon: 'ti-eraser' },
@@ -557,7 +557,7 @@ export function BoardCanvas({
               <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex max-w-[90%] -translate-x-1/2 items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary backdrop-blur">
                 <i className="ti ti-zoom-scan text-sm" aria-hidden="true" />
                 <span className="truncate">
-                  Breakdown{breakdown.focus ? ` — ${breakdown.focus}` : ''}
+                  Breakdown{breakdown.focus ? `: ${breakdown.focus}` : ''}
                 </span>
               </div>
 

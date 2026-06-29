@@ -1,8 +1,8 @@
 export const SITE = {
   name: 'SAT Sage',
   shortName: 'SAT Sage',
-  tagline: 'Your free last-minute SAT coach',
-  appPath: '/app',
+  tagline: 'Your AI-powered SAT coach. Now in beta.',
+  appPath: '/waitlist',
   supportEmail: 'help@satemergencyroom.com',
   // The date legal documents were last revised. Update when policies change.
   legalUpdated: 'June 18, 2026',
@@ -10,9 +10,10 @@ export const SITE = {
 
 /** Primary navigation shown in the marketing header. */
 export const NAV_LINKS = [
-  { label: 'How it works', href: '/#how-it-works' },
-  { label: 'FAQ', href: '/#faq' },
+  { label: 'How it works', href: '/how-it-works' },
+  { label: 'FAQ', href: '/faq' },
   { label: 'About', href: '/about' },
+  { label: 'Waitlist', href: '/waitlist' },
 ] as const
 
 /** Footer link groups. */
@@ -20,9 +21,9 @@ export const FOOTER_GROUPS = [
   {
     title: 'Product',
     links: [
-      { label: 'How it works', href: '/#how-it-works' },
-      { label: 'FAQ', href: '/#faq' },
-      { label: 'Open the app', href: '/app' },
+      { label: 'How it works', href: '/how-it-works' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Join waitlist', href: '/waitlist' },
     ],
   },
   {
