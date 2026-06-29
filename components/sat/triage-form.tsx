@@ -7,10 +7,10 @@ import {
   RW_WEAK_AREAS,
 } from '@/lib/constants'
 import type { TriageData, TimeBudget } from '@/lib/sat-types'
-import { buildTestTimeOptions, deriveTimes, TIME_BUDGET_LABELS } from '@/lib/time-utils'
+import { buildTestTimeOptions, deriveTimes } from '@/lib/time-utils'
 import { getPanicTheme } from '@/lib/theme'
 
-const TIME_BUDGETS: TimeBudget[] = ['all-day', 'evening', 'few-hours', 'sprint']
+
 
 interface Props {
   onSubmit: (data: TriageData) => void
@@ -49,7 +49,6 @@ export function TriageForm({ onSubmit }: Props) {
   const [panic, setPanic] = useState(3)
   const [testStartTime, setTestStartTime] = useState('8:00 AM')
   const [daysUntilSat, setDaysUntilSat] = useState('')
-  const [timeBudget, setTimeBudget] = useState<TimeBudget | ''>('')
   const [lastMath, setLastMath] = useState('')
   const [lastRW, setLastRW] = useState('')
   const [goalMath, setGoalMath] = useState('')
@@ -65,9 +64,8 @@ export function TriageForm({ onSubmit }: Props) {
   const [scoreReportText, setScoreReportText] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [errors, setErrors] = useState<{ weak?: string; time?: string; days?: string }>({})
+  const [errors, setErrors] = useState<{ weak?: string; days?: string }>({})
   const weakRef = useRef<HTMLDivElement>(null)
-  const timeRef = useRef<HTMLDivElement>(null)
   const daysRef = useRef<HTMLDivElement>(null)
 
   const theme = getPanicTheme(panic)
@@ -141,19 +139,14 @@ export function TriageForm({ onSubmit }: Props) {
   }
 
   function handleSubmit() {
-    const nextErrors: { weak?: string; time?: string; days?: string } = {}
+    const nextErrors: { weak?: string; days?: string } = {}
     if (!daysUntilSat) nextErrors.days = 'Tell us how far out your SAT is.'
-    if (!timeBudget) nextErrors.time = 'Tell us how much time you have right now.'
     if (weakAreas.length === 0)
       nextErrors.weak = 'Pick at least one weak area so we can target your plan.'
     setErrors(nextErrors)
 
     if (nextErrors.days) {
       daysRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      return
-    }
-    if (nextErrors.time) {
-      timeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
     if (nextErrors.weak) {
@@ -165,7 +158,7 @@ export function TriageForm({ onSubmit }: Props) {
       panic,
       testStartTime,
       daysUntilSat,
-      timeBudget: timeBudget as TimeBudget,
+      timeBudget: 'few-hours' as TimeBudget,
       lastMath,
       lastRW,
       goalMath,
@@ -285,35 +278,6 @@ export function TriageForm({ onSubmit }: Props) {
           </div>
         </section>
       )}
-
-      {/* Section C — Time budget */}
-      <section ref={timeRef} className="flex flex-col gap-5">
-        <div>
-          <SectionLabel>How much time do you have right now?</SectionLabel>
-          <div className="flex flex-col gap-2">
-            {TIME_BUDGETS.map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setTimeBudget(b)}
-                aria-pressed={timeBudget === b}
-                className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition-colors ${
-                  timeBudget === b
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card hover:border-primary/50'
-                }`}
-              >
-                {TIME_BUDGET_LABELS[b]}
-              </button>
-            ))}
-          </div>
-          {errors.time && (
-            <p className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
-              {errors.time}
-            </p>
-          )}
-        </div>
-      </section>
 
       {/* Section C — Past scores */}
       <section className="flex flex-col gap-3">
