@@ -81,7 +81,7 @@ export default function SignUpPage() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <span className="font-serif text-3xl font-bold text-primary">SAT Sage</span>
-          <p className="mt-1 text-sm text-muted-foreground">Start your SAT journey — it&apos;s free</p>
+          <p className="mt-1 text-sm text-muted-foreground">Start your SAT journey. It&apos;s free.</p>
         </div>
 
         <div className="rounded-3xl bg-card p-8 shadow-sm ring-1 ring-border/50">

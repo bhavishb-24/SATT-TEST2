@@ -154,7 +154,7 @@ export function VideoStrip({ participants, muted, camOff, onToggle, visible }: P
         {others.length === 0 && (
           <div className="flex h-full flex-1 items-center justify-center">
             <p className="text-xs text-muted-foreground">
-              No one else is here yet — share the room code to invite friends.
+              No one else is here yet. Share the room code to invite friends.
             </p>
           </div>
         )}

@@ -197,7 +197,7 @@ export default function Page() {
           strengths: strong.slice(0, 3),
           recommended_focus:
             missed.length > 0 ? `Start with ${missed[0]} tonight.` : 'Reinforce your strengths.',
-          encouragement: "You showed up the night before — that's already a win.",
+          encouragement: "You showed up the night before. That's already a win.",
         }
       }
 

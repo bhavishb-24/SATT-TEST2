@@ -4,7 +4,7 @@ const FEATURES = [
   {
     icon: 'ti-clipboard-heart',
     title: 'Personalized study plan',
-    body: 'Tell us your SAT date (up to 12 months away) and your stress level — your AI coach instantly builds a prioritized, day-by-day plan targeting your exact weak spots.',
+    body: 'Tell us your SAT date (up to 12 months away) and your stress level. Your AI coach instantly builds a prioritized, day-by-day plan targeting your exact weak spots.',
   },
   {
     icon: 'ti-pencil',
@@ -19,7 +19,7 @@ const FEATURES = [
   {
     icon: 'ti-cards',
     title: 'Rapid flashcards',
-    body: 'Flip through high-yield concepts and vocab. Mark what you know, loop the rest, and build confidence fast — whether you have two weeks or two hours.',
+    body: 'Flip through high-yield concepts and vocab. Mark what you know, loop the rest, and build confidence fast, whether you have two weeks or two hours.',
   },
   {
     icon: 'ti-clock-play',
@@ -46,8 +46,8 @@ export function Features() {
               A full prep toolkit from signup to test day
             </h2>
             <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
-              Whether you join a year out or the night before, every tool you need is right here —
-              no dashboards to configure, no courses to buy, and no time spent figuring out where
+              Whether you join a year out or the night before, every tool you need is right here.
+              No dashboards to configure, no courses to buy, and no time spent figuring out where
               to start.
             </p>
           </div>

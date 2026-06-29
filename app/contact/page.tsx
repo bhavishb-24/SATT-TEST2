@@ -6,14 +6,14 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Get in touch with the SAT Sage team. Questions, feedback, or a bug to report — we read everything.',
+    'Get in touch with the SAT Sage team. Questions, feedback, or a bug to report. We read everything.',
 }
 
 const CHANNELS = [
   {
     icon: 'ti-mail',
     title: 'Email us',
-    body: 'For anything at all — questions, feedback, or a wrong answer you spotted.',
+    body: 'Questions, feedback, or a wrong answer you spotted. We read it all.',
     actionLabel: SITE.supportEmail,
     href: `mailto:${SITE.supportEmail}`,
   },
@@ -46,8 +46,8 @@ export default function ContactPage() {
           </h1>
           <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground">
             {SITE.name} is built by a small team that genuinely reads every message. Whether
-            you&apos;re stuck, you found a bug, or you just want to say the panic button helped —
-            reach out.
+            you&apos;re stuck, you found a bug, or you just want to say the panic button helped,
+            we want to hear from you.
           </p>
 
           <ul className="mt-10 flex flex-col gap-4">
@@ -82,7 +82,7 @@ export default function ContactPage() {
             <Link href="/#faq" className="font-medium text-primary underline underline-offset-2">
               FAQ
             </Link>{' '}
-            — it covers the most common questions.
+            for answers to the most common questions.
           </p>
         </div>
       </section>

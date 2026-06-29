@@ -14,7 +14,7 @@ const STEPS = [
   {
     icon: 'ti-sparkles',
     title: 'Get your plan',
-    body: 'Your AI coach builds a prioritized, time-boxed study plan — highest-impact topics first, sleep deadline included.',
+    body: 'Your AI coach builds a prioritized, time-boxed study plan. Highest-impact topics first, sleep deadline included.',
   },
   {
     icon: 'ti-run',

@@ -144,7 +144,7 @@ export function CreateRoomModal({ user, onClose, onCreated }: Props) {
           {/* Max members */}
           <div className="flex flex-col gap-1.5">
             <p className="text-sm font-semibold text-foreground">
-              Max students — <span className="text-primary">{max}</span>
+              Max students: <span className="text-primary">{max}</span>
             </p>
             <input
               type="range"

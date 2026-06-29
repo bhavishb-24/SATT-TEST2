@@ -8,7 +8,7 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'Join the Waitlist',
   description:
-    'Be the first to access new SAT Sage features — live coaching, study groups, and more. Free for students with their SAT within 12 months.',
+    'Be the first to access new SAT Sage features: live coaching, study groups, and more. Free for students with their SAT within 12 months.',
 }
 
 const PERKS = [
@@ -25,7 +25,7 @@ const PERKS = [
   {
     icon: 'ti-bell',
     title: 'Test date reminders',
-    body: "We'll remind you at key milestones — 30 days, 14 days, and the night before — with a custom plan for each.",
+    body: "We'll remind you at key milestones (30 days, 14 days, and the night before) with a custom plan for each.",
   },
 ]
 
@@ -47,7 +47,7 @@ export default function WaitlistPage() {
                 </span>
               </h1>
               <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
-                {SITE.name} is free to use right now — but we are building even more for
+                {SITE.name} is free to use right now. We are building even more for
                 students who want to prep smart from up to 12 months out. Join the waitlist
                 and be first to know when live coaching, study groups, and personalized
                 progress reports go live.
@@ -87,7 +87,7 @@ export default function WaitlistPage() {
                 Don&apos;t want to wait?
               </p>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                The core app is free and available right now — no account needed.
+                The core app is free and available right now. No account needed.
               </p>
               <Link
                 href={SITE.appPath}

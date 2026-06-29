@@ -20,11 +20,11 @@ const SITE_URL = 'https://sat-sage.vercel.app'
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'SAT Sage — Your free last-minute SAT coach',
-    template: '%s — SAT Sage',
+    default: 'SAT Sage: Your free SAT coach',
+    template: '%s | SAT Sage',
   },
   description:
-    'A free, AI-powered SAT study coach for the night before the test. Get a personalized plan, practice drills, formulas, and a calm path from panic to ready — no sign-up required.',
+    'A free, AI-powered SAT study coach for any student within 12 months of their test. Get a personalized plan, practice drills, formulas, and a calm path from panic to ready. No sign-up required.',
   applicationName: 'SAT Sage',
   keywords: [
     'SAT prep',
@@ -39,17 +39,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: SITE_URL,
-    title: 'SAT Sage — Your free last-minute SAT coach',
+    title: 'SAT Sage: Your free SAT coach',
     description:
-      'Wealthy students hire a tutor the night before. Now you have one too — free. A calm, personalized plan to go from panic to ready.',
+      'Wealthy students hire a tutor the night before. Now you have one too, for free. A calm, personalized plan to go from panic to ready.',
     siteName: 'SAT Sage',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SAT Sage' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SAT Sage — Your free last-minute SAT coach',
+    title: 'SAT Sage: Your free SAT coach',
     description:
-      'A free, AI-powered SAT coach for the night before the test. From panic to a clear plan.',
+      'A free, AI-powered SAT coach for students within 12 months of their test. From panic to a clear plan.',
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },

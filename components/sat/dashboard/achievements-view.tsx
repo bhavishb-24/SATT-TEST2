@@ -222,7 +222,7 @@ function OverviewTab({ state, api }: { state: GamificationState; api: Gamificati
             ))}
             {activeQuests.length === 0 && (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                All quests complete for now — check back tomorrow.
+                All quests complete for now. Check back tomorrow.
               </p>
             )}
           </div>
@@ -533,7 +533,7 @@ function JourneyTab({ journey }: { journey: JourneyMilestone[] }) {
 
         {upcomingMilestones.length > 0 && doneMilestones.length > 0 && (
           <p className="mt-4 text-xs text-muted-foreground text-center">
-            {upcomingMilestones.length} milestone{upcomingMilestones.length !== 1 ? 's' : ''} ahead — keep going.
+            {upcomingMilestones.length} milestone{upcomingMilestones.length !== 1 ? 's' : ''} ahead. Keep going.
           </p>
         )}
       </div>
@@ -771,7 +771,7 @@ function ProfileTab({ state }: { state: GamificationState }) {
             {unlockedAchievements.map((a) => (
               <div
                 key={a.id}
-                title={`${a.title} — ${a.description}`}
+                title={`${a.title}: ${a.description}`}
                 className={cn(
                   'flex h-12 w-12 items-center justify-center rounded-2xl text-xl',
                   'shadow-sm ring-2 ring-white hover:scale-110 transition-transform cursor-default',

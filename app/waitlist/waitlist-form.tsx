@@ -38,13 +38,13 @@ export function WaitlistForm() {
         <p className="max-w-sm text-pretty text-muted-foreground">
           {state.alreadySignedUp
             ? "Looks like you already signed up with this email. We'll reach out when new features and study groups go live."
-            : "We'll reach out as soon as new features, live coaching sessions, and study groups go live. Start prepping now — the app is free to use today."}
+            : "We'll reach out as soon as new features, live coaching sessions, and study groups go live. The app is free to use today, so start prepping now."}
         </p>
         <a
           href="/app"
           className="mt-2 flex min-h-[48px] items-center gap-2 rounded-xl bg-primary px-7 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          Start prepping now — free
+          Start prepping now, it&apos;s free
           <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
         </a>
       </div>

@@ -46,7 +46,7 @@ export function MorningMode({ plan, triage }: Props) {
   const countdown =
     now && testMinutes != null
       ? formatCountdown(nextOccurrence(testMinutes, now).getTime() - now.getTime())
-      : '—'
+      : 'N/A'
 
   const mathReminder = plan.top_math_tips[0] ?? 'Isolate the variable one step at a time.'
   const rwReminder = plan.top_rw_tips[0] ?? 'Support every answer with a line from the passage.'

@@ -7,14 +7,14 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'SAT Sage was built for stressed students who deserve the same prep advantages as anyone else — no tutor fees, no gatekeeping, just a calm and capable AI coach.',
+    'SAT Sage was built for stressed students who deserve the same prep advantages as anyone else. No tutor fees, no gatekeeping, just a calm and capable AI coach.',
 }
 
 const VALUES = [
   {
     icon: 'ti-gift',
     title: 'Free, always',
-    body: 'The night before your SAT — or the year before — should never come with a paywall. Every feature is free, with no account required to get started.',
+    body: 'The night before your SAT, or the year before, should never come with a paywall. Every feature is free, with no account required to get started.',
   },
   {
     icon: 'ti-mood-calm',
@@ -24,12 +24,12 @@ const VALUES = [
   {
     icon: 'ti-scale',
     title: 'Fairness',
-    body: 'Wealthy students have tutors on speed dial. We are trying to put a version of that in every student\'s pocket — no zip code required.',
+    body: 'Wealthy students have tutors on speed dial. We are trying to put a version of that in every student\'s pocket. No zip code required.',
   },
   {
     icon: 'ti-calendar-check',
     title: 'Long-term prep, not just last-minute',
-    body: 'We built SAT Sage to work across the full 12-month window before your test. Start early with foundations or sprint at the last minute — the plan adapts to you.',
+    body: 'We built SAT Sage to work across the full 12-month window before your test. Start early with foundations or sprint at the last minute. The plan adapts to you.',
   },
 ]
 
@@ -55,19 +55,19 @@ export default function AboutPage() {
             </h1>
             <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground">
               The night before the SAT, some students have a private tutor on speed dial. Most
-              don&apos;t. That gap has always felt unfair — so we built {SITE.name} to give every
+              don&apos;t. That gap has always felt unfair. We built {SITE.name} to give every
               student a calm, capable coach from the moment they decide to prepare, all the way
               through test day.
             </p>
             <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
               You can start up to 12 months before your SAT. Whether you have a year, a month,
-              or just one night left, {SITE.name} turns your current situation — stress level,
-              weak areas, time available — into a clear, actionable plan. No sign-up required.
+              or just one night left, {SITE.name} turns your current situation (stress level,
+              weak areas, and time available) into a clear, actionable plan. No sign-up required.
               No cost. No judgment.
             </p>
             <p className="mt-4 text-pretty text-lg leading-relaxed text-muted-foreground">
               We are not here to replace months of hard work. We are here to make those months
-              count — and to make sure that when the night before finally arrives, you feel
+              count, and to make sure that when the night before finally arrives, you feel
               ready instead of panicked.
             </p>
           </FadeInOnScroll>

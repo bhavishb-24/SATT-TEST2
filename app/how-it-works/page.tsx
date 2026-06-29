@@ -7,14 +7,14 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'How It Works',
   description:
-    'See exactly how SAT Sage builds your personalized SAT study plan in under 60 seconds — whether your test is tomorrow or 12 months away.',
+    'See exactly how SAT Sage builds your personalized SAT study plan in under 60 seconds, whether your test is tomorrow or 12 months away.',
 }
 
 const STEPS = [
   {
     icon: 'ti-calendar-event',
     title: 'Tell us when you test',
-    body: "Enter your SAT date — anywhere from 7 days to 12 months away. SAT Sage is built for every student, not just last-minute crammers. The earlier you join, the more your plan can evolve with you.",
+    body: "Enter your SAT date, anywhere from 7 days to 12 months away. SAT Sage is built for every student, not just last-minute crammers. The earlier you join, the more your plan can evolve with you.",
     detail:
       'You can update your test date anytime. Your plan automatically recalibrates with new priorities as your timeline shifts.',
   },
@@ -28,7 +28,7 @@ const STEPS = [
   {
     icon: 'ti-target',
     title: 'Flag your weak areas',
-    body: 'Pick the math topics and reading/writing skills that feel shakiest. No guessing — this is about targeting the areas with the highest score potential for you specifically.',
+    body: 'Pick the math topics and reading/writing skills that feel shakiest. This is about targeting the areas with the highest score potential for you specifically, not random guessing.',
     detail:
       'You can also upload your College Board score report and we\'ll scan it automatically to fill in your weak spots.',
   },
@@ -49,7 +49,7 @@ const STEPS = [
   {
     icon: 'ti-trophy',
     title: 'Walk in ready',
-    body: "Come test day, you'll know exactly what you studied, what improved, and where you stand. No last-minute guessing — just confidence built over every session you put in.",
+    body: "Come test day, you'll know exactly what you studied, what improved, and where you stand. No last-minute guessing. Just confidence built over every session you put in.",
     detail:
       'Use the morning checklist before you leave: key reminders, a breathing reset, and a quick review of your top tips.',
   },
@@ -76,7 +76,7 @@ export default function HowItWorksPage() {
               From &ldquo;I don&apos;t know where to start&rdquo; to a clear plan in 60 seconds
             </h1>
             <p className="mt-6 text-pretty text-lg leading-relaxed text-muted-foreground">
-              {SITE.name} works for students at every stage — a year out or the night before.
+              {SITE.name} works for students at every stage, a year out or the night before.
               Answer a few questions and your AI coach does the hard thinking for you.
             </p>
           </FadeInOnScroll>
@@ -168,7 +168,7 @@ export default function HowItWorksPage() {
                 Ready to stop guessing and start prepping?
               </h2>
               <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
-                Join thousands of students already building their plans — completely free.
+                Join thousands of students already building their plans. Completely free.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
@@ -182,7 +182,7 @@ export default function HowItWorksPage() {
                   href={SITE.appPath}
                   className="flex min-h-[54px] items-center justify-center gap-2 rounded-xl border border-border bg-card px-7 text-base font-semibold text-foreground transition-colors hover:bg-muted"
                 >
-                  Try it now — no signup
+                  Try it now, no signup needed
                 </Link>
               </div>
             </div>
