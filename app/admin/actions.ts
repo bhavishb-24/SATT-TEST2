@@ -24,7 +24,7 @@ export async function adminLogin(formData: FormData) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: COOKIE_MAX_AGE,
-    path: '/admin',
+    path: '/',
   })
 
   redirect('/admin')
@@ -32,7 +32,7 @@ export async function adminLogin(formData: FormData) {
 
 export async function adminLogout() {
   const cookieStore = await cookies()
-  cookieStore.delete(COOKIE_NAME)
+  cookieStore.set(COOKIE_NAME, '', { maxAge: 0, path: '/' })
   redirect('/admin/login')
 }
 
