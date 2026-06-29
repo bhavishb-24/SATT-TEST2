@@ -1,33 +1,35 @@
+import { FadeInOnScroll } from '@/components/marketing/fade-in-on-scroll'
+
 const FEATURES = [
   {
-    icon: 'ti-clipboard-list',
-    title: 'AI emergency plan',
-    body: 'Answer a few questions and get a calm, prioritized, hour-by-hour plan built around your exact weak areas and the time you have left.',
+    icon: 'ti-clipboard-heart',
+    title: 'Personalized study plan',
+    body: 'Tell us your SAT date (up to 12 months away) and your stress level — your AI coach instantly builds a prioritized, day-by-day plan targeting your exact weak spots.',
   },
   {
     icon: 'ti-pencil',
     title: 'Practice drills',
-    body: 'Fresh SAT-style questions for any topic, with instant feedback and clear explanations so you actually learn from every miss.',
+    body: 'Fresh SAT-style questions for any topic, with instant feedback and clear explanations. Every practice session is calibrated to where you are right now.',
   },
   {
     icon: 'ti-math-function',
     title: 'Formula & rules sheet',
-    body: 'Every must-know math formula and grammar rule in one searchable place — beautifully typeset and ready for last-minute review.',
+    body: 'Every must-know math formula and grammar rule in one searchable place — beautifully typeset so you can review the night before without hunting through notes.',
   },
   {
     icon: 'ti-cards',
     title: 'Rapid flashcards',
-    body: 'Flip through high-yield concepts and vocab. Mark what you know, loop the rest, and build confidence fast.',
+    body: 'Flip through high-yield concepts and vocab. Mark what you know, loop the rest, and build confidence fast — whether you have two weeks or two hours.',
   },
   {
     icon: 'ti-clock-play',
-    title: 'Focus timer',
-    body: 'A built-in pomodoro keeps you in deep work with structured breaks, so cramming never tips into burnout.',
+    title: 'Built-in focus timer',
+    body: 'A pomodoro timer keeps you in deep work with structured breaks, so studying never tips into burnout — crucial when you\'re already stressed.',
   },
   {
     icon: 'ti-chart-arcs',
     title: 'Progress tracking',
-    body: 'See accuracy by section, topics completed, and focus time at a glance — proof that you are getting more ready by the minute.',
+    body: 'Watch your accuracy climb by section, see topics completed, and track focus time. Proof that every session is making you more ready for test day.',
   },
 ]
 
@@ -35,18 +37,21 @@ export function Features() {
   return (
     <section id="features" className="border-t border-border bg-card/40">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
-        <div className="flex max-w-2xl flex-col gap-4">
-          <span className="text-sm font-bold uppercase tracking-wider text-primary">
-            Everything in one place
-          </span>
-          <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
-            A full prep toolkit, opened the moment you need it most
-          </h2>
-          <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
-            No dashboards to configure, no courses to buy. Just the focused tools that move your
-            score tonight — and a coach that keeps you calm while you use them.
-          </p>
-        </div>
+        <FadeInOnScroll>
+          <div className="flex max-w-2xl flex-col gap-4">
+            <span className="text-sm font-bold uppercase tracking-wider text-primary">
+              Everything in one place
+            </span>
+            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
+              A full prep toolkit from signup to test day
+            </h2>
+            <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
+              Whether you join a year out or the night before, every tool you need is right here —
+              no dashboards to configure, no courses to buy, and no stress trying to figure out
+              where to start.
+            </p>
+          </div>
+        </FadeInOnScroll>
 
         <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
