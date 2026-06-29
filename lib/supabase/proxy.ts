@@ -1,20 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 
-/** Routes that require waitlist sign-up before access. */
-const GATED_PREFIXES = ['/app', '/whiteboard', '/rooms', '/mocktest-preview']
-
 export async function updateSession(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Redirect gated routes to the waitlist
-  if (GATED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/waitlist'
-    url.search = ''
-    return NextResponse.redirect(url)
-  }
-
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
