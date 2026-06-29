@@ -107,6 +107,14 @@ export default function WaitlistPage() {
               <div className="mt-6">
                 <WaitlistForm />
               </div>
+              <div className="mt-5 border-t border-border pt-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Already have an invite code?{' '}
+                  <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
+                    Create your account
+                  </Link>
+                </p>
+              </div>
             </div>
           </FadeInOnScroll>
         </div>
