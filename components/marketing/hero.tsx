@@ -30,7 +30,7 @@ export function Hero() {
           >
             <span className="ti ti-book-2 text-sm text-primary" aria-hidden="true" />
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              Free SAT Prep — Up to 1 Year Before Your Test
+              Free SAT Prep: Up to 1 Year Before Your Test
             </span>
           </motion.div>
 
@@ -53,7 +53,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             Whether your SAT is tomorrow or 12 months away, {SITE.name} meets you exactly
-            where you are. Tell us when you&apos;re testing and how stressed you feel — your
+            where you are. Tell us when you&apos;re testing and how stressed you feel. Your
             AI coach builds a personalized plan in 60 seconds. No tutor fees. No fluff. Just
             results.
           </motion.p>
@@ -68,7 +68,7 @@ export function Hero() {
               href="/waitlist"
               className="flex min-h-[54px] items-center justify-center gap-2 rounded-xl bg-primary px-7 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80"
             >
-              Join the waitlist — free
+              Join the waitlist, free
               <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
             </Link>
             <Link
@@ -88,7 +88,7 @@ export function Hero() {
             {[
               'No account needed',
               '100% free',
-              'Works night before or 1 year out',
+              'Works the night before or 1 year out',
             ].map((item) => (
               <li key={item} className="flex items-center gap-1.5">
                 <span className="ti ti-check text-base text-primary" aria-hidden="true" />
@@ -202,7 +202,7 @@ function PlanPreview() {
       <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3.5 py-3">
         <span className="ti ti-brain text-base text-primary" aria-hidden="true" />
         <span className="text-xs font-medium text-foreground">
-          AI adapts your plan as you progress — no stress.
+          AI adapts your plan as you progress. No stress.
         </span>
       </div>
     </div>

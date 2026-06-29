@@ -194,14 +194,14 @@ export function HomeView({
             />
             <HeroStat
               label="Confidence"
-              value={confidenceScore > 0 ? `${confidenceScore}%` : '—'}
+              value={confidenceScore > 0 ? `${confidenceScore}%` : 'N/A'}
               sub={confidenceScore > 0 ? 'based on your answers' : 'answer questions to see'}
               icon="ti-brain"
               iconColor="bg-purple-50 text-purple-600"
             />
             <HeroStat
               label="Est. SAT"
-              value={estimatedSAT > 0 ? estimatedSAT.toLocaleString() : '—'}
+              value={estimatedSAT > 0 ? estimatedSAT.toLocaleString() : 'N/A'}
               sub={estimatedSAT > 0 ? 'projected' : 'start practicing'}
               icon="ti-chart-line"
               iconColor="bg-emerald-50 text-primary"
@@ -274,7 +274,7 @@ export function HomeView({
             </div>
           ) : (
             <p className="rounded-2xl border border-dashed border-border bg-card/50 p-4 text-sm text-muted-foreground text-center">
-              All quests complete for today — keep practicing to earn XP.
+              All quests complete for today. Keep practicing to earn XP.
             </p>
           )}
         </section>

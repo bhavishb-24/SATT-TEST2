@@ -55,7 +55,7 @@ export function CoachWelcome({ triage, response, onReady }: CoachWelcomeProps) {
             )}
           </p>
           <p className="text-base leading-relaxed text-muted-foreground">
-            You don&apos;t have to figure anything out — just follow me. I&apos;ll show you one
+            You don&apos;t have to figure anything out. Just follow me. I&apos;ll show you one
             thing at a time.
           </p>
           {triage.panic >= 4 && (

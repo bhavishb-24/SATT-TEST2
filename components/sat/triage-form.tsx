@@ -185,7 +185,7 @@ export function TriageForm({ onSubmit }: Props) {
           Let&apos;s build your plan.
         </h1>
         <p className="text-base text-muted-foreground">
-          A few quick questions so your coach can build the perfect plan — whether your SAT is
+          A few quick questions so your coach can build the perfect plan, whether your SAT is
           tomorrow or 12 months away.
         </p>
       </header>
@@ -236,9 +236,9 @@ export function TriageForm({ onSubmit }: Props) {
             <option value="" disabled>
               Select how far out your test is...
             </option>
-            <option value="7">7 days — test is next week</option>
-            <option value="14">14 days — two weeks out</option>
-            <option value="30">30 days — about a month</option>
+            <option value="7">7 days (test is next week)</option>
+            <option value="14">14 days (two weeks out)</option>
+            <option value="30">30 days (about a month)</option>
             <option value="60">2 months</option>
             <option value="90">3 months</option>
             <option value="120">4 months</option>
@@ -478,7 +478,7 @@ function NumberInput({
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
+        placeholder="e.g. 650"
         className="min-h-[44px] w-full rounded-xl border border-border bg-card px-4 text-sm"
       />
     </label>

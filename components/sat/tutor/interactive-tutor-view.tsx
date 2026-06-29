@@ -113,7 +113,7 @@ function WelcomeScreen({ studentName, weakTopics, onAction }: WelcomeScreenProps
       icon: 'ti-crosshair',
       label: 'Practice Weak Topics',
       message: recommendedTopic
-        ? `Help me practice ${recommendedTopic} — it's my weakest area.`
+        ? `Help me practice ${recommendedTopic}. It's my weakest area.`
         : 'Help me practice my weakest topics.',
     },
     {
@@ -154,7 +154,7 @@ function WelcomeScreen({ studentName, weakTopics, onAction }: WelcomeScreenProps
             <p className="mt-1 text-sm text-muted-foreground">
               Today I recommend focusing on{' '}
               <span className="font-semibold text-primary">{recommendedTopic}</span>
-              {' '}— it currently has your lowest confidence score.
+              {'. It currently has your lowest confidence score.'}
             </p>
           )}
         </div>
@@ -550,7 +550,7 @@ export function InteractiveTutorView({ triage, stats, gamification, onNavigate }
             </button>
           </div>
           <p className="mt-1.5 text-center text-[11px] text-muted-foreground/50">
-            Sage uses the Socratic method — it guides you to the answer rather than giving it directly.
+            Sage uses the Socratic method. It guides you to the answer rather than giving it directly.
           </p>
         </div>
       </div>

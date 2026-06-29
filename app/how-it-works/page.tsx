@@ -21,7 +21,7 @@ const STEPS = [
   {
     icon: 'ti-mood-sad',
     title: 'Share how you\'re feeling',
-    body: "Stressed? Panicking? Feeling okay? We ask because your emotional state shapes your plan. A student with 3 months and moderate anxiety gets a very different strategy than one with 2 weeks in full panic mode.",
+    body: "Stressed? Panicking? Feeling okay? We ask because your emotional state shapes your plan. A student with 3 months and moderate anxiety gets a very different strategy from one with 2 weeks left and full panic mode.",
     detail:
       'There is no wrong answer here. The panic button is always one tap away if you spiral mid-session.',
   },
@@ -37,7 +37,7 @@ const STEPS = [
     title: 'Get your personalized plan',
     body: 'Your AI coach builds a complete, prioritized study plan in about 60 seconds. Topics are ordered by score impact, time-boxed to fit your schedule, and adapted to your stress level.',
     detail:
-      'Plans include daily goals, practice drills, flashcard decks, and recommended review time — all mapped to your exact SAT date.',
+      'Plans include daily goals, practice drills, flashcard decks, and recommended review time, all mapped to your exact SAT date.',
   },
   {
     icon: 'ti-run',
@@ -56,10 +56,10 @@ const STEPS = [
 ]
 
 const TIMELINE = [
-  { range: '7–30 days', focus: 'High-intensity sprint — highest-impact topics only, timed drills, daily plans' },
-  { range: '2–3 months', focus: 'Balanced prep — full topic coverage, practice tests, weak area targeting' },
-  { range: '4–6 months', focus: 'Deep prep — section mastery, vocab building, regular mock tests' },
-  { range: '7–12 months', focus: 'Full roadmap — foundations, strategy, long-term progress tracking' },
+  { range: '7 to 30 days', focus: 'High-intensity sprint: highest-impact topics only, timed drills, and daily plans' },
+  { range: '2 to 3 months', focus: 'Balanced prep: full topic coverage, practice tests, and weak area targeting' },
+  { range: '4 to 6 months', focus: 'Deep prep: section mastery, vocab building, and regular mock tests' },
+  { range: '7 to 12 months', focus: 'Full roadmap: foundations, strategy, and long-term progress tracking' },
 ]
 
 export default function HowItWorksPage() {

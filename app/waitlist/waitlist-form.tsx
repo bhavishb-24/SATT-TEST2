@@ -4,9 +4,9 @@ import { useActionState } from 'react'
 import { joinWaitlist, type WaitlistFormState } from './actions'
 
 const DAYS_OPTIONS = [
-  { value: '7', label: '7 days — test is next week' },
-  { value: '14', label: '14 days — two weeks out' },
-  { value: '30', label: '30 days — about a month' },
+  { value: '7', label: '7 days (test is next week)' },
+  { value: '14', label: '14 days (two weeks out)' },
+  { value: '30', label: '30 days (about a month)' },
   { value: '60', label: '2 months' },
   { value: '90', label: '3 months' },
   { value: '120', label: '4 months' },
@@ -126,7 +126,7 @@ export function WaitlistForm() {
           </>
         ) : (
           <>
-            Join the waitlist — free
+            Join the waitlist, free
             <span className="ti ti-arrow-right text-lg" aria-hidden="true" />
           </>
         )}

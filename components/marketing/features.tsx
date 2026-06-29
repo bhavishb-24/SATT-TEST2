@@ -14,7 +14,7 @@ const FEATURES = [
   {
     icon: 'ti-math-function',
     title: 'Formula & rules sheet',
-    body: 'Every must-know math formula and grammar rule in one searchable place — beautifully typeset so you can review the night before without hunting through notes.',
+    body: 'Every must-know math formula and grammar rule in one searchable place, beautifully typeset so you can review the night before without hunting through notes.',
   },
   {
     icon: 'ti-cards',
@@ -24,7 +24,7 @@ const FEATURES = [
   {
     icon: 'ti-clock-play',
     title: 'Built-in focus timer',
-    body: 'A pomodoro timer keeps you in deep work with structured breaks, so studying never tips into burnout — crucial when you\'re already stressed.',
+    body: 'A pomodoro timer keeps you in deep work with structured breaks, so studying never tips into burnout. Crucial when you\'re already stressed.',
   },
   {
     icon: 'ti-chart-arcs',
@@ -47,8 +47,8 @@ export function Features() {
             </h2>
             <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
               Whether you join a year out or the night before, every tool you need is right here —
-              no dashboards to configure, no courses to buy, and no stress trying to figure out
-              where to start.
+              no dashboards to configure, no courses to buy, and no time spent figuring out where
+              to start.
             </p>
           </div>
         </FadeInOnScroll>

@@ -40,7 +40,7 @@ export function TopicLesson({ lesson, completed, onComplete }: Props) {
           All {targets.length} targets complete
         </p>
         <p className="text-xs text-emerald-700 dark:text-emerald-300">
-          Nice work — you finished every learning target in this topic.
+          Nice work! You finished every learning target in this topic.
         </p>
         <button
           type="button"
@@ -269,7 +269,7 @@ function MultipleChoice({
       </div>
       {picked !== null && (
         <Feedback correct={isRight}>
-          <p className="mb-1 font-bold">{isRight ? 'Correct!' : 'Not quite — try again.'}</p>
+          <p className="mb-1 font-bold">{isRight ? 'Correct!' : 'Not quite. Try again.'}</p>
           {challenge.explanation}
         </Feedback>
       )}
@@ -325,7 +325,7 @@ function Highlight({
         <>
           <Feedback correct={correct}>
             <p className="mb-1 font-bold">
-              {correct ? 'Correct — that is the evidence!' : 'Not the strongest evidence. Re-read and try again.'}
+              {correct ? 'Correct! That is the evidence.' : 'Not the strongest evidence. Re-read and try again.'}
             </p>
             {challenge.explanation}
           </Feedback>
@@ -434,7 +434,7 @@ function Order({
       {checked && (
         <>
           <Feedback correct={correct}>
-            <p className="mb-1 font-bold">{correct ? 'Perfect sequence!' : 'Not quite — reset and try again.'}</p>
+            <p className="mb-1 font-bold">{correct ? 'Perfect sequence!' : 'Not quite. Reset and try again.'}</p>
             {challenge.explanation}
           </Feedback>
           {correct ? (
@@ -503,7 +503,7 @@ function FillBlank({
 
       {chosen !== null && (
         <Feedback correct={correct}>
-          <p className="mb-1 font-bold">{correct ? 'Correct!' : 'Not quite — try another chip.'}</p>
+          <p className="mb-1 font-bold">{correct ? 'Correct!' : 'Not quite. Try another chip.'}</p>
           {challenge.explanation}
         </Feedback>
       )}

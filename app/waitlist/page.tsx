@@ -15,7 +15,7 @@ const PERKS = [
   {
     icon: 'ti-star',
     title: 'Early access to new features',
-    body: 'Live coaching sessions, study groups, and AI-powered mock tests — waitlist members get them first.',
+    body: 'Live coaching sessions, study groups, and AI-powered mock tests. Waitlist members get them first.',
   },
   {
     icon: 'ti-users',
