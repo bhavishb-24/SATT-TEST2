@@ -40,13 +40,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // If not logged in and trying to visit /admin, redirect to login with return path
-  if (!user && pathname.startsWith('/admin')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    url.searchParams.set('next', pathname)
-    return NextResponse.redirect(url)
-  }
-
   return supabaseResponse
 }
