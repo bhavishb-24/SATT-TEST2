@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { cookies } from 'next/headers'
+import { isAdminAuthenticated } from '@/app/admin/actions'
 import { nanoid } from 'nanoid'
 
 /** Validate an invite code without consuming it. Returns true if valid & unused. */
@@ -30,8 +30,7 @@ export async function consumeInviteCode(code: string, userId: string): Promise<v
 // ── Admin actions ──────────────────────────────────────────────────────────
 
 async function requireAdmin() {
-  const cookieStore = await cookies()
-  const authed = cookieStore.get('admin_auth')?.value === 'true'
+  const authed = await isAdminAuthenticated()
   if (!authed) throw new Error('Unauthorized')
 }
 

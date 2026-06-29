@@ -23,7 +23,6 @@ export const FOOTER_GROUPS = [
     links: [
       { label: 'How it works', href: '/how-it-works' },
       { label: 'FAQ', href: '/faq' },
-      { label: 'Waitlist', href: '/waitlist' },
       { label: 'Join waitlist', href: '/waitlist' },
     ],
   },
