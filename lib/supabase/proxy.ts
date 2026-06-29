@@ -31,11 +31,19 @@ export async function updateSession(request: NextRequest) {
   // Refresh session — do NOT remove this
   const { data: { user } } = await supabase.auth.getUser()
 
-  // If logged in and trying to visit an auth page, send them to the app
   const { pathname } = request.nextUrl
+
+  // If logged in and trying to visit an auth page, send them to the app
   if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone()
     url.pathname = '/app'
+    return NextResponse.redirect(url)
+  }
+
+  // If not logged in and trying to visit /admin, redirect to login
+  if (!user && pathname.startsWith('/admin')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
     return NextResponse.redirect(url)
   }
 
