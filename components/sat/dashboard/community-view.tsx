@@ -795,7 +795,7 @@ function CreatePanel({ weakAreas }: { weakAreas: string[] }) {
   )
 }
 
-// ─── Library panel ────────────────────────────────────────────────────────────
+// ─── Library panel ───────────────────────────────────────���────────────────────
 
 function LibraryPanel({ onSwitchDiscover, onSwitchCreate }: { onSwitchDiscover: () => void; onSwitchCreate: () => void }) {
   const PLAYLISTS: never[] = []
@@ -825,7 +825,7 @@ function LibraryPanel({ onSwitchDiscover, onSwitchCreate }: { onSwitchDiscover: 
             <div>
               <p className="text-sm font-semibold text-foreground">{"You haven't created any questions yet"}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Your published questions will appear here along with analytics — views, attempts, and where students struggle.
+                Your published questions will appear here along with analytics: views, attempts, and where students struggle.
               </p>
             </div>
             <button

@@ -363,7 +363,7 @@ function QuestionsTab({ exam = 'SAT', topic = '' }: { exam?: string; topic?: str
       setQuestions([
         {
           id: '1',
-          question: `Which of the following best describes the primary purpose of the passage? (Sample ${exam} question — generate more with the button above)`,
+          question: `Which of the following best describes the primary purpose of the passage? (Sample ${exam} question. Generate more with the button above.)`,
           choices: ['To argue a position', 'To describe a process', 'To compare two concepts', 'To present a narrative'],
           correct: 0,
           explanation: 'The passage takes a clear stance on the topic, making "argue a position" the best answer.',
@@ -413,7 +413,7 @@ function QuestionsTab({ exam = 'SAT', topic = '' }: { exam?: string; topic?: str
             <div>
               <p className="font-semibold text-foreground">No questions yet</p>
               <p className="mt-1 max-w-xs text-sm text-muted-foreground text-pretty">
-                Enter a topic above and click Generate — Sage AI will write {exam}-style questions for your group.
+                Enter a topic above and click Generate. Sage AI will write {exam}-style questions for your group.
               </p>
             </div>
             <button
@@ -525,9 +525,9 @@ function FlashcardsTab({ exam = 'SAT', topic = '' }: { exam?: string; topic?: st
       }
     } catch {
       setCards([
-        { id: '1', front: 'Quadratic Formula', back: 'x = (−b ± √(b²−4ac)) / 2a — solves ax² + bx + c = 0' },
+        { id: '1', front: 'Quadratic Formula', back: 'x = (−b ± √(b²−4ac)) / 2a. Solves ax² + bx + c = 0.' },
         { id: '2', front: 'Subject-Verb Agreement', back: 'A singular subject takes a singular verb. "The team is..." not "The team are..."' },
-        { id: '3', front: 'Central Idea', back: 'The central idea is the main point the author wants you to take away — usually broader than any single detail.' },
+        { id: '3', front: 'Central Idea', back: 'The central idea is the main point the author wants you to take away. It is usually broader than any single detail.' },
       ])
       setIndex(0)
       setFlipped(false)
@@ -600,7 +600,7 @@ function FlashcardsTab({ exam = 'SAT', topic = '' }: { exam?: string; topic?: st
             <button
               onClick={() => setFlipped((f) => !f)}
               className="group relative flex h-48 w-full max-w-lg cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-border bg-card p-6 text-center shadow-md transition-all hover:border-primary/40 hover:shadow-lg"
-              aria-label={flipped ? 'Card back — click to flip' : 'Card front — click to flip'}
+              aria-label={flipped ? 'Card back, click to flip' : 'Card front, click to flip'}
             >
               <span className="absolute right-4 top-4 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                 {flipped ? 'Back' : 'Front'} · tap to flip
@@ -661,7 +661,7 @@ function PracticeTab({ exam = 'SAT', topic = '' }: { exam?: string; topic?: stri
         question: `If f(x) = 3x² − 5x + 2, what is the value of f(3)? (Sample ${exam} question)`,
         choices: ['14', '16', '20', '22'],
         correct: 2,
-        explanation: 'f(3) = 3(9) − 5(3) + 2 = 27 − 15 + 2 = 14. Wait — recalculate: 27−15+2=14. The answer is 14 (choice A).',
+        explanation: 'f(3) = 3(9) - 5(3) + 2 = 27 - 15 + 2 = 14. The answer is 14 (choice A).',
         selected: null,
         revealed: false,
       })
@@ -808,7 +808,7 @@ function NotesTab({ roomName }: { roomName: string }) {
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder={`Start typing notes for ${roomName}...\n\nKey concepts, formulas, reminders — anything goes. Your notes are saved locally.`}
+        placeholder={`Start typing notes for ${roomName}...\n\nKey concepts, formulas, reminders. Anything goes. Your notes are saved locally.`}
         className="flex-1 resize-none bg-background px-5 py-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
         aria-label="Shared notes"
       />

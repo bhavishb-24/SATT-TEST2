@@ -81,7 +81,7 @@ const FAQ: FaqEntry[] = [
   {
     category: 'Premium',
     q: 'Is there a free trial?',
-    a: 'Yes — Pro includes a 7-day free trial. No credit card required until the trial ends.',
+    a: 'Yes. Pro includes a 7-day free trial. No credit card required until the trial ends.',
   },
 ]
 

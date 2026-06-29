@@ -72,7 +72,7 @@ export function SessionSummary({ onClose, summary, loading }: SessionSummaryProp
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">Confidence score</p>
-              <p className="text-xs text-muted-foreground">Up from 64% before this lesson — nice jump.</p>
+              <p className="text-xs text-muted-foreground">Up from 64% before this lesson. Nice jump.</p>
             </div>
           </div>
 

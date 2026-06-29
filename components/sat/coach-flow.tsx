@@ -222,7 +222,7 @@ export function CoachFlow({
     if (!topicStartTime || !currentTopic) return
     const elapsed = (Date.now() - topicStartTime.getTime()) / 60000
     if (elapsed < currentTopic.time_minutes * 0.6) {
-      const msg = `You finished ${currentTopic.name} fast — I added extra review time to your next topic.`
+      const msg = `You finished ${currentTopic.name} fast. I added extra review time to your next topic.`
       setAdaptations((prev) => [...prev, { topic: currentTopic.name, message: msg }])
       setPendingBanner(msg)
       // give next topic extra time

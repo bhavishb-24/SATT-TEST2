@@ -5,7 +5,7 @@ import { SITE } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description:
-    'The terms for using SAT Sage — a free, AI-powered SAT study tool. Please read before using the service.',
+    'The terms for using SAT Sage, a free AI-powered SAT study tool. Please read before using the service.',
 }
 
 export default function TermsPage() {

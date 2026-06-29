@@ -18,7 +18,7 @@ const STEPS: TourStep[] = [
   {
     target: null,
     title: "Hi, I'm Sage!",
-    body: "I'm your study buddy. Let me give you a quick tour of your command center so you know where everything lives. Hit Next — or Skip if you'd rather dive straight in.",
+    body: "I'm your study buddy. Let me give you a quick tour of your command center so you know where everything lives. Hit Next, or Skip if you'd rather dive straight in.",
   },
   {
     target: 'countdown',
@@ -29,7 +29,7 @@ const STEPS: TourStep[] = [
     target: 'nav-home',
     view: 'home',
     title: 'Dashboard',
-    body: "Your home base — a quick snapshot of tonight's plan, your progress, and what to do next.",
+    body: "Your home base: a quick snapshot of tonight's plan, your progress, and what to do next.",
   },
   {
     target: 'nav-plan',
@@ -47,7 +47,7 @@ const STEPS: TourStep[] = [
     target: 'nav-mocktest',
     view: 'mocktest',
     title: 'Mock Tests',
-    body: 'Full-length, 98-question SAT-style practice tests. Same structure as the real digital SAT — two R&W modules and two Math modules.',
+    body: 'Full-length, 98-question SAT-style practice tests. Same structure as the real digital SAT: two R&W modules and two Math modules.',
   },
   {
     target: 'nav-flashcards',
@@ -65,7 +65,7 @@ const STEPS: TourStep[] = [
     target: 'nav-asktutor',
     view: 'asktutor',
     title: 'Ask AI Tutor',
-    body: "Stuck on a question? Snap a photo and I'll walk you through it Socratic-style — no spoilers, just guidance.",
+    body: "Stuck on a question? Snap a photo and I'll walk you through it Socratic-style. No spoilers, just guidance.",
   },
   {
     target: 'nav-community',
@@ -76,7 +76,7 @@ const STEPS: TourStep[] = [
   {
     target: null,
     title: "You're all set!",
-    body: "That's the whole tour. You've got this — one topic at a time. Let's go!",
+    body: "That's the whole tour. You've got this. One topic at a time. Let's go!",
   },
 ]
 

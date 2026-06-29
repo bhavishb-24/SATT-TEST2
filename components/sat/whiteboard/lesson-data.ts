@@ -4,7 +4,7 @@
 
 export const QUESTION = {
   number: 14,
-  section: 'Math — Geometry',
+  section: 'Math: Geometry',
   prompt:
     'In right triangle ABC, the right angle is at B. If AB = 6 and BC = 8, what is the length of the hypotenuse AC?',
 }
@@ -15,11 +15,11 @@ export const STEP_NARRATION: string[] = [
   'See that little square at B? That means angle B is exactly ninety degrees.', // 1 right angle mark
   'One leg, A B, has a length of six.', // 2 label AB
   'The other leg, B C, has a length of eight.', // 3 label BC
-  'And A C — the side across from the right angle — is what we want to find.', // 4 label AC ?
+  'And A C, the side across from the right angle, is what we want to find.', // 4 label AC ?
   'Because this is a right triangle, we can use the Pythagorean theorem.', // 5 a^2 + b^2 = c^2
   'Plug in our two legs: six squared plus eight squared.', // 6 substitute
   'Thirty-six plus sixty-four gives us one hundred.', // 7 = 100
-  'So A C is the square root of one hundred — which is ten!', // 8 answer circled
+  'So A C is the square root of one hundred, which is ten!', // 8 answer circled
 ]
 
 export interface TeachStage {
@@ -38,13 +38,13 @@ export const TEACH_STAGES: TeachStage[] = [
   {
     reveal: 2,
     message:
-      "No problem — let's solve this together. First, look at the triangle I drew. What *kind* of triangle is this? Notice the little square at corner B.",
+      "No problem. Let's solve this together. First, look at the triangle I drew. What *kind* of triangle is this? Notice the little square at corner B.",
     nextLabel: 'I think it\u2019s a right triangle…',
   },
   {
     reveal: 4,
     message:
-      "Exactly — it's a right triangle. Now, when you know the two shorter sides (the legs) and want the longest side, which famous formula comes to mind?",
+      "Exactly. It's a right triangle. Now, when you know the two shorter sides (the legs) and want the longest side, which famous formula comes to mind?",
     nextLabel: 'Give me a hint',
   },
   {
@@ -62,7 +62,7 @@ export const TEACH_STAGES: TeachStage[] = [
   {
     reveal: 9,
     message:
-      "Take the square root of both sides: √100 = **10**. So AC = 10. You just solved it the way a tutor would — one visual step at a time. 🎉",
+      "Take the square root of both sides: √100 = **10**. So AC = 10. You just solved it the way a tutor would: one visual step at a time. 🎉",
     nextLabel: 'I\u2019ve got it!',
     mastery: true,
   },
@@ -72,7 +72,7 @@ export const OPENING_MESSAGES = [
   {
     role: 'assistant' as const,
     content:
-      "Hi! I'm your Whiteboard AI tutor. Paste or type any SAT question you're stuck on, and I'll work through it step by step on the board — out loud, one line at a time.",
+      "Hi! I'm your Whiteboard AI tutor. Paste or type any SAT question you're stuck on, and I'll work through it step by step on the board, out loud, one line at a time.",
   },
 ]
 
@@ -104,7 +104,7 @@ export const PERSONAS: Persona[] = [
     icon: 'ti-help-octagon',
     tagline: 'Guides with questions',
     instruction:
-      'Teach almost entirely through guiding questions. Rarely state facts directly — instead ask one pointed question at a time that leads the student to discover the next step themselves. Wait for their reasoning before advancing.',
+      'Teach almost entirely through guiding questions. Rarely state facts directly. Instead ask one pointed question at a time that leads the student to discover the next step themselves. Wait for their reasoning before advancing.',
   },
   {
     key: 'direct',
@@ -246,7 +246,7 @@ export const MEMORY_ITEMS: MemoryItem[] = [
 ]
 
 export const MEMORY_NUDGE =
-  'Last week you rushed a Pythagorean problem just like this — let\'s slow down and label every side first.'
+  'Last week you rushed a Pythagorean problem just like this. Let\'s slow down and label every side first.'
 
 export interface SmartAction {
   icon: string
@@ -264,7 +264,7 @@ export const SMART_ACTIONS: SmartAction[] = [
   {
     icon: 'ti-photo',
     label: 'Explain visually',
-    reply: "Replaying the drawing — watch each side and label appear one at a time on the board.",
+    reply: "Replaying the drawing. Watch each side and label appear one at a time on the board.",
   },
   {
     icon: 'ti-copy',
@@ -275,7 +275,7 @@ export const SMART_ACTIONS: SmartAction[] = [
   {
     icon: 'ti-help-circle',
     label: 'Give me a hint',
-    reply: "Hint: the side opposite the right angle is always the hypotenuse — that's the 'c' in a² + b² = c².",
+    reply: "Hint: the side opposite the right angle is always the hypotenuse. That's the 'c' in a² + b² = c².",
   },
   {
     icon: 'ti-flame',
@@ -286,7 +286,7 @@ export const SMART_ACTIONS: SmartAction[] = [
   {
     icon: 'ti-cards',
     label: 'Create flashcards',
-    reply: "Made a flashcard: Front — 'Pythagorean theorem?' · Back — 'a² + b² = c² (c = hypotenuse).' Saved to your deck.",
+    reply: "Made a flashcard: Front: 'Pythagorean theorem?' · Back: 'a² + b² = c² (c = hypotenuse).' Saved to your deck.",
   },
 ]
 
@@ -296,8 +296,8 @@ export const SESSION_SUMMARY = {
   confidence: 88,
   nextTopic: 'Special right triangles (30-60-90 & 45-45-90)',
   homework: [
-    'Legs 9 and 12 — find the hypotenuse.',
-    'Hypotenuse 25, one leg 7 — find the other leg.',
+    'Legs 9 and 12. Find the hypotenuse.',
+    'Hypotenuse 25, one leg 7. Find the other leg.',
     'Is a 7-24-25 triangle a right triangle?',
   ],
   flashcards: 2,
