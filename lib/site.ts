@@ -2,7 +2,7 @@ export const SITE = {
   name: 'SAT Sage',
   shortName: 'SAT Sage',
   tagline: 'Your free last-minute SAT coach',
-  appPath: '/app',
+  appPath: '/waitlist',
   supportEmail: 'help@satemergencyroom.com',
   // The date legal documents were last revised. Update when policies change.
   legalUpdated: 'June 18, 2026',
@@ -24,7 +24,7 @@ export const FOOTER_GROUPS = [
       { label: 'How it works', href: '/how-it-works' },
       { label: 'FAQ', href: '/faq' },
       { label: 'Waitlist', href: '/waitlist' },
-      { label: 'Open the app', href: '/app' },
+      { label: 'Open the app', href: '/waitlist' },
     ],
   },
   {
