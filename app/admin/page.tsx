@@ -51,15 +51,17 @@ export default function AdminPage() {
               Manage invite codes and view users.
             </p>
           </div>
-          <form action={adminLogout}>
-            <button
-              type="submit"
-              className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <i className="ti ti-logout text-sm" aria-hidden="true" />
-              Sign out
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={async () => {
+              await adminLogout()
+              router.push('/admin/login')
+            }}
+            className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <i className="ti ti-logout text-sm" aria-hidden="true" />
+            Sign out
+          </button>
         </div>
 
         {/* Tabs */}

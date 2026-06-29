@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { adminLogin } from '@/app/admin/actions'
 import { cn } from '@/lib/utils'
 
 export default function AdminLoginPage() {
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -14,7 +16,11 @@ export default function AdminLoginPage() {
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
       const result = await adminLogin(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      } else if (result?.success) {
+        router.push('/admin')
+      }
     })
   }
 
