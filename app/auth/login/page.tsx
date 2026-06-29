@@ -102,12 +102,20 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
-            Create one free
-          </Link>
-        </p>
+        <div className="mt-6 flex flex-col items-center gap-1.5 text-center text-sm text-muted-foreground">
+          <p>
+            Have an invite code?{' '}
+            <Link href="/auth/sign-up" className="font-medium text-primary hover:underline">
+              Create an account
+            </Link>
+          </p>
+          <p>
+            No invite code?{' '}
+            <Link href="/waitlist" className="font-medium text-primary hover:underline">
+              Join the waitlist
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
