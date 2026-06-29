@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createInviteCodes, deleteInviteCode, type InviteCode } from '@/app/auth/actions'
+import { adminLogout } from '@/app/admin/actions'
 import { cn } from '@/lib/utils'
 
 export default function AdminInvitePanel({ initialCodes }: { initialCodes: InviteCode[] }) {
@@ -46,11 +47,22 @@ export default function AdminInvitePanel({ initialCodes }: { initialCodes: Invit
       <div className="mx-auto max-w-3xl px-4 py-12">
 
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="font-serif text-3xl font-bold text-foreground">Admin</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage invite codes for beta access.
-          </p>
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-foreground">Admin</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage invite codes for beta access.
+            </p>
+          </div>
+          <form action={adminLogout}>
+            <button
+              type="submit"
+              className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <span className="ti ti-logout text-sm" aria-hidden="true" />
+              Sign out
+            </button>
+          </form>
         </div>
 
         {/* Generate codes */}

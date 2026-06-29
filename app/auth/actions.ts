@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { nanoid } from 'nanoid'
 
 /** Validate an invite code without consuming it. Returns true if valid & unused. */
@@ -30,15 +30,9 @@ export async function consumeInviteCode(code: string, userId: string): Promise<v
 // ── Admin actions ──────────────────────────────────────────────────────────
 
 async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-
-  const allowedEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim().toLowerCase())
-  if (!allowedEmails.includes(user.email?.toLowerCase() ?? '')) {
-    throw new Error('Unauthorized')
-  }
-  return user
+  const cookieStore = await cookies()
+  const authed = cookieStore.get('admin_auth')?.value === 'true'
+  if (!authed) throw new Error('Unauthorized')
 }
 
 export type InviteCode = {
@@ -66,13 +60,12 @@ export async function createInviteCodes(
   count: number,
   note: string,
 ): Promise<InviteCode[]> {
-  const user = await requireAdmin()
+  await requireAdmin()
   const supabase = createAdminClient()
 
   const rows = Array.from({ length: count }, () => ({
     code: nanoid(8).toUpperCase(),
     note: note.trim() || null,
-    created_by: user.id,
   }))
 
   const { data, error } = await supabase
