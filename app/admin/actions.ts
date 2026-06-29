@@ -5,6 +5,17 @@ import { redirect } from 'next/navigation'
 
 const COOKIE_NAME = 'admin_auth'
 const COOKIE_MAX_AGE = 60 * 60 * 8 // 8 hours
+const IS_PROD = process.env.NODE_ENV === 'production'
+
+// In production the app may be embedded in a cross-origin iframe (preview panes,
+// deployment previews). A SameSite=Lax cookie is withheld from server-action POST
+// requests in that context, so we use SameSite=None (requires Secure) in prod.
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: IS_PROD,
+  sameSite: (IS_PROD ? 'none' : 'lax') as 'none' | 'lax',
+  path: '/',
+}
 
 export async function adminLogin(formData: FormData) {
   const password = formData.get('password') as string
@@ -19,20 +30,14 @@ export async function adminLogin(formData: FormData) {
   }
 
   const cookieStore = await cookies()
-  cookieStore.set(COOKIE_NAME, 'true', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE,
-    path: '/',
-  })
+  cookieStore.set(COOKIE_NAME, 'true', { ...COOKIE_OPTIONS, maxAge: COOKIE_MAX_AGE })
 
   redirect('/admin')
 }
 
 export async function adminLogout() {
   const cookieStore = await cookies()
-  cookieStore.set(COOKIE_NAME, '', { maxAge: 0, path: '/' })
+  cookieStore.set(COOKIE_NAME, '', { ...COOKIE_OPTIONS, maxAge: 0 })
   redirect('/admin/login')
 }
 
