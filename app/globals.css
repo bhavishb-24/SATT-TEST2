@@ -143,6 +143,15 @@
   animation: var(--animate-fade-in);
 }
 
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+  will-change: transform;
+}
+
 @keyframes breathe {
   0%, 100% { transform: scale(0.75); opacity: 0.6; }
   40% { transform: scale(1); opacity: 1; }

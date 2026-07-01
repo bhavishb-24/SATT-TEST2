@@ -105,23 +105,47 @@ export function Hero() {
 
       </div>
 
-      {/* Social proof strip */}
-      <div className="relative border-t border-white/30 bg-white/20 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-8 px-5 py-5 lg:px-8">
-          {[
-            { icon: 'ti-users', stat: '10,000+', label: 'Students prepping' },
-            { icon: 'ti-star', stat: '4.9 / 5', label: 'Average rating' },
-            { icon: 'ti-clock', stat: '60 sec', label: 'To your custom plan' },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2.5">
-              <span className={`ti ${item.icon} text-xl text-primary`} aria-hidden="true" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-extrabold text-white">{item.stat}</span>
-                <span className="text-xs text-white/75">{item.label}</span>
-              </div>
+      {/* Scrolling marquee strip */}
+      <div
+        className="relative overflow-hidden border-t border-white/30 py-4"
+        style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}
+        aria-label="Social proof"
+      >
+        {/* Left/right fade masks */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-white/30 to-transparent" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-white/30 to-transparent" aria-hidden="true" />
+
+        <div className="flex animate-marquee whitespace-nowrap" aria-hidden="true">
+          {[...Array(2)].map((_, setIdx) => (
+            <div key={setIdx} className="flex items-center">
+              {[
+                { icon: 'ti-users',      stat: '10,000+',  label: 'Students prepping' },
+                { icon: 'ti-star',       stat: '4.9 / 5',  label: 'Average rating' },
+                { icon: 'ti-clock',      stat: '60 sec',   label: 'To your custom plan' },
+                { icon: 'ti-check',      stat: '100%',     label: 'Free forever' },
+                { icon: 'ti-calendar',   stat: '12 mo',    label: 'Planning horizon' },
+                { icon: 'ti-brain',      stat: 'AI',       label: 'Powered study plan' },
+                { icon: 'ti-bolt',       stat: '60 sec',   label: 'Plan generation' },
+                { icon: 'ti-school',     stat: 'SAT',      label: 'Focused prep' },
+              ].map((item) => (
+                <div key={item.label} className="mx-8 flex items-center gap-3">
+                  <span className={`ti ${item.icon} text-lg text-primary`} aria-hidden="true" />
+                  <span className="text-sm font-extrabold text-white">{item.stat}</span>
+                  <span className="text-xs text-white/70">{item.label}</span>
+                  <span className="ml-8 text-white/20" aria-hidden="true">·</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
+
+        {/* Accessible static version for screen readers */}
+        <ul className="sr-only">
+          <li>10,000+ students prepping</li>
+          <li>4.9 / 5 average rating</li>
+          <li>60 seconds to your custom plan</li>
+          <li>100% free forever</li>
+        </ul>
       </div>
     </section>
   )
