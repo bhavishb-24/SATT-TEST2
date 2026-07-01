@@ -10,7 +10,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-50 bg-transparent">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 lg:px-8">
         <Logo />
 
@@ -20,7 +20,7 @@ export function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               {link.label}
             </Link>
@@ -54,7 +54,7 @@ export function SiteHeader() {
       {open && (
         <div
           id="mobile-menu"
-          className="animate-fade-in border-t border-border bg-background md:hidden"
+          className="animate-fade-in border-t border-white/30 bg-white/20 backdrop-blur-md md:hidden"
         >
           <nav
             className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-5 py-4"
@@ -65,7 +65,7 @@ export function SiteHeader() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                className="rounded-lg px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-white/10"
               >
                 {link.label}
               </Link>

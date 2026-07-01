@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter, Instrument_Serif } from 'next/font/google'
 import './globals.css'
+import { GlassFilter } from '@/components/ui/liquid-glass'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -60,7 +61,7 @@ export const viewport: Viewport = {
   colorScheme: 'light',
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#FAFAF8',
+  themeColor: '#7dd6f0',
 }
 
 export default function RootLayout({
@@ -71,8 +72,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`light ${inter.variable} ${instrumentSerif.variable} bg-background`}
-      style={{ colorScheme: 'light' }}
+      className={`${inter.variable} ${instrumentSerif.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -87,7 +87,8 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className="font-sans antialiased" style={{ background: 'transparent' }} suppressHydrationWarning>
+        <GlassFilter />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

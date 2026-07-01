@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { SITE } from '@/lib/site'
 import { FadeInOnScroll } from '@/components/marketing/fade-in-on-scroll'
+import { Glass } from '@/components/ui/liquid-glass'
 
 const STEPS = [
   {
@@ -32,7 +33,7 @@ export function HowItWorks() {
             <span className="text-sm font-bold uppercase tracking-wider text-primary">
               How it works
             </span>
-            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
+            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight text-foreground sm:text-5xl">
               From &ldquo;I&apos;m not ready&rdquo; to a clear plan in three steps
             </h2>
           </div>
@@ -52,9 +53,11 @@ export function HowItWorks() {
           }}
         >
           {STEPS.map((step, i) => (
-            <motion.li
+            <Glass
               key={step.title}
-              className="relative flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 lg:p-8 transition-all hover:border-primary/40 hover:shadow-lg"
+              as={motion.li}
+              className="relative flex flex-col gap-4 rounded-2xl p-6 lg:p-8 transition-transform hover:-translate-y-1"
+              // @ts-ignore framer-motion variants on Glass as
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -72,7 +75,7 @@ export function HowItWorks() {
               <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
                 {step.body}
               </p>
-            </motion.li>
+            </Glass>
           ))}
         </motion.ol>
 

@@ -3,39 +3,44 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { SITE } from '@/lib/site'
+import { Glass } from '@/components/ui/liquid-glass'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-background">
-      {/* Subtle warm accent blobs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-32 right-0 h-[500px] w-[500px] rounded-full bg-primary/8 blur-3xl" />
-        <div className="absolute bottom-0 -left-20 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
-      </div>
+    <section className="relative overflow-hidden -mt-16">
+      {/* Desktop video background */}
+      <video
+        className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover md:block"
+        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/SAT%20sage%20landing%20page%202-hra5N2P1wkKtmldHXJaZj14uzmXNH5.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        aria-hidden="true"
+      />
 
-      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8 lg:py-24">
-        {/* Left — message */}
+      {/* Mobile image background */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="pointer-events-none absolute inset-0 block h-full w-full object-cover md:hidden"
+        src="/hero-poster.png"
+        alt=""
+        aria-hidden="true"
+      />
+
+      {/* Minimal overlay — just enough for text legibility, video stays vivid */}
+      <div className="pointer-events-none absolute inset-0 bg-black/15" aria-hidden="true" />
+
+      <div className="relative mx-auto w-full max-w-4xl px-5 pb-20 pt-36 lg:px-8 lg:pb-32 lg:pt-48">
+        {/* Content */}
         <motion.div
-          className="flex flex-col items-start gap-7"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="flex flex-col items-center gap-7 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Eyebrow badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5"
-          >
-            <span className="ti ti-book-2 text-sm text-primary" aria-hidden="true" />
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              Free SAT Prep: Up to 1 Year Before Your Test
-            </span>
-          </motion.div>
-
           <motion.h1
-            className="text-balance font-serif text-5xl font-normal leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl"
+            className="text-balance text-center font-serif text-5xl font-normal leading-[1.05] tracking-tight text-white sm:text-6xl xl:text-7xl"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -47,7 +52,7 @@ export function Hero() {
           </motion.h1>
 
           <motion.p
-            className="max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground"
+            className="max-w-2xl text-pretty text-center text-lg leading-relaxed text-white/80"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -59,7 +64,7 @@ export function Hero() {
           </motion.p>
 
           <motion.div
-            className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center"
+            className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -73,14 +78,14 @@ export function Hero() {
             </Link>
             <Link
               href="/how-it-works"
-              className="flex min-h-[54px] items-center justify-center gap-2 rounded-xl border border-border bg-card px-7 text-base font-semibold text-foreground transition-colors hover:bg-muted"
+              className="flex min-h-[54px] items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-7 text-base font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
             >
               See how it works
             </Link>
           </motion.div>
 
           <motion.ul
-            className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
+            className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -98,113 +103,56 @@ export function Hero() {
           </motion.ul>
         </motion.div>
 
-        {/* Right — product preview */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, x: 20, rotateZ: 5 }}
-          animate={{ opacity: 1, x: 0, rotateZ: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <PlanPreview />
-        </motion.div>
       </div>
 
-      {/* Social proof strip */}
-      <div className="relative border-t border-border bg-card/60">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-8 px-5 py-5 lg:px-8">
-          {[
-            { icon: 'ti-users', stat: '10,000+', label: 'Students prepping' },
-            { icon: 'ti-star', stat: '4.9 / 5', label: 'Average rating' },
-            { icon: 'ti-clock', stat: '60 sec', label: 'To your custom plan' },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2.5">
-              <span className={`ti ${item.icon} text-xl text-primary`} aria-hidden="true" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-extrabold text-foreground">{item.stat}</span>
-                <span className="text-xs text-muted-foreground">{item.label}</span>
-              </div>
+      {/* Scrolling marquee strip */}
+      <div
+        className="relative overflow-hidden border-t border-white/20 py-4"
+        style={{ background: '#1a7fa8' }}
+        aria-label="Social proof"
+      >
+        {/* Left/right fade masks */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#1a7fa8] to-transparent" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#1a7fa8] to-transparent" aria-hidden="true" />
+
+        <div className="flex animate-marquee whitespace-nowrap" aria-hidden="true">
+          {[...Array(2)].map((_, setIdx) => (
+            <div key={setIdx} className="flex items-center">
+              {[
+                { icon: 'ti-brain',        label: 'AI-personalized study plan' },
+                { icon: 'ti-calendar',     label: 'Up to 12 months of prep' },
+                { icon: 'ti-pencil',       label: 'Daily practice drills' },
+                { icon: 'ti-math-function',label: 'Formula & rules sheet' },
+                { icon: 'ti-cards',        label: 'Rapid flashcards' },
+                { icon: 'ti-clock-play',   label: 'Built-in focus timer' },
+                { icon: 'ti-chart-arcs',   label: 'Progress tracking' },
+                { icon: 'ti-check',        label: '100% free, no tutor fees' },
+                { icon: 'ti-bolt',         label: 'Plan ready in 60 seconds' },
+                { icon: 'ti-school',       label: 'SAT-focused content only' },
+                { icon: 'ti-mood-smile',   label: 'Stress-aware scheduling' },
+                { icon: 'ti-target',       label: 'Targets your weak spots' },
+              ].map((item) => (
+                <div key={item.label} className="mx-10 flex items-center gap-2.5">
+                  <span className={`ti ${item.icon} text-base text-white/60`} aria-hidden="true" />
+                  <span className="text-sm font-medium tracking-wide text-white">{item.label}</span>
+                  <span className="ml-10 text-white/25" aria-hidden="true">·</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
+
+        {/* Accessible static version for screen readers */}
+        <ul className="sr-only">
+          <li>AI-personalized study plan</li>
+          <li>Up to 12 months of prep</li>
+          <li>Daily practice drills</li>
+          <li>Formula and rules sheet</li>
+          <li>100% free, no tutor fees</li>
+        </ul>
       </div>
     </section>
   )
 }
 
-/** A static, on-brand preview of the in-app study plan. */
-function PlanPreview() {
-  const topics = [
-    { n: 1, name: 'Linear equations', tag: 'Highest impact', time: '25 min', done: true },
-    { n: 2, name: 'Comma & punctuation rules', tag: 'Quick win', time: '15 min', done: true },
-    { n: 3, name: 'Data analysis & graphs', tag: 'Weak area', time: '20 min', done: false },
-    { n: 4, name: 'Word problems', tag: 'Review', time: '20 min', done: false },
-  ]
 
-  return (
-    <div className="rotate-1 rounded-2xl border border-border bg-card p-5 shadow-xl shadow-foreground/5 transition-transform hover:rotate-0 lg:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
-        <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Your study plan
-          </span>
-          <span className="text-lg font-extrabold tracking-tight">From stressed to ready</span>
-        </div>
-        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-          14 days out
-        </span>
-      </div>
-
-      {/* Progress */}
-      <div className="mt-4 flex items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-          <div className="h-full w-1/2 rounded-full bg-primary" />
-        </div>
-        <span className="text-xs font-semibold text-muted-foreground">2 / 4 done</span>
-      </div>
-
-      {/* Topics */}
-      <ul className="mt-4 flex flex-col gap-2.5">
-        {topics.map((t) => (
-          <li
-            key={t.n}
-            className="flex items-center gap-3 rounded-xl border border-border bg-background px-3.5 py-3"
-          >
-            <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                t.done
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              {t.done ? (
-                <span className="ti ti-check text-sm" aria-hidden="true" />
-              ) : (
-                t.n
-              )}
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span
-                className={`truncate text-sm font-semibold ${
-                  t.done ? 'text-muted-foreground line-through' : 'text-foreground'
-                }`}
-              >
-                {t.name}
-              </span>
-              <span className="text-xs text-muted-foreground">{t.tag}</span>
-            </div>
-            <span className="shrink-0 text-xs font-medium text-muted-foreground">{t.time}</span>
-          </li>
-        ))}
-      </ul>
-
-      {/* Footer hint */}
-      <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3.5 py-3">
-        <span className="ti ti-brain text-base text-primary" aria-hidden="true" />
-        <span className="text-xs font-medium text-foreground">
-          AI adapts your plan as you progress. No stress.
-        </span>
-      </div>
-    </div>
-  )
-}

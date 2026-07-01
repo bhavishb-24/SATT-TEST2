@@ -6,7 +6,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-border bg-card">
+    <footer>
       <div className="mx-auto w-full max-w-6xl px-5 py-12 lg:px-8 lg:py-16">
         <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
           {/* Brand */}
@@ -42,7 +42,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-4 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
             &copy; {year} {SITE.name}. Made for stressed students everywhere.
           </p>

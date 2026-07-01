@@ -54,52 +54,61 @@
 
 :root {
   color-scheme: light;
-  /* Solace design system — warm cream canvas, cream surfaces, calm teal brand accent. */
-  --background: #f5f2ed;
-  --foreground: #1a1a1a;
-  --card: #faf7f2;
-  --card-foreground: #1a1a1a;
-  --popover: #faf7f2;
-  --popover-foreground: #1a1a1a;
-  --primary: #0e8a6a;
+  /* SAT Sage — sky-blue to mint-green light theme */
+  --background: transparent;
+  --foreground: #0e2233;
+  --card: rgba(255,255,255,0.40);
+  --card-foreground: #0e2233;
+  --popover: rgba(255,255,255,0.92);
+  --popover-foreground: #0e2233;
+  --primary: #1a7fa8;
   --primary-foreground: #ffffff;
-  --secondary: #e6f5f0;
-  --secondary-foreground: #096b52;
-  --muted: #ede9e2;
-  --muted-foreground: #6f6f6b;
-  --accent: #e6f5f0;
-  --accent-foreground: #096b52;
+  --secondary: rgba(214,240,232,0.50);
+  --secondary-foreground: #0e5c45;
+  --muted: rgba(223,240,247,0.40);
+  --muted-foreground: #3d6a82;
+  --accent: #d6f0e8;
+  --accent-foreground: #0e5c45;
   --destructive: #d94040;
-  --border: #e8e8e8;
-  --input: #e2e2de;
-  --ring: #0e8a6a;
-  --chart-1: #0e8a6a;
-  --chart-2: #1aad86;
-  --chart-3: #2563eb;
-  --chart-4: #d97706;
-  --chart-5: #888888;
+  --border: rgba(255,255,255,0.15);
+  --input: rgba(255,255,255,0.6);
+  --ring: #1a7fa8;
+  --chart-1: #1a7fa8;
+  --chart-2: #2ab8a0;
+  --chart-3: #3b82f6;
+  --chart-4: #f59e0b;
+  --chart-5: #64748b;
   --radius: 0.75rem;
-  --sidebar: #faf7f2;
-  --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #0e8a6a;
+  --sidebar: #c8eaf5;
+  --sidebar-foreground: #0e2233;
+  --sidebar-primary: #1a7fa8;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e6f5f0;
-  --sidebar-accent-foreground: #096b52;
-  --sidebar-border: #e8e8e8;
-  --sidebar-ring: #0e8a6a;
+  --sidebar-accent: #d6f0e8;
+  --sidebar-accent-foreground: #0e5c45;
+  --sidebar-border: rgba(255,255,255,0.5);
+  --sidebar-ring: #1a7fa8;
 }
 
-/* Light mode only — the Solace design system does not define a dark theme. */
+/* SAT Sage — light theme. */
+
+html {
+  @apply font-sans;
+  background-image: url('/site-bg-clean.jpg') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+  background-color: #7dd6f0 !important;
+  min-height: 100%;
+}
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
+    @apply text-foreground;
+    background: transparent !important;
   }
 }
 
@@ -132,15 +141,24 @@
 @keyframes micPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(14, 138, 106, 0.5);
+    box-shadow: 0 0 0 0 rgba(26, 127, 168, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(14, 138, 106, 0);
+    box-shadow: 0 0 0 12px rgba(26, 127, 168, 0);
   }
 }
 
 .animate-fade-in {
   animation: var(--animate-fade-in);
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+  will-change: transform;
 }
 
 @keyframes breathe {
@@ -299,6 +317,7 @@
 /* Smooth in-page anchor scrolling with offset for the sticky header */
 html {
   scroll-behavior: smooth;
+  /* background preserved from the rule above */
 }
 :target {
   scroll-margin-top: 5rem;
