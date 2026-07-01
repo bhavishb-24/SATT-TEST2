@@ -4,7 +4,7 @@ import { Glass } from '@/components/ui/liquid-glass'
 
 export function CtaBand() {
   return (
-    <section className="border-t border-border">
+    <section>
       <div className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
         <Glass className="flex flex-col items-center gap-6 rounded-3xl px-6 py-14 text-center lg:px-12 lg:py-20" style={{ background: 'rgba(14,34,51,0.82)' }}>
           <span className="ti ti-heartbeat text-4xl text-primary" aria-hidden="true" />
