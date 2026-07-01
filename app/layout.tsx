@@ -76,8 +76,11 @@ export default function RootLayout({
       style={{
         colorScheme: 'light',
         minHeight: '100%',
-        background: 'linear-gradient(135deg, #7dd6f0 0%, #a8e6d8 40%, #b8efd8 70%, #c8f5e0 100%)',
+        backgroundImage: 'url(/site-bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
       }}
       suppressHydrationWarning
     >
