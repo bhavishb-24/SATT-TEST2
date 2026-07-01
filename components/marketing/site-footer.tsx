@@ -1,12 +1,14 @@
 import Link from 'next/link'
 import { FOOTER_GROUPS, SITE } from '@/lib/site'
 import { Logo } from './logo'
+import { Glass } from '@/components/ui/liquid-glass'
 
 export function SiteFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-white/20">
+      <Glass className="rounded-none">
       <div className="mx-auto w-full max-w-6xl px-5 py-12 lg:px-8 lg:py-16">
         <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
           {/* Brand */}
@@ -52,6 +54,7 @@ export function SiteFooter() {
           </p>
         </div>
       </div>
+      </Glass>
     </footer>
   )
 }

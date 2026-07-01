@@ -1,4 +1,5 @@
 import { FadeInOnScroll } from '@/components/marketing/fade-in-on-scroll'
+import { Glass } from '@/components/ui/liquid-glass'
 
 const FEATURES = [
   {
@@ -55,9 +56,10 @@ export function Features() {
 
         <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <li
+            <Glass
               key={f.title}
-              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-lg hover:shadow-foreground/5"
+              as="li"
+              className="flex flex-col gap-3 rounded-2xl p-6 transition-transform hover:-translate-y-1"
             >
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <span className={`${f.icon} ti text-2xl`} aria-hidden="true" />
@@ -66,7 +68,7 @@ export function Features() {
               <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
                 {f.body}
               </p>
-            </li>
+            </Glass>
           ))}
         </ul>
       </div>

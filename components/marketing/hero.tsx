@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { SITE } from '@/lib/site'
+import { Glass } from '@/components/ui/liquid-glass'
 
 export function Hero() {
   return (
@@ -43,12 +44,13 @@ export function Hero() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5"
           >
-            <span className="ti ti-book-2 text-sm text-primary" aria-hidden="true" />
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              Free SAT Prep: Up to 1 Year Before Your Test
-            </span>
+            <Glass className="flex items-center gap-2 rounded-full px-4 py-1.5">
+              <span className="ti ti-book-2 text-sm text-primary" aria-hidden="true" />
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                Free SAT Prep: Up to 1 Year Before Your Test
+              </span>
+            </Glass>
           </motion.div>
 
           <motion.h1
@@ -158,7 +160,7 @@ function PlanPreview() {
   ]
 
   return (
-    <div className="rotate-1 rounded-2xl border border-border bg-card p-5 shadow-xl shadow-foreground/5 transition-transform hover:rotate-0 lg:p-6">
+    <Glass className="rotate-1 rounded-2xl p-5 transition-transform hover:rotate-0 lg:p-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
         <div className="flex flex-col">
@@ -222,6 +224,6 @@ function PlanPreview() {
           AI adapts your plan as you progress. No stress.
         </span>
       </div>
-    </div>
+    </Glass>
   )
 }

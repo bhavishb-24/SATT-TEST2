@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter, Instrument_Serif } from 'next/font/google'
 import './globals.css'
+import { GlassFilter } from '@/components/ui/liquid-glass'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -88,6 +89,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
+        <GlassFilter />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
