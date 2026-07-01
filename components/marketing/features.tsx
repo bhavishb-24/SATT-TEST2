@@ -1,5 +1,4 @@
 import { FadeInOnScroll } from '@/components/marketing/fade-in-on-scroll'
-import { Glass } from '@/components/ui/liquid-glass'
 
 const FEATURES = [
   {
@@ -25,7 +24,7 @@ const FEATURES = [
   {
     icon: 'ti-clock-play',
     title: 'Built-in focus timer',
-    body: 'A pomodoro timer keeps you in deep work with structured breaks, so studying never tips into burnout. Crucial when you\'re already stressed.',
+    body: "A pomodoro timer keeps you in deep work with structured breaks, so studying never tips into burnout. Crucial when you're already stressed.",
   },
   {
     icon: 'ti-chart-arcs',
@@ -36,17 +35,19 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section id="features" className="border-t border-border bg-background">
+    <section
+      id="features"
+      style={{
+        background: 'linear-gradient(135deg, #b8e4f0 0%, #a0d8e8 20%, #7ecfba 50%, #a8dfc8 75%, #c2ecd8 100%)',
+      }}
+    >
       <div className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
         <FadeInOnScroll>
-          <div className="flex max-w-2xl flex-col gap-4">
-            <span className="text-sm font-bold uppercase tracking-wider text-primary">
-              Everything in one place
-            </span>
-            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
+          <div className="flex flex-col items-center gap-5 text-center">
+            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight text-slate-800 sm:text-5xl lg:text-6xl">
               A full prep toolkit from signup to test day
             </h2>
-            <p className="text-pretty text-lg leading-relaxed text-muted-foreground">
+            <p className="max-w-2xl text-pretty text-lg leading-relaxed text-slate-700">
               Whether you join a year out or the night before, every tool you need is right here.
               No dashboards to configure, no courses to buy, and no time spent figuring out where
               to start.
@@ -54,21 +55,35 @@ export function Features() {
           </div>
         </FadeInOnScroll>
 
-        <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <Glass
+            <li
               key={f.title}
-              as="li"
-              className="flex flex-col gap-3 rounded-2xl p-6 transition-transform hover:-translate-y-1"
+              className="flex flex-col gap-4 rounded-2xl p-6 transition-transform hover:-translate-y-1 lg:p-7"
+              style={{
+                background: 'rgba(255,255,255,0.45)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+                border: '1px solid rgba(255,255,255,0.6)',
+              }}
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <span className={`${f.icon} ti text-2xl`} aria-hidden="true" />
+              <span
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{
+                  background: 'rgba(255,255,255,0.55)',
+                  border: '1px solid rgba(255,255,255,0.7)',
+                }}
+              >
+                <span className={`ti ${f.icon} text-xl text-slate-500`} aria-hidden="true" />
               </span>
-              <h3 className="text-lg font-bold tracking-tight">{f.title}</h3>
-              <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+              <h3 className="font-serif text-xl font-normal tracking-tight text-slate-800">
+                {f.title}
+              </h3>
+              <p className="text-pretty text-sm leading-relaxed text-slate-600">
                 {f.body}
               </p>
-            </Glass>
+            </li>
           ))}
         </ul>
       </div>
