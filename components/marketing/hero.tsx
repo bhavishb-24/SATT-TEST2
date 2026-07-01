@@ -7,7 +7,7 @@ import { Glass } from '@/components/ui/liquid-glass'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden -mt-16">
       {/* Desktop video background */}
       <video
         className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover md:block"
@@ -31,7 +31,7 @@ export function Hero() {
       {/* Dark overlay for text legibility */}
       <div className="pointer-events-none absolute inset-0 bg-black/55" aria-hidden="true" />
 
-      <div className="relative mx-auto w-full max-w-4xl px-5 py-20 lg:px-8 lg:py-32">
+      <div className="relative mx-auto w-full max-w-4xl px-5 pb-20 pt-36 lg:px-8 lg:pb-32 lg:pt-48">
         {/* Content */}
         <motion.div
           className="flex flex-col items-center gap-7 text-center"

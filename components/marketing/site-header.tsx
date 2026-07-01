@@ -10,7 +10,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 bg-transparent">
+    <header className="fixed inset-x-0 top-0 z-50 bg-transparent">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 lg:px-8">
         <Logo />
 
