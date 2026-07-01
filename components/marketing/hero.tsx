@@ -107,13 +107,13 @@ export function Hero() {
 
       {/* Scrolling marquee strip */}
       <div
-        className="relative overflow-hidden border-t border-white/30 py-4"
-        style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}
+        className="relative overflow-hidden border-t border-white/20 py-4"
+        style={{ background: '#1a7fa8' }}
         aria-label="Social proof"
       >
         {/* Left/right fade masks */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-white/30 to-transparent" aria-hidden="true" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-white/30 to-transparent" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#1a7fa8] to-transparent" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#1a7fa8] to-transparent" aria-hidden="true" />
 
         <div className="flex animate-marquee whitespace-nowrap" aria-hidden="true">
           {[...Array(2)].map((_, setIdx) => (
