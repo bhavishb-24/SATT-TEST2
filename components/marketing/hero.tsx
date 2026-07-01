@@ -28,8 +28,8 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      {/* Dark overlay for text legibility — keep light so video motion stays visible */}
-      <div className="pointer-events-none absolute inset-0 bg-black/30" aria-hidden="true" />
+      {/* Minimal overlay — just enough for text legibility, video stays vivid */}
+      <div className="pointer-events-none absolute inset-0 bg-black/15" aria-hidden="true" />
 
       <div className="relative mx-auto w-full max-w-4xl px-5 pb-20 pt-36 lg:px-8 lg:pb-32 lg:pt-48">
         {/* Content */}
@@ -39,20 +39,6 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Eyebrow badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Glass className="flex items-center gap-2 rounded-full px-4 py-1.5">
-              <span className="ti ti-book-2 text-sm text-primary" aria-hidden="true" />
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                Free SAT Prep: Up to 1 Year Before Your Test
-              </span>
-            </Glass>
-          </motion.div>
-
           <motion.h1
             className="text-balance text-center font-serif text-5xl font-normal leading-[1.05] tracking-tight text-white sm:text-6xl xl:text-7xl"
             initial={{ opacity: 0, y: 10 }}
