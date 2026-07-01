@@ -5,14 +5,12 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { NAV_LINKS, SITE } from '@/lib/site'
 import { Logo } from './logo'
-import { Glass } from '@/components/ui/liquid-glass'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50">
-      <Glass className="rounded-none border-b border-white/20">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-transparent backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 lg:px-8">
         <Logo />
 
@@ -83,7 +81,6 @@ export function SiteHeader() {
           </nav>
         </div>
       )}
-      </Glass>
     </header>
   )
 }
