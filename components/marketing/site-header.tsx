@@ -54,7 +54,7 @@ export function SiteHeader() {
       {open && (
         <div
           id="mobile-menu"
-          className="animate-fade-in border-t border-white/20 md:hidden"
+          className="animate-fade-in border-t border-white/30 bg-white/20 backdrop-blur-md md:hidden"
         >
           <nav
             className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-5 py-4"

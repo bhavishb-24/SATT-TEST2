@@ -35,12 +35,7 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section
-      id="features"
-      style={{
-        background: 'linear-gradient(135deg, #b8e4f0 0%, #a0d8e8 20%, #7ecfba 50%, #a8dfc8 75%, #c2ecd8 100%)',
-      }}
-    >
+    <section id="features">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
         <FadeInOnScroll>
           <div className="flex flex-col items-center gap-5 text-center">

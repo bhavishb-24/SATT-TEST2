@@ -33,7 +33,7 @@ export function HowItWorks() {
             <span className="text-sm font-bold uppercase tracking-wider text-primary">
               How it works
             </span>
-            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight sm:text-5xl">
+            <h2 className="text-balance font-serif text-4xl font-normal tracking-tight text-foreground sm:text-5xl">
               From &ldquo;I&apos;m not ready&rdquo; to a clear plan in three steps
             </h2>
           </div>

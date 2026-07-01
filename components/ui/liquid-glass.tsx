@@ -81,7 +81,7 @@ export const Glass: React.FC<GlassProps> = ({
       )}
       style={{
         boxShadow:
-          "0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)",
+          "0 4px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.6)",
         ...style,
       }}
     >
@@ -96,10 +96,10 @@ export const Glass: React.FC<GlassProps> = ({
         }}
         aria-hidden="true"
       />
-      {/* Translucent tint — inherits from context, no hardcoded color */}
+      {/* Translucent tint — soft white for light glass feel */}
       <div
         className="absolute inset-0 z-10 rounded-[inherit]"
-        style={{ background: "rgba(255,255,255,0.04)" }}
+        style={{ background: "rgba(255,255,255,0.30)" }}
         aria-hidden="true"
       />
       {/* Inner highlight border */}

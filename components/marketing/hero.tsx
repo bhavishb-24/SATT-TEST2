@@ -106,7 +106,7 @@ export function Hero() {
       </div>
 
       {/* Social proof strip */}
-      <div className="relative border-t border-white/10 bg-black/40 backdrop-blur-sm">
+      <div className="relative border-t border-white/30 bg-white/20 backdrop-blur-sm">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-8 px-5 py-5 lg:px-8">
           {[
             { icon: 'ti-users', stat: '10,000+', label: 'Students prepping' },
@@ -117,7 +117,7 @@ export function Hero() {
               <span className={`ti ${item.icon} text-xl text-primary`} aria-hidden="true" />
               <div className="flex flex-col leading-tight">
                 <span className="text-sm font-extrabold text-white">{item.stat}</span>
-                <span className="text-xs text-white/60">{item.label}</span>
+                <span className="text-xs text-white/75">{item.label}</span>
               </div>
             </div>
           ))}

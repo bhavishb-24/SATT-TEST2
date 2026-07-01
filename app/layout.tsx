@@ -58,10 +58,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'dark',
+  colorScheme: 'light',
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0d1b2a',
+  themeColor: '#7dd6f0',
 }
 
 export default function RootLayout({
@@ -72,8 +72,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${instrumentSerif.variable} bg-background`}
-      style={{ colorScheme: 'dark' }}
+      className={`${inter.variable} ${instrumentSerif.variable}`}
+      style={{
+        colorScheme: 'light',
+        minHeight: '100%',
+        background: 'linear-gradient(135deg, #7dd6f0 0%, #a8e6d8 40%, #b8efd8 70%, #c8f5e0 100%)',
+        backgroundAttachment: 'fixed',
+      }}
       suppressHydrationWarning
     >
       <head>

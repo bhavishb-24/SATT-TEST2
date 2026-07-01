@@ -53,43 +53,43 @@
 }
 
 :root {
-  color-scheme: dark;
-  /* SAT Sage — deep blue-teal dark theme matching the landing video */
-  --background: #0b1624;
-  --foreground: #f0f6ff;
-  --card: #0f1e30;
-  --card-foreground: #f0f6ff;
-  --popover: #0f1e30;
-  --popover-foreground: #f0f6ff;
-  --primary: #ddeeff;
-  --primary-foreground: #071120;
-  --secondary: #142032;
-  --secondary-foreground: #c8e0f8;
-  --muted: #152436;
-  --muted-foreground: #7a9ab5;
-  --accent: #142032;
-  --accent-foreground: #c8e0f8;
-  --destructive: #e05555;
-  --border: #1a2f45;
-  --input: #152436;
-  --ring: #ddeeff;
-  --chart-1: #ddeeff;
-  --chart-2: #9ec8f0;
+  color-scheme: light;
+  /* SAT Sage — sky-blue to mint-green light theme */
+  --background: #c8eaf5;
+  --foreground: #0e2233;
+  --card: rgba(255,255,255,0.55);
+  --card-foreground: #0e2233;
+  --popover: #ffffff;
+  --popover-foreground: #0e2233;
+  --primary: #1a7fa8;
+  --primary-foreground: #ffffff;
+  --secondary: #d6f0e8;
+  --secondary-foreground: #0e5c45;
+  --muted: #dff0f7;
+  --muted-foreground: #3d6a82;
+  --accent: #d6f0e8;
+  --accent-foreground: #0e5c45;
+  --destructive: #d94040;
+  --border: rgba(255,255,255,0.5);
+  --input: rgba(255,255,255,0.6);
+  --ring: #1a7fa8;
+  --chart-1: #1a7fa8;
+  --chart-2: #2ab8a0;
   --chart-3: #3b82f6;
   --chart-4: #f59e0b;
-  --chart-5: #94a3b8;
+  --chart-5: #64748b;
   --radius: 0.75rem;
-  --sidebar: #0b1624;
-  --sidebar-foreground: #f0f6ff;
-  --sidebar-primary: #ddeeff;
-  --sidebar-primary-foreground: #071120;
-  --sidebar-accent: #142032;
-  --sidebar-accent-foreground: #c8e0f8;
-  --sidebar-border: #1a2f45;
-  --sidebar-ring: #ddeeff;
+  --sidebar: #c8eaf5;
+  --sidebar-foreground: #0e2233;
+  --sidebar-primary: #1a7fa8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d6f0e8;
+  --sidebar-accent-foreground: #0e5c45;
+  --sidebar-border: rgba(255,255,255,0.5);
+  --sidebar-ring: #1a7fa8;
 }
 
-/* SAT Sage — dark theme only. */
+/* SAT Sage — light theme. */
 
 @layer base {
   * {
@@ -132,10 +132,10 @@
 @keyframes micPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(221, 238, 255, 0.5);
+    box-shadow: 0 0 0 0 rgba(26, 127, 168, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(221, 238, 255, 0);
+    box-shadow: 0 0 0 12px rgba(26, 127, 168, 0);
   }
 }
 
