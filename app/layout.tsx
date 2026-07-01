@@ -96,7 +96,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className="font-sans antialiased" style={{ background: 'transparent' }} suppressHydrationWarning>
         <GlassFilter />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

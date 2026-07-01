@@ -55,7 +55,7 @@
 :root {
   color-scheme: light;
   /* SAT Sage — sky-blue to mint-green light theme */
-  --background: #c8eaf5;
+  --background: transparent;
   --foreground: #0e2233;
   --card: rgba(255,255,255,0.55);
   --card-foreground: #0e2233;
@@ -96,7 +96,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background: transparent;
   }
   html {
     @apply font-sans;
