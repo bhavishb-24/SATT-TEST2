@@ -61,32 +61,32 @@
   --card-foreground: #e8f0f7;
   --popover: #122236;
   --popover-foreground: #e8f0f7;
-  --primary: #12c99a;
-  --primary-foreground: #04150f;
+  --primary: #a8c8e8;
+  --primary-foreground: #0a1a2e;
   --secondary: #1a3347;
-  --secondary-foreground: #7ecfba;
+  --secondary-foreground: #c2daf0;
   --muted: #1a2f42;
   --muted-foreground: #7a9ab5;
   --accent: #1a3347;
-  --accent-foreground: #7ecfba;
+  --accent-foreground: #c2daf0;
   --destructive: #e05555;
   --border: #1e3550;
   --input: #1a2f42;
-  --ring: #12c99a;
-  --chart-1: #12c99a;
-  --chart-2: #1aad86;
+  --ring: #a8c8e8;
+  --chart-1: #a8c8e8;
+  --chart-2: #7ab0d4;
   --chart-3: #3b82f6;
   --chart-4: #f59e0b;
   --chart-5: #94a3b8;
   --radius: 0.75rem;
   --sidebar: #0d1b2a;
   --sidebar-foreground: #e8f0f7;
-  --sidebar-primary: #12c99a;
-  --sidebar-primary-foreground: #04150f;
+  --sidebar-primary: #a8c8e8;
+  --sidebar-primary-foreground: #0a1a2e;
   --sidebar-accent: #1a3347;
-  --sidebar-accent-foreground: #7ecfba;
+  --sidebar-accent-foreground: #c2daf0;
   --sidebar-border: #1e3550;
-  --sidebar-ring: #12c99a;
+  --sidebar-ring: #a8c8e8;
 }
 
 /* SAT Sage — dark theme only. */
@@ -132,10 +132,10 @@
 @keyframes micPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(14, 138, 106, 0.5);
+    box-shadow: 0 0 0 0 rgba(168, 200, 232, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(14, 138, 106, 0);
+    box-shadow: 0 0 0 12px rgba(168, 200, 232, 0);
   }
 }
 
