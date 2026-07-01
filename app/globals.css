@@ -93,12 +93,12 @@
 
 html {
   @apply font-sans;
-  background-image: url('/hero-poster.png') !important;
+  background-image: url('/site-bg-video-frame.png') !important;
   background-size: cover !important;
   background-position: center !important;
   background-attachment: fixed !important;
   background-repeat: no-repeat !important;
-  background-color: #7dd6f0 !important;
+  background-color: #2a4a6b !important;
   min-height: 100%;
 }
 
