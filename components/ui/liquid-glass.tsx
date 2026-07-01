@@ -96,10 +96,10 @@ export const Glass: React.FC<GlassProps> = ({
         }}
         aria-hidden="true"
       />
-      {/* Frosted tint — dark-themed: subtle deep-blue tint */}
+      {/* Translucent tint — inherits from context, no hardcoded color */}
       <div
         className="absolute inset-0 z-10 rounded-[inherit]"
-        style={{ background: "rgba(18, 40, 65, 0.45)" }}
+        style={{ background: "rgba(255,255,255,0.04)" }}
         aria-hidden="true"
       />
       {/* Inner highlight border */}

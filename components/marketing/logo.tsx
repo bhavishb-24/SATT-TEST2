@@ -21,6 +21,10 @@ export function Logo({
         width={56}
         height={56}
         className="h-14 w-14 transition-transform hover:scale-105"
+        style={{
+          filter:
+            "brightness(0) saturate(100%) invert(80%) sepia(20%) saturate(400%) hue-rotate(180deg) brightness(110%)",
+        }}
       />
     </Link>
   )
