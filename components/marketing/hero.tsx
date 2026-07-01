@@ -119,20 +119,23 @@ export function Hero() {
           {[...Array(2)].map((_, setIdx) => (
             <div key={setIdx} className="flex items-center">
               {[
-                { icon: 'ti-users',      stat: '10,000+',  label: 'Students prepping' },
-                { icon: 'ti-star',       stat: '4.9 / 5',  label: 'Average rating' },
-                { icon: 'ti-clock',      stat: '60 sec',   label: 'To your custom plan' },
-                { icon: 'ti-check',      stat: '100%',     label: 'Free forever' },
-                { icon: 'ti-calendar',   stat: '12 mo',    label: 'Planning horizon' },
-                { icon: 'ti-brain',      stat: 'AI',       label: 'Powered study plan' },
-                { icon: 'ti-bolt',       stat: '60 sec',   label: 'Plan generation' },
-                { icon: 'ti-school',     stat: 'SAT',      label: 'Focused prep' },
+                { icon: 'ti-brain',        label: 'AI-personalized study plan' },
+                { icon: 'ti-calendar',     label: 'Up to 12 months of prep' },
+                { icon: 'ti-pencil',       label: 'Daily practice drills' },
+                { icon: 'ti-math-function',label: 'Formula & rules sheet' },
+                { icon: 'ti-cards',        label: 'Rapid flashcards' },
+                { icon: 'ti-clock-play',   label: 'Built-in focus timer' },
+                { icon: 'ti-chart-arcs',   label: 'Progress tracking' },
+                { icon: 'ti-check',        label: '100% free, no tutor fees' },
+                { icon: 'ti-bolt',         label: 'Plan ready in 60 seconds' },
+                { icon: 'ti-school',       label: 'SAT-focused content only' },
+                { icon: 'ti-mood-smile',   label: 'Stress-aware scheduling' },
+                { icon: 'ti-target',       label: 'Targets your weak spots' },
               ].map((item) => (
-                <div key={item.label} className="mx-8 flex items-center gap-3">
-                  <span className={`ti ${item.icon} text-lg text-primary`} aria-hidden="true" />
-                  <span className="text-sm font-extrabold text-white">{item.stat}</span>
-                  <span className="text-xs text-white/70">{item.label}</span>
-                  <span className="ml-8 text-white/20" aria-hidden="true">·</span>
+                <div key={item.label} className="mx-10 flex items-center gap-2.5">
+                  <span className={`ti ${item.icon} text-base text-white/60`} aria-hidden="true" />
+                  <span className="text-sm font-medium tracking-wide text-white">{item.label}</span>
+                  <span className="ml-10 text-white/25" aria-hidden="true">·</span>
                 </div>
               ))}
             </div>
@@ -141,10 +144,11 @@ export function Hero() {
 
         {/* Accessible static version for screen readers */}
         <ul className="sr-only">
-          <li>10,000+ students prepping</li>
-          <li>4.9 / 5 average rating</li>
-          <li>60 seconds to your custom plan</li>
-          <li>100% free forever</li>
+          <li>AI-personalized study plan</li>
+          <li>Up to 12 months of prep</li>
+          <li>Daily practice drills</li>
+          <li>Formula and rules sheet</li>
+          <li>100% free, no tutor fees</li>
         </ul>
       </div>
     </section>
