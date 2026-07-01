@@ -53,43 +53,43 @@
 }
 
 :root {
-  color-scheme: light;
-  /* Solace design system — warm cream canvas, cream surfaces, calm teal brand accent. */
-  --background: #f5f2ed;
-  --foreground: #1a1a1a;
-  --card: #faf7f2;
-  --card-foreground: #1a1a1a;
-  --popover: #faf7f2;
-  --popover-foreground: #1a1a1a;
-  --primary: #0e8a6a;
-  --primary-foreground: #ffffff;
-  --secondary: #e6f5f0;
-  --secondary-foreground: #096b52;
-  --muted: #ede9e2;
-  --muted-foreground: #6f6f6b;
-  --accent: #e6f5f0;
-  --accent-foreground: #096b52;
-  --destructive: #d94040;
-  --border: #e8e8e8;
-  --input: #e2e2de;
-  --ring: #0e8a6a;
-  --chart-1: #0e8a6a;
+  color-scheme: dark;
+  /* SAT Sage — deep blue-teal dark theme matching the landing video */
+  --background: #0d1b2a;
+  --foreground: #e8f0f7;
+  --card: #122236;
+  --card-foreground: #e8f0f7;
+  --popover: #122236;
+  --popover-foreground: #e8f0f7;
+  --primary: #12c99a;
+  --primary-foreground: #04150f;
+  --secondary: #1a3347;
+  --secondary-foreground: #7ecfba;
+  --muted: #1a2f42;
+  --muted-foreground: #7a9ab5;
+  --accent: #1a3347;
+  --accent-foreground: #7ecfba;
+  --destructive: #e05555;
+  --border: #1e3550;
+  --input: #1a2f42;
+  --ring: #12c99a;
+  --chart-1: #12c99a;
   --chart-2: #1aad86;
-  --chart-3: #2563eb;
-  --chart-4: #d97706;
-  --chart-5: #888888;
+  --chart-3: #3b82f6;
+  --chart-4: #f59e0b;
+  --chart-5: #94a3b8;
   --radius: 0.75rem;
-  --sidebar: #faf7f2;
-  --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #0e8a6a;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e6f5f0;
-  --sidebar-accent-foreground: #096b52;
-  --sidebar-border: #e8e8e8;
-  --sidebar-ring: #0e8a6a;
+  --sidebar: #0d1b2a;
+  --sidebar-foreground: #e8f0f7;
+  --sidebar-primary: #12c99a;
+  --sidebar-primary-foreground: #04150f;
+  --sidebar-accent: #1a3347;
+  --sidebar-accent-foreground: #7ecfba;
+  --sidebar-border: #1e3550;
+  --sidebar-ring: #12c99a;
 }
 
-/* Light mode only — the Solace design system does not define a dark theme. */
+/* SAT Sage — dark theme only. */
 
 @layer base {
   * {

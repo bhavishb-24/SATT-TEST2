@@ -36,7 +36,7 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section id="features" className="border-t border-border bg-card/40">
+    <section id="features" className="border-t border-border bg-background">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
         <FadeInOnScroll>
           <div className="flex max-w-2xl flex-col gap-4">

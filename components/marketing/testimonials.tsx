@@ -23,7 +23,7 @@ const QUOTES = [
 
 export function Testimonials() {
   return (
-    <section className="border-t border-border bg-card/40">
+    <section className="border-t border-border bg-background">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
         <div className="flex max-w-2xl flex-col gap-4">
           <span className="text-sm font-bold uppercase tracking-wider text-primary">

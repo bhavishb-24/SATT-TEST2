@@ -58,10 +58,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
+  colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#FAFAF8',
+  themeColor: '#0d1b2a',
 }
 
 export default function RootLayout({
@@ -72,8 +72,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`light ${inter.variable} ${instrumentSerif.variable} bg-background`}
-      style={{ colorScheme: 'light' }}
+      className={`dark ${inter.variable} ${instrumentSerif.variable} bg-background`}
+      style={{ colorScheme: 'dark' }}
       suppressHydrationWarning
     >
       <head>
