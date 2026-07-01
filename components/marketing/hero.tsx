@@ -28,8 +28,8 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      {/* Dark overlay for text legibility */}
-      <div className="pointer-events-none absolute inset-0 bg-black/55" aria-hidden="true" />
+      {/* Dark overlay for text legibility — keep light so video motion stays visible */}
+      <div className="pointer-events-none absolute inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="relative mx-auto w-full max-w-4xl px-5 pb-20 pt-36 lg:px-8 lg:pb-32 lg:pt-48">
         {/* Content */}
