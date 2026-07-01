@@ -73,15 +73,6 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${instrumentSerif.variable}`}
-      style={{
-        colorScheme: 'light',
-        minHeight: '100%',
-        backgroundImage: 'url(/site-bg.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-      }}
       suppressHydrationWarning
     >
       <head>

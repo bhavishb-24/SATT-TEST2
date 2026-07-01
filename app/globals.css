@@ -57,15 +57,15 @@
   /* SAT Sage — sky-blue to mint-green light theme */
   --background: transparent;
   --foreground: #0e2233;
-  --card: rgba(255,255,255,0.55);
+  --card: rgba(255,255,255,0.40);
   --card-foreground: #0e2233;
-  --popover: #ffffff;
+  --popover: rgba(255,255,255,0.92);
   --popover-foreground: #0e2233;
   --primary: #1a7fa8;
   --primary-foreground: #ffffff;
-  --secondary: #d6f0e8;
+  --secondary: rgba(214,240,232,0.50);
   --secondary-foreground: #0e5c45;
-  --muted: #dff0f7;
+  --muted: rgba(223,240,247,0.40);
   --muted-foreground: #3d6a82;
   --accent: #d6f0e8;
   --accent-foreground: #0e5c45;
@@ -99,9 +99,15 @@
     @apply text-foreground;
     background: transparent;
   }
-  html {
-    @apply font-sans;
-  }
+html {
+  @apply font-sans;
+  background-image: url('/site-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  min-height: 100%;
+}
 }
 
 @keyframes fadeIn {
