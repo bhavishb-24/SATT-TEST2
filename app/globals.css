@@ -93,7 +93,7 @@
 
 html {
   @apply font-sans;
-  background-image: url('/site-bg.jpg') !important;
+  background-image: url('/site-bg-cropped.jpg') !important;
   background-size: cover !important;
   background-position: center !important;
   background-attachment: fixed !important;
